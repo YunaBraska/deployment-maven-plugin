@@ -1,0 +1,136 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <groupId>berlin.yuna</groupId>
+    <artifactId>maven-deployment</artifactId>
+    <version>0.0.1</version>
+    <packaging>pom</packaging>
+
+    <name>${project.artifactId}</name>
+    <description>This is an example how to separate the deployment from build process in maven which I am using for my deployments to keep also the pom.xml small and not have a parent which is needed to be also in maven central</description>
+    <url>${git-project.url}</url>
+
+    <developers>
+        <developer>
+            <name>Yuna Morgenstern</name>
+            <email>io@yuna.berlin</email>
+        </developer>
+    </developers>
+
+    <licenses>
+        <license>
+            <name>The Apache License, Version 2.0</name>
+            <url>http://www.apache.org/licenses/LICENSE-2.0.txt</url>
+        </license>
+    </licenses>
+
+    <properties>
+        <java.version>1.8</java.version>
+        <parent-project.encoding>UTF-8</parent-project.encoding>
+        <project.build.sourceEncoding>${parent-project.encoding}</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>${parent-project.encoding}</project.reporting.outputEncoding>
+        <git-project.url>https://github.com/YunaBraska/maven-deployment</git-project.url>
+    </properties>
+
+    <dependencies>
+        <dependency>
+            <groupId>berlin.yuna</groupId>
+            <artifactId>command-line-util</artifactId>
+            <version>0.0.4</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.8.0-beta4</version>
+            <optional>true</optional>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.13-beta-2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hamcrest</groupId>
+            <artifactId>hamcrest-core</artifactId>
+            <version>2.1</version>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
+
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>3.8.0</version>
+                <configuration>
+                    <target>${java.version}</target>
+                    <source>${java.version}</source>
+                </configuration>
+            </plugin>
+            <plugin>
+                <groupId>org.jacoco</groupId>
+                <artifactId>jacoco-maven-plugin</artifactId>
+                <version>0.8.3</version>
+                <configuration>
+                    <excludes>
+                        <!--
+                        *   Match zero or more characters
+                        **  Match zero or more directories
+                        ?   Match a single character
+                        -->
+                        <exclude>**/*/model/**/*</exclude>
+                        <exclude>**/*/domain/**/*</exclude>
+                        <exclude>**/*/persistence/**/*</exclude>
+                        <exclude>**/*/target/**/*</exclude>
+                    </excludes>
+                </configuration>
+                <executions>
+                    <execution>
+                        <goals>
+                            <goal>prepare-agent</goal>
+                        </goals>
+                    </execution>
+                    <execution>
+                        <id>report</id>
+                        <phase>prepare-package</phase>
+                        <goals>
+                            <goal>report</goal>
+                        </goals>
+                    </execution>
+                </executions>
+            </plugin>
+            <plugin>
+                <groupId>com.ning.maven.plugins</groupId>
+                <artifactId>maven-duplicate-finder-plugin</artifactId>
+                <version>1.0.9</version>
+                <executions>
+                    <execution>
+                        <phase>validate</phase>
+                        <goals>
+                            <goal>check</goal>
+                        </goals>
+                        <configuration>
+                            <failBuildInCaseOfDifferentContentConflict>true</failBuildInCaseOfDifferentContentConflict>
+                            <failBuildInCaseOfEqualContentConflict>false</failBuildInCaseOfEqualContentConflict>
+                            <ignoredResources>
+                                <ignoredResource>.*</ignoredResource>
+                            </ignoredResources>
+                        </configuration>
+                    </execution>
+                </executions>
+            </plugin>
+        </plugins>
+    </build>
+
+    <scm>
+        <connection>scm:git:${git-project.url}</connection>
+        <developerConnection>scm:git:${git-project.url}</developerConnection>
+        <url>${git-project.url}.git</url>
+    </scm>
+</project>
