@@ -30,7 +30,8 @@ public class MavenDeployComponentTest extends Ci {
                 + " --MVN_CLEAN=true"
                 + " --MVN_UPDATE=true"
                 + " --MVN_JAVA_DOC=true"
-                + " --MVN_SOURCE=true";
+                + " --MVN_SOURCE=true"
+                + " --GIT_TAG=true";
 
         LOG.debug("Project dir [{}]", terminal.dir());
         LOG.debug("Build Command [{}]", command);
@@ -73,7 +74,7 @@ public class MavenDeployComponentTest extends Ci {
         assertThat(console, containsString("update-child-modules"));
         assertThat(console, containsString("use-latest-releases"));
         assertThat(console, containsString("use-next-snapshots"));
-        assertThat(console, containsString("maven-source-plugin"));
+        assertThat(console, containsString("[WARN] Tagging failed cause PROJECT_VERSION [3.2.1.2.3] is not set or the GIT_TAG [3.2.1.2.3] already exists"));
         assertThat(console, containsString("[INFO] BUILD SUCCESS"));
     }
 }
