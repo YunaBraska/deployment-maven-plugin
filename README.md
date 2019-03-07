@@ -9,6 +9,11 @@
 ### Description
 This is an example how to separate the deployment from build process in maven which I am using for my deployments to keep also the pom.xml small and not have a parent which is needed to be also in maven central 
 
+### Example
+````bash
+ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PROFILES=true --MVN_CLEAN=true --MVN_UPDATE=true --MVN_JAVA_DOC=true --MVN_SOURCE=true --GIT_TAG=true
+````
+
 ### Technical links
 * https://maven.apache.org/plugins/maven-javadoc-plugin/
 * https://maven.apache.org/plugins/maven-source-plugin/
