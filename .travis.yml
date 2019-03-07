@@ -1,0 +1,9 @@
+language: java
+sudo: false
+script: mvn clean verify
+
+after_success:
+  - bash <(curl -s https://codecov.io/bash) -t ab6f3540-1a81-4b13-b45c-d7369dac0eed
+env:
+  global:
+    - CODECOV_TOKEN=:ab6f3540-1a81-4b13-b45c-d7369dac0eed

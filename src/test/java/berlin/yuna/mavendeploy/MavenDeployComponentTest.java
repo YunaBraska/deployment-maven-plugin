@@ -1,37 +1,23 @@
 package berlin.yuna.mavendeploy;
 
 import berlin.yuna.clu.logic.SystemUtil;
-import berlin.yuna.clu.logic.Terminal;
 import org.junit.Before;
 import org.junit.Test;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
-import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class MavenDeployComponentTest {
-
-    private static final Logger LOG = LoggerFactory.getLogger(Terminal.class);
-    private final File buildFile = new File(Paths.get("target").toAbsolutePath().getParent().toFile(), "ci.bash");
-    private Terminal terminal;
+public class MavenDeployComponentTest extends Ci {
 
     @Before
     public void setUp() {
-        assertThat(buildFile.exists(), is(true));
-        terminal = new Terminal()
-                .dir(prepareTestProject())
-                .consumerInfo(System.out::println)
-                .consumerError(System.err::println);
+        init();
     }
 
     @Test
@@ -89,21 +75,5 @@ public class MavenDeployComponentTest {
         assertThat(console, containsString("use-next-snapshots"));
         assertThat(console, containsString("maven-source-plugin"));
         assertThat(console, containsString("[INFO] BUILD SUCCESS"));
-    }
-
-    private File prepareTestProject() {
-        final File testDir = new File(System.getProperty("java.io.tmpdir"), getClass().getSimpleName());
-        if (!testDir.exists()) {
-            assertThat(testDir.mkdirs(), is(true));
-            assertThat(testDir.exists(), is(true));
-            new Terminal()
-                    .dir(testDir)
-                    .consumerInfo(System.out::println)
-                    .consumerError(System.err::println)
-                    .execute("git clone https://github.com/YunaBraska/command-line-util");
-            assertThat(testDir.list(), is(notNullValue()));
-            assertThat(requireNonNull(testDir.list()).length, is(not(0)));
-        }
-        return new File(testDir, "command-line-util");
     }
 }
