@@ -103,7 +103,7 @@ if [ ${#GPG_PASSPHRASE} -ge 2 ]; then
     gpg -k
     #signing dummy so that maven is using right agent without settings XML
     echo 'gpg.activation' > gpg.act; gpg --sign --armor --always-trust --passphrase=${GPG_PASSPHRASE} --pinentry-mode loopback gpg.act; rm -rf gpg.act gpg.act.asc
-    #for x in target/*.jar; do gpg --sign --armor --always-trust --passphrase=7576Simba --pinentry-mode loopback "${x}"; done
+    #for x in target/*.jar; do gpg --sign --armor --always-trust --passphrase=${GPG_PASSPHRASE} --pinentry-mode loopback "${x}"; done
     #mvn package gpg:sign -Dgpg.passphrase=${GPG_PASSPHRASE} -Darguments=-D--pinentry-mode -Darguments=loopback
     #for x in target/*.asc; do gpg --verify "${x}"; done
 fi
