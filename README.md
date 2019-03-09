@@ -7,7 +7,30 @@
 [![Gitter][Gitter-image]][Gitter-Url] 
 
 ### Description
-This is an example how to separate the deployment from build process in maven which I am using for my deployments to keep also the pom.xml small and not have a parent which is needed to be also in maven central 
+This is an example/alternative to [maven-oss-parent](https://github.com/YunaBraska/maven-oss-parent) how to separate the deployment from build process in maven which I am using for my deployments to keep also the pom.xml small and not have a parent which is needed to be also in maven central 
+
+### Requirements
+* \[JAVA\] for maven 
+* \[MAVEN\] to run maven commands 
+* \[GIT\] for tagging
+
+### Parameters
+| Parameter       | Type    | Default |  Description                                  |
+|:----------------|:--------|:--------|:----------------------------------------------|
+| PROJECT_VERSION | String  | ''      | Sets project version in pom                   |
+| MVN_TAG         | Boolean | true    | Tags the project if not already done          |
+| MVN_CLEAN       | Boolean | true    | Purges local maven repository cache           |
+| MVN_JAVA_DOC    | Boolean | true    | Creates java doc (-javadoc.jar)               |
+| MVN_SOURCE      | Boolean | true    | Creates java sources (-sources.jar)           |
+| MVN_PROFILES    | Boolean | true    | Uses all available profiles                   |
+| MVN_UPDATE      | Boolean | true    | Updates parent, props, dependencies           |
+| MVN_RELEASE     | Boolean | true    | (Nexus) Releases the deployment               |
+| MVN_DEPLOY_ID   | String  | ''      | (Nexus) Deploys artifacts (id = Settings.xml) |
+| MVN_OPTIONS     | String  | ''      | Adds additional maven options                 |
+| GPG_PASSPHRASE  | String  | ''      | Signs artifacts (.asc) with GPG 2.1           |
+| JAVA_VERSION    | String  | 1.8     | Sets compiler java version                    |
+| ENCODING        | String  | UTF-8   | Sets compiler encoding                        |
+
 
 ### Example
 ````bash
@@ -18,12 +41,22 @@ ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PR
 * https://maven.apache.org/plugins/maven-javadoc-plugin/
 * https://maven.apache.org/plugins/maven-source-plugin/
 * http://maven.apache.org/plugins/maven-gpg-plugin/sign-mojo.html
+* https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-
 
 ### TODO
-* [ ] Maven custom meta data like UTF-8, Java version, custom param....
-* [ ] SCM DEPLOY TAG
+* [ ] release process
+* [ ] set always autoReleaseAfterClose=false and add "mvn nexus-staging:release" to release process
+* [ ] tag only at release
+* [ ] option/param to fail if tag already exists
+* [ ] release needs a new version to be set manually
+* [ ] option/param remove snapshot
+* [ ] no artifact process (like: javadoc, sources,...) if its just pom artifact
+* [ ] set scm url if not exists or changed
+* [ ] reset readme urls, description and title
+* [ ] painful... write in other language than bash...
+
+* [ ] find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin
 * [ ] org.sonatype.plugins
-* [ ] RELEASE <autoVersionSubmodules>true</autoVersionSubmodules> <useReleaseProfile>true</useReleaseProfile>
 * [ ] own or buy logo https://www.designevo.com/apps/logo/?name=blue-hexagon-and-3d-container
 
 ![maven-deployment](src/main/resources/banner.png "maven-deployment")

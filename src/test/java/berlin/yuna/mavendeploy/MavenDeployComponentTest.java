@@ -31,13 +31,15 @@ public class MavenDeployComponentTest extends Ci {
                 + " --MVN_UPDATE=true"
                 + " --MVN_JAVA_DOC=true"
                 + " --MVN_SOURCE=true"
-                + " --GIT_TAG=true";
+                + " --MVN_RELEASE=false"
+                + " --MVN_TAG=true";
 
         LOG.debug("Project dir [{}]", terminal.dir());
         LOG.debug("Build Command [{}]", command);
 
         final String console = terminal.execute(command).consoleInfo();
         assertConsoleOutput(console);
+        assertThat(terminal.status(), is(0));
 
 
         final File pomFile = new File(terminal.dir(), "pom.xml");
