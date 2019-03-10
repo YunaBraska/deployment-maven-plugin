@@ -124,7 +124,7 @@ if [ ${#GPG_PASSPHRASE} -ge 2 ]; then MVN_GPG_PARAM="-Dgpg.passphrase=${GPG_PASS
 if [ ${MVN_TAG} = "false" ]; then MVN_TAG_CMD=''; else MVN_TAG_CMD="${MVN_TAG_CMD}${PROJECT_VERSION}"; MVN_TAG='true'; GIT_TAG=$(git describe --always); fi
 if [ ${MVN_RELEASE} = "false" ]; then MVN_RELEASE_PARAM='-DautoReleaseAfterClose=false'; MVN_RELEASE_PARAM="-DautoReleaseAfterClose=true"; MVN_RELEASE='true'; fi
 if [ ${#PROJECT_VERSION} -le 2 ] || [ ${GIT_TAG} = "${PROJECT_VERSION}" ]; then MVN_TAG_CMD=''; ${MVN_TAG} = "false"; echo "[WARN] Tagging failed cause PROJECT_VERSION [${PROJECT_VERSION}] is not set or the GIT_TAG [${GIT_TAG}] already exists"; fi
-MVN_OPTIONS="${MVN_OPTIONS} -Dproject.build.sourceEncoding=${ENCODING} -Dproject.encoding=${ENCODING} -Dproject.reporting.outputEncoding=${ENCODING} -Dmaven.compiler.source=${JAVA_VERSION} -Dmaven.compiler.target=${JAVA_VERSION} -DuseSystemClassLoader=false -Djdk.net.URLClassPath.disableClassPathURLCheck=true -DargLine=-Xmx1024m -DargLine=-XX:MaxPermSize=256m -Dmaven.surefire.debug -X"
+MVN_OPTIONS="${MVN_OPTIONS} -Dproject.build.sourceEncoding=${ENCODING} -Dproject.encoding=${ENCODING} -Dproject.reporting.outputEncoding=${ENCODING} -Dmaven.compiler.source=${JAVA_VERSION} -Dmaven.compiler.target=${JAVA_VERSION} -DuseSystemClassLoader=false -Djdk.net.URLClassPath.disableClassPathURLCheck=true -DargLine=-Xmx1024m -DargLine=-XX:MaxPermSize=256m -X"
 
 #echo "GPG_PASSPHRASE [${GPG_PASSPHRASE}]"
 echo "PROJECT_VERSION [${PROJECT_VERSION}]"
