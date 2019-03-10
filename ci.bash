@@ -153,10 +153,12 @@ else
 fi
 
 #FIXME: find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin
-if [ ${#GPG_PASSPHRASE} -ge 2 ]; then
+MVN_REPO_PATH=$(mvn help:evaluate -Dexpression=settings.localRepository | grep -v '\[INFO\]')
+if [ ! -d "${MVN_REPO_PATH}/berlin/yuna/maven-gpg-plugin" ]; then
     echo "########## START INSTALLING GPG PLUGIN FORK FROM [berlin.yuna] ##########"
-    SCRIPT_HOME="$(cd "${BASH_SOURCE[0]%/*}" && echo "$PWD")"
-    mvn clean install -f=${SCRIPT_HOME}/src/main/resources/maven-gpg-plugin -Drat.ignoreErrors=true --quiet
+    git clone https://github.com/YunaBraska/maven-gpg-plugin maven-gpg-plugin
+    mvn clean install -f=maven-gpg-plugin -Drat.ignoreErrors=true --quiet
+    rm -rf maven-gpg-plugin
     echo "########## END INSTALLING GPG PLUGIN FORK FROM [berlin.yuna] ##########"
 fi
 
@@ -164,7 +166,7 @@ fi
 ${MVN_UPDATE_CMD}
 MVN_ALL="${MVN_GOAL_CMD} ${MVN_CLEAN_PARAM} ${MVN_DOC_CMD} ${MVN_DOC_PARAM} ${MVN_SOURCE_CMD} ${MVN_TAG_CMD} ${MVN_OPTIONS} ${MVN_GPG_CMD} ${MVN_GPG_PARAM} ${MVN_PROFILES} ${SONATYPE_DEPLOY_CMD} ${MVN_REPORT_CMD}"
 echo "[DEBUG] [${MVN_ALL}]"
-mvn ${MVN_ALL}
+time mvn ${MVN_ALL}
 
 #i really have no idea how this works... sometimes it just doesn't lets hope it works now better
 #if [ ${#GPG_PASSPHRASE} -ge 2 ]; then
