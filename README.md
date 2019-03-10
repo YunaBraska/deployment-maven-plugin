@@ -41,6 +41,7 @@ ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PR
 * https://maven.apache.org/plugins/maven-javadoc-plugin/
 * https://maven.apache.org/plugins/maven-source-plugin/
 * http://maven.apache.org/plugins/maven-gpg-plugin/sign-mojo.html
+* http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html
 * https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-
 
 ### TODO
