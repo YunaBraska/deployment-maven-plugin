@@ -7,6 +7,7 @@ import org.slf4j.Logger;
 import java.io.File;
 
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_CLEAN_CACHE;
+import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_GPG_SIGN_XX;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_JAVADOC;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_SOURCE;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_TAG_XX;
@@ -47,17 +48,6 @@ public class bashConvert {
     private String SONATYPE_STAGING_URL = "https://oss.sonatype.org/service/local/staging/deploy/maven2/";
     private String SONATYPE_DEPLOY_CMD = null;
 
-    private String MVN_GOAL_CMD = 'clean'
-    private String MVN_CLEAN_PARAM = 'generate-resources generate-sources dependency:resolve-plugins'
-    private String MVN_UPDATE_CMD = "versions:update-parent versions:update-properties versions:update-child-modules versions:use-latest-releases versions:use-next-snapshots versions:commit -DallowSnapshots=true -DgenerateBackupPoms=false"
-    private String MVN_DOC_CMD = "javadoc:jar"
-    private String MVN_DOC_PARAM = "-Dnodeprecatedlist -Dquiet=true"
-    private String MVN_SOURCE_CMD = "source:jar-no-fork"
-    private String MVN_REPORT_CMD = "versions:display-dependency-updates versions:display-plugin-updates"
-    //    MVN_GPG_CMD="gpg:sign"
-    private String MVN_GPG_CMD = "berlin.yuna:maven-gpg-plugin:sign"
-    private String MVN_GPG_PARAM = "-Darguments=-D--pinentry-mode -Darguments=loopback"
-    private String MVN_TAG_CMD = "scm:tag -Dtag=";
 
     private static final Logger LOG = getLogger(bashConvert.class);
 
@@ -88,28 +78,49 @@ public class bashConvert {
     public void run() {
         //TODO: read pom file
         //TODO: release on git changes (git status)
+        downloadMavenGpgIfNotExists();
 
-        LOG.info("PROJECT_DIR [{}]", PROJECT_DIR.toString());
-
-
-//        MVN_ALL=" ${MVN_TAG_CMD} ${MVN_OPTIONS} ${MVN_GPG_CMD} ${MVN_GPG_PARAM} ${MVN_PROFILES} ${SONATYPE_DEPLOY_CMD} ${MVN_REPORT_CMD}"
+//        MVN_ALL=" ${SONATYPE_DEPLOY_CMD} ${MVN_REPORT_CMD}"
         final StringBuilder mvnConsole = new StringBuilder();
-        mvnConsole.append("mvn");
-        mvnConsole.append(MVN_CLEAN ? CMD_MVN_CLEAN_CACHE : "");
-        mvnConsole.append(isEmpty(MVN_DEPLOY_ID) ? "clean" : "deploy");
-        mvnConsole.append(!IS_POM && MVN_UPDATE ? CMD_MVN_UPDATE : "");
-        mvnConsole.append(!IS_POM && MVN_JAVA_DOC ? CMD_MVN_JAVADOC : "");
-        mvnConsole.append(MVN_SOURCE ? CMD_MVN_SOURCE : "");
-        mvnConsole.append(hasNewTag() ? CMD_MVN_TAG_XX + PROJECT_VERSION : "");
-        mvnConsole.append(partMvnProfiles());
+        mvnConsole.append("mvn ");
+        mvnConsole.append(MVN_CLEAN ? CMD_MVN_CLEAN_CACHE + " " : "");
+        mvnConsole.append(isEmpty(MVN_DEPLOY_ID) ? "clean " : "deploy ");
+        mvnConsole.append(MVN_UPDATE ? CMD_MVN_UPDATE + " " : "");
+        mvnConsole.append(!IS_POM && MVN_JAVA_DOC ? CMD_MVN_JAVADOC + " " : "");
+        mvnConsole.append(!IS_POM && MVN_SOURCE ? CMD_MVN_SOURCE + " " : "");
+        mvnConsole.append(hasNewTag() ? CMD_MVN_TAG_XX + PROJECT_VERSION + " " : "");
+        mvnConsole.append(generateMavenOptions(MVN_OPTIONS, ENCODING, JAVA_VERSION)).append(" ");
+        mvnConsole.append(isEmpty(GPG_PASSPHRASE) ? "" : CMD_MVN_GPG_SIGN_XX + GPG_PASSPHRASE + " ");
+        mvnConsole.append(partMvnProfiles()).append(" ");
         newTerminal().execute(mvnConsole.toString());
+    }
+
+    private void downloadMavenGpgIfNotExists() {
+        //FIXME: find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin
+        final String MVN_REPO_PATH = newTerminal().execute("$(mvn help:evaluate -Dexpression=settings.localRepository | grep -v '\\[INFO\\]')").consoleInfo();
+        if (!isEmpty(GPG_PASSPHRASE) && !new File(MVN_REPO_PATH, "berlin/yuna/maven-gpg-plugin").exists()) {
+            LOG.warn("START INSTALLING GPG PLUGIN FORK FROM [berlin.yuna]");
+            newTerminal().execute("git clone https://github.com/YunaBraska/maven-gpg-plugin maven-gpg-plugin");
+            newTerminal().execute("mvn clean install - f = maven - gpg - plugin - Drat.ignoreErrors = true-- quiet");
+            newTerminal().execute("rm - rf maven - gpg - plugin");
+            LOG.warn("FINISHED INSTALLING GPG PLUGIN FORK FROM [berlin.yuna]");
+        }
+    }
+
+    private String generateMavenOptions(final String previousMavenOptions, final String encoding, final String javaVersion) {
+        return previousMavenOptions
+                + " -Dproject.build.sourceEncoding=" + encoding
+                + " -Dproject.encoding=" + encoding
+                + " -Dproject.reporting.outputEncoding=" + encoding
+                + " -Dmaven.compiler.source=" + javaVersion
+                + " -Dmaven.compiler.target=" + javaVersion;
     }
 
     private boolean hasNewTag() {
         if (GIT_TAG && !isEmpty(PROJECT_VERSION)) {
             final String lastGitTag = lastGitTag();
             final boolean newTag = !PROJECT_VERSION.equalsIgnoreCase(lastGitTag);
-            LOG.info(newTag? "New GIT_TAG [{}]" : "GIT_TAG [{}] already exists", GIT_TAG);
+            LOG.info(newTag ? "New GIT_TAG [{}]" : "GIT_TAG [{}] already exists", GIT_TAG);
             return newTag;
         }
         return false;
