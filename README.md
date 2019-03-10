@@ -55,6 +55,8 @@ ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PR
 * [ ] set scm url if not exists or changed
 * [ ] reset readme urls, description and title
 * [ ] painful... write in other language than bash...
+* [ ] semantic versioning update if last commit major/feature/bugfix
+* [ ] option/param git commit changes
 
 * [ ] find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin
 * [ ] org.sonatype.plugins
