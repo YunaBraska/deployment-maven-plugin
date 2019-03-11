@@ -19,6 +19,7 @@ This is an example/alternative to [maven-oss-parent](https://github.com/YunaBras
 |:----------------|:--------|:--------|:----------------------------------------------|
 | PROJECT_VERSION | String  | ''      | Sets project version in pom                   |
 | MVN_TAG         | Boolean | true    | Tags the project if not already done          |
+| MVN_TAG_BREAK   | Boolean | false   | Fails at "MVN_TAG" if tag already exists      |
 | MVN_CLEAN       | Boolean | true    | Purges local maven repository cache           |
 | MVN_JAVA_DOC    | Boolean | true    | Creates java doc (-javadoc.jar)               |
 | MVN_SOURCE      | Boolean | true    | Creates java sources (-sources.jar)           |
@@ -40,6 +41,7 @@ ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PR
 ### Technical links
 * https://maven.apache.org/plugins/maven-javadoc-plugin/
 * https://maven.apache.org/plugins/maven-source-plugin/
+* http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html
 * http://maven.apache.org/plugins/maven-gpg-plugin/sign-mojo.html
 * http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html
 * https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-
@@ -48,15 +50,15 @@ ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PR
 * [ ] release process
 * [ ] set always autoReleaseAfterClose=false and add "mvn nexus-staging:release" to release process
 * [ ] tag only at release
-* [ ] option/param to fail if tag already exists
 * [ ] release needs a new version to be set manually
 * [ ] option/param remove snapshot
-* [ ] no artifact process (like: javadoc, sources,...) if its just pom artifact
 * [ ] set scm url if not exists or changed
 * [ ] reset readme urls, description and title
 * [ ] painful... write in other language than bash...
 * [ ] semantic versioning update if last commit major/feature/bugfix
 * [ ] option/param git commit changes
+* [ ] Deploy Dynamic nexus
+* [ ] Deploy artifactory
 
 * [ ] find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin
 * [ ] org.sonatype.plugins

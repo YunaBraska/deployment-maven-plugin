@@ -1,23 +1,37 @@
 package berlin.yuna.mavendeploy;
 
 import berlin.yuna.clu.logic.SystemUtil;
+import berlin.yuna.clu.logic.Terminal;
 import org.junit.Before;
 import org.junit.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
 import static java.util.Objects.requireNonNull;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.notNullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
-public class MavenDeployComponentTest extends Ci {
+public class MavenDeployComponentTest {
+
+    static final Logger LOG = LoggerFactory.getLogger(Terminal.class);
+    final File buildFile = new File(Paths.get("target").toAbsolutePath().getParent().toFile(), "ci.bash");
+    Terminal terminal;
 
     @Before
     public void setUp() {
-        init();
+        assertThat(buildFile.exists(), is(true));
+        terminal = new Terminal()
+                .dir(prepareTestProject())
+                .consumerInfo(System.out::println)
+                .consumerError(System.err::println);
     }
 
     @Test
@@ -78,5 +92,21 @@ public class MavenDeployComponentTest extends Ci {
         assertThat(console, containsString("use-next-snapshots"));
         assertThat(console, containsString("[WARN] Tagging failed cause PROJECT_VERSION [3.2.1.2.3] is not set or the GIT_TAG [3.2.1.2.3] already exists"));
         assertThat(console, containsString("[INFO] BUILD SUCCESS"));
+    }
+
+    private File prepareTestProject() {
+        final File testDir = new File(System.getProperty("java.io.tmpdir"), getClass().getSimpleName());
+        if (!testDir.exists()) {
+            assertThat(testDir.mkdirs(), is(true));
+            assertThat(testDir.exists(), is(true));
+            new Terminal()
+                    .dir(testDir)
+                    .consumerInfo(System.out::println)
+                    .consumerError(System.err::println)
+                    .execute("git clone https://github.com/YunaBraska/command-line-util");
+            assertThat(testDir.list(), is(notNullValue()));
+            assertThat(requireNonNull(testDir.list()).length, is(not(0)));
+        }
+        return new File(testDir, "command-line-util");
     }
 }
