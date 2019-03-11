@@ -5,15 +5,21 @@ import berlin.yuna.clu.logic.Terminal;
 import org.slf4j.Logger;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_CLEAN;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_CLEAN_CACHE;
+import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_FAILSAFE_XX;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_GPG_SIGN_XX;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_JAVADOC;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_REPORT;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_SOURCE;
+import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_SURFIRE_XX;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_TAG_XX;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_UPDATE;
+import static berlin.yuna.mavendeploy.MavenCommands.FILE_MVN_FAILSAFE;
+import static berlin.yuna.mavendeploy.MavenCommands.FILE_MVN_SURFIRE;
 import static berlin.yuna.mavendeploy.MavenCommands.MVN_DEPLOY_LAYOUT;
 import static berlin.yuna.mavendeploy.MavenCommands.SONATYPE_PLUGIN;
 import static berlin.yuna.mavendeploy.MavenCommands.SONATYPE_STAGING_URL;
@@ -27,7 +33,7 @@ class Ci {
         new Ci(args).run();
     }
 
-    final CommandLineReader clr;
+    private final CommandLineReader clr;
 
     private File PROJECT_DIR = new File(System.getProperty("user.dir"));
     private String JAVA_VERSION = "1.8";
@@ -100,8 +106,30 @@ class Ci {
         mvnCommand.append(isEmpty(MVN_DEPLOY_ID) ? "" : prepareNexusDeployUrl()).append(" ");
         mvnCommand.append(generateMavenOptions(MVN_OPTIONS, ENCODING, JAVA_VERSION)).append(" ");
         mvnCommand.append(partMvnProfiles()).append(" ");
+        mvnCommand.append(prepareSurFire()).append(" ");
+        mvnCommand.append(prepareFailSafe()).append(" ");
         mvnCommand.append(CMD_MVN_REPORT).append(" ");
         return mvnCommand.toString();
+    }
+
+    private String prepareSurFire() {
+        try {
+            File failSafeConf = File.createTempFile("surFireExcludes", ".conf");
+            Files.write(failSafeConf.toPath(), FILE_MVN_SURFIRE.getBytes());
+            return CMD_MVN_SURFIRE_XX + failSafeConf.getAbsolutePath();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String prepareFailSafe() {
+        try {
+            File failSafeConf = File.createTempFile("failSafeIncludes", ".conf");
+            Files.write(failSafeConf.toPath(), FILE_MVN_FAILSAFE.getBytes());
+            return CMD_MVN_FAILSAFE_XX + failSafeConf.getAbsolutePath();
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 
     private String prepareNexusDeployUrl() {
@@ -110,12 +138,15 @@ class Ci {
 
     private void downloadMavenGpgIfNotExists() {
         //FIXME: find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin
-        final String MVN_REPO_PATH = newTerminal().execute("mvn help:evaluate -Dexpression=settings.localRepository | grep -v '\\[INFO\\]'").consoleInfo();
+        final String MVN_REPO_PATH = newTerminal().execute(
+                "mvn help:evaluate -Dexpression=settings.localRepository | grep -v '\\[INFO\\]'").consoleInfo();
         if (!isEmpty(GPG_PASSPHRASE) && !new File(MVN_REPO_PATH, "berlin/yuna/maven-gpg-plugin").exists()) {
             LOG.warn("START INSTALLING GPG PLUGIN FORK FROM [berlin.yuna]");
-            newTerminal().execute("git clone https://github.com/YunaBraska/maven-gpg-plugin maven-gpg-plugin");
-            newTerminal().execute("mvn clean install - f = maven - gpg - plugin - Drat.ignoreErrors = true-- quiet");
-            newTerminal().execute("rm - rf maven - gpg - plugin");
+            Terminal terminal = newTerminal().timeoutMs(-1).dir(System.getProperty("java.io.tmpdir"));
+            terminal.execute("rm -rf maven-gpg-plugin");
+            terminal.execute("git clone https://github.com/YunaBraska/maven-gpg-plugin maven-gpg-plugin");
+            terminal.execute("mvn clean install -f=maven-gpg-plugin -Drat.ignoreErrors=true --quiet");
+            terminal.execute("rm -rf maven-gpg-plugin");
             LOG.warn("FINISHED INSTALLING GPG PLUGIN FORK FROM [berlin.yuna]");
         }
     }
@@ -147,7 +178,7 @@ class Ci {
     }
 
     private String lastGitTag() {
-        return newTerminal().execute("git describe --always").consoleInfo().trim();
+        return newTerminal().execute("git describe --tags --always  | sed 's/\\(.*\\)-.*/\\1/'").consoleInfo().trim();
     }
 
     private boolean isEmpty(final String test) {
@@ -158,16 +189,17 @@ class Ci {
         if (MVN_PROFILES) {
             LOG.info("Read maven profiles");
             //TODO: read pom file
-            final String command = "echo $(mvn help:all-profiles | grep \"Profile Id\" | cut -d' ' -f 5 | xargs | tr ' ' ',')";
+            final String command = "mvn help:all-profiles | grep \"Profile Id\" | cut -d' ' -f 5 | xargs | tr ' ' ','";
             final String mvnProfiles = newTerminal().timeoutMs(-1).execute(command).consoleInfo();
             LOG.info("Found maven profiles [{}]", mvnProfiles.trim());
-            return isEmpty(mvnProfiles) ? "" : "-p " + mvnProfiles.trim();
+            return isEmpty(mvnProfiles) ? "" : "--activate-profiles=" + mvnProfiles.trim();
         }
         return "";
     }
 
     private Boolean isPomArtifact() {
-        return newTerminal().execute("grep '<packaging>pom</packaging>' pom.xml | wc -l").consoleInfo().trim().equals("1");
+        return newTerminal().execute("grep '<packaging>pom</packaging>' pom.xml | wc -l").consoleInfo().trim().equals(
+                "1");
     }
 
     private String getOrElse(final String test, final String fallback) {
@@ -191,7 +223,7 @@ class Ci {
                 .breakOnError(true)
                 .consumerInfo(System.out::println)
                 .consumerError(System.err::println)
-                .dir(PROJECT_DIR).timeoutMs(16000);
+                .dir(PROJECT_DIR).timeoutMs(32000);
     }
 
 }

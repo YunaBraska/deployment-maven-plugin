@@ -39,14 +39,15 @@ ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PR
 ````
 
 ### Technical links
-* https://maven.apache.org/plugins/maven-javadoc-plugin/
-* https://maven.apache.org/plugins/maven-source-plugin/
-* http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html
-* http://maven.apache.org/plugins/maven-gpg-plugin/sign-mojo.html
-* http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html
-* https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-
+* [maven-javadoc-plugin](https://maven.apache.org/plugins/maven-javadoc-plugin/)
+* [maven-source-plugin](https://maven.apache.org/plugins/maven-source-plugin/)
+* [maven-surefire-plugin](http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html)
+* [maven-gpg-plugin](http://maven.apache.org/plugins/maven-gpg-plugin/usage.html)
+* [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
 ### TODO
+* [ ] implement skip test
+* [ ] external settings "--settings "
 * [ ] release process
 * [ ] set always autoReleaseAfterClose=false and add "mvn nexus-staging:release" to release process
 * [ ] tag only at release

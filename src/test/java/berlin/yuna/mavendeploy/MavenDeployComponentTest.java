@@ -3,6 +3,7 @@ package berlin.yuna.mavendeploy;
 import berlin.yuna.clu.logic.SystemUtil;
 import berlin.yuna.clu.logic.Terminal;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -34,6 +35,7 @@ public class MavenDeployComponentTest {
                 .consumerError(System.err::println);
     }
 
+    @Ignore
     @Test
     public void ciBuildTest() {
         final String command = buildFile.getAbsolutePath()
