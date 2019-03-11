@@ -18,6 +18,7 @@ This is an example/alternative to [maven-oss-parent](https://github.com/YunaBras
 | Parameter       | Type    | Default |  Description                                  |
 |:----------------|:--------|:--------|:----------------------------------------------|
 | PROJECT_VERSION | String  | ''      | Sets project version in pom                   |
+| SEMANTIC_FORMAT | String  | ''      | Updates semantic version from regex pattern   |
 | MVN_TAG         | Boolean | true    | Tags the project if not already done          |
 | MVN_TAG_BREAK   | Boolean | false   | Fails at "MVN_TAG" if tag already exists      |
 | MVN_CLEAN       | Boolean | true    | Purges local maven repository cache           |
@@ -32,6 +33,11 @@ This is an example/alternative to [maven-oss-parent](https://github.com/YunaBras
 | JAVA_VERSION    | String  | 1.8     | Sets compiler java version                    |
 | ENCODING        | String  | UTF-8   | Sets compiler encoding                        |
 
+### SEMANTIC_FORMAT
+* Syntax \[1.2.3\]
+````"<separator>::<major>::<minor>::<patch>"````
+* Example \[1-2.3.4-5\]
+````"[.-]::release::feature::bugfix\|hotfix::custom_1.*[0-9]::custom_2.*[A-Z]"````
 
 ### Example
 ````bash
@@ -56,7 +62,6 @@ ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PR
 * [ ] set scm url if not exists or changed
 * [ ] reset readme urls, description and title
 * [ ] painful... write in other language than bash...
-* [ ] semantic versioning update if last commit major/feature/bugfix
 * [ ] option/param git commit changes
 * [ ] Deploy Dynamic nexus
 * [ ] Deploy artifactory
