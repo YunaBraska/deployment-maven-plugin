@@ -21,7 +21,10 @@ import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_URL;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
+import static org.hamcrest.CoreMatchers.not;
+import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.junit.Assert.assertTrue;
 
 public class CiTest {
 
@@ -92,5 +95,6 @@ public class CiTest {
     @Test
     public void runCI_shouldNotReturnAnyError() {
         Ci.main(null);
+        assertThat(WORK_DIR, is(not(nullValue())));
     }
 }

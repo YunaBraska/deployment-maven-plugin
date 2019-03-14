@@ -12,7 +12,7 @@ public class GitService {
 
     public GitService(final File workDir) {
         this.workDir = workDir;
-        terminal = new Terminal().timeoutMs(30000).breakOnError(true).dir(workDir).consumerError(System.err::println);
+        terminal = new Terminal(GitService.class).timeoutMs(30000).breakOnError(true).dir(workDir).consumerError(System.err::println);
     }
 
     public File clone(final String url, final String name) {

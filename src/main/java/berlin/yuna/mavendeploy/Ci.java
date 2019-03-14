@@ -40,6 +40,7 @@ public class Ci {
 
     public static void main(final String[] args) {
         System.out.println(new Ci(args).prepareMaven());
+        System.exit(0);
     }
 
     private final Model pom;
@@ -59,7 +60,7 @@ public class Ci {
     private boolean MVN_JAVA_DOC = true;
     private boolean MVN_PROFILES = true;
     private boolean MVN_SOURCE = true;
-    private boolean MVN_TAG = true;
+    private boolean MVN_TAG = false;
     private boolean MVN_TAG_BREAK = false;
     private boolean MVN_REPORT = false;
     private boolean MVN_RELEASE = true;
@@ -228,7 +229,7 @@ public class Ci {
     }
 
     private Terminal newTerminal() {
-        return new Terminal()
+        return new Terminal(Ci.class)
                 .breakOnError(true)
                 .consumerError(System.err::println)
                 .dir(PROJECT_DIR).timeoutMs(32000);

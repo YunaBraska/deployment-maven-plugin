@@ -18,7 +18,7 @@ public class GpgUtil {
 
     public static synchronized void downloadMavenGpgIfNotExists(final File projectDir) {
         //FIXME: find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin
-        final Terminal terminal = new Terminal().dir(projectDir).consumerError(System.err::println);
+        final Terminal terminal = new Terminal(GpgUtil.class).dir(projectDir).consumerError(System.err::println);
         final String MVN_REPO_PATH = terminal.execute(CMD_MVN_REPO_PATH).consoleInfo();
         if (!new File(MVN_REPO_PATH, "berlin/yuna/maven-gpg-plugin").exists()) {
             installMavenGpgPlugin(terminal, MVN_REPO_PATH);

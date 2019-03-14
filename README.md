@@ -19,7 +19,7 @@ This is an example/alternative to [maven-oss-parent](https://github.com/YunaBras
 |:----------------|:--------|:--------|:---------------------------------------------------------------------------|
 | PROJECT_VERSION | String  | ''      | Sets project version in pom                                                |
 | SEMANTIC_FORMAT | String  | ''      | Updates semantic version from regex pattern (overwrites PROJECT_VERSION)   |
-| MVN_TAG         | Boolean | true    | Tags the project with PROJECT_VERSION if not already exists                |
+| MVN_TAG         | Boolean | false   | Tags the project with PROJECT_VERSION if not already exists                |
 | MVN_TAG_BREAK   | Boolean | false   | Tags the project with PROJECT_VERSION and fails if already exists          |
 | MVN_CLEAN       | Boolean | true    | cleans target and resolves dependencies                                    |
 | MVN_CLEAN_CACHE | Boolean | false   | Purges local maven repository cache                                        |
@@ -55,7 +55,6 @@ ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PR
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
 ### TODO
-* [ ] painful... write in other language than bash...
 * [ ] option/param remove snapshot
 * [ ] external settings "--settings "
 * [ ] release process

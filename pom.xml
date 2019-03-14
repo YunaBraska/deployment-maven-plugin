@@ -9,7 +9,9 @@
     <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
-    <description>This is an example how to separate the deployment from build process in maven which I am using for my deployments to keep also the pom.xml small and not have a parent which is needed to be also in maven central</description>
+    <description>This is an example how to separate the deployment from build process in maven which I am using for my
+        deployments to keep also the pom.xml small and not have a parent which is needed to be also in maven central
+    </description>
     <url>${git-project.url}</url>
 
     <developers>
@@ -28,9 +30,9 @@
 
     <properties>
         <java.version>1.8</java.version>
-        <parent-project.encoding>UTF-8</parent-project.encoding>
-        <project.build.sourceEncoding>${parent-project.encoding}</project.build.sourceEncoding>
-        <project.reporting.outputEncoding>${parent-project.encoding}</project.reporting.outputEncoding>
+        <project.encoding>UTF-8</project.encoding>
+        <project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
+        <project.reporting.outputEncoding>${project.encoding}</project.reporting.outputEncoding>
         <git-project.url>https://github.com/YunaBraska/maven-deployment</git-project.url>
     </properties>
 
@@ -63,13 +65,12 @@
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-            <version>1.8.0-beta4</version>
-            <optional>true</optional>
+            <version>1.7.26</version>
         </dependency>
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-            <version>1.6.1</version>
+            <version>1.7.26</version>
         </dependency>
         <dependency>
             <groupId>org.apache.logging.log4j</groupId>
@@ -83,10 +84,10 @@
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-compiler-plugin</artifactId>
-                <version>3.6.0</version>
+                <version>3.8.0</version>
                 <configuration>
-                    <source>1.8</source>
-                    <target>1.8</target>
+                    <source>${java.version}</source>
+                    <target>${java.version}</target>
                 </configuration>
             </plugin>
             <plugin>
