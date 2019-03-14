@@ -7,6 +7,7 @@ import java.io.File;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_CLEAN;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_CLEAN_CACHE;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_FAILSAFE_XX;
+import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_GPG_SIGN_ALT_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_GPG_SIGN_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_JAVADOC;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_REPORT;
@@ -61,7 +62,8 @@ public class CiTest {
                 + " --MVN_TAG=true"
                 + " --MVN_REPORT=true"
                 + " --MVN_TAG_BREAK=true"
-                + " --GPG_PASSPHRASE=${gppPassword}"
+                + " --GPG_PASSPHRASE=${gppPassword-1}"
+                + " --GPG_PASSPHRASE_ALT=${gppPassword-2}"
                 + " --MVN_DEPLOY_ID=nexus"
                 + " --PROJECT_DIR=/Users/yunamorgenstern/Documents/projects/system-util";
 
@@ -80,7 +82,8 @@ public class CiTest {
         assertThat(mavenCommand, containsString(SONATYPE_PLUGIN));
         assertThat(mavenCommand, containsString(SONATYPE_STAGING_URL));
         assertThat(mavenCommand, containsString(CMD_MVN_VERSION_XX + "3.2.1.2.3"));
-        assertThat(mavenCommand, containsString(CMD_MVN_GPG_SIGN_XX + "${gppPassword}"));
+        assertThat(mavenCommand, containsString(CMD_MVN_GPG_SIGN_XX + "${gppPassword-1}"));
+        assertThat(mavenCommand, containsString(CMD_MVN_GPG_SIGN_ALT_XX + "${gppPassword-2}"));
         assertThat(mavenCommand, containsString(CMD_MVN_SURFIRE_XX));
         assertThat(mavenCommand, containsString("mvnSurFireExcludes_"));
         assertThat(mavenCommand, containsString(CMD_MVN_FAILSAFE_XX));

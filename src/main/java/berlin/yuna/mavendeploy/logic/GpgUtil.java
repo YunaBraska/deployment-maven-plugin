@@ -13,7 +13,7 @@ public class GpgUtil {
     private static final Logger LOG = getLogger(Ci.class);
     private static final String CMD_MVN_REPO_PATH = "mvn help:evaluate -Dexpression=settings.localRepository | grep -v '\\[INFO\\]'";
     private static final File WORK_DIR = new File(System.getProperty("java.io.tmpdir"));
-    private static final String URL_MVN_GPG_PLUGIN = "https://github.com/YunaBraska/maven-gpg-plugin maven-gpg-plugin";
+    private static final String URL_MVN_GPG_PLUGIN = "https://github.com/YunaBraska/maven-gpg-plugin.git";
     private static final String NAME_MAVEN_GPG_PLUGIN = "maven-gpg-plugin";
 
     public static synchronized void downloadMavenGpgIfNotExists(final File projectDir) {

@@ -16,7 +16,7 @@ public class GitService {
     }
 
     public File clone(final String url, final String name) {
-        terminal.execute("git clone " + url + " " + name);
+        terminal.breakOnError(false).execute("git clone " + url + " " + name);
         return new File(workDir, name);
     }
 

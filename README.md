@@ -7,7 +7,8 @@
 [![Gitter][Gitter-image]][Gitter-Url] 
 
 ### Description
-This is an example/alternative to [maven-oss-parent](https://github.com/YunaBraska/maven-oss-parent) how to separate the deployment from build process in maven which I am using for my deployments to keep also the pom.xml small and not have a parent which is needed to be also in maven central 
+This is an example/alternative to [maven-oss-parent](https://github.com/YunaBraska/maven-oss-parent) to separate the deployment from build process and keep original the pom.xml small
+Automatically 
 
 ### Requirements
 * \[JAVA\] for maven 
@@ -15,26 +16,27 @@ This is an example/alternative to [maven-oss-parent](https://github.com/YunaBras
 * \[GIT\] for tagging
 
 ### Parameters
-| Parameter       | Type    | Default |  Description                                                               |
-|:----------------|:--------|:--------|:---------------------------------------------------------------------------|
-| PROJECT_VERSION | String  | ''      | Sets project version in pom                                                |
-| SEMANTIC_FORMAT | String  | ''      | Updates semantic version from regex pattern (overwrites PROJECT_VERSION)   |
-| MVN_TAG         | Boolean | false   | Tags the project with PROJECT_VERSION if not already exists                |
-| MVN_TAG_BREAK   | Boolean | false   | Tags the project with PROJECT_VERSION and fails if already exists          |
-| MVN_CLEAN       | Boolean | true    | cleans target and resolves dependencies                                    |
-| MVN_CLEAN_CACHE | Boolean | false   | Purges local maven repository cache                                        |
-| MVN_SKIP_TEST   | Boolean | false   | skips all tests                                                            |
-| MVN_JAVA_DOC    | Boolean | true    | Creates java doc (-javadoc.jar) if its not a pom artifact                  |
-| MVN_SOURCE      | Boolean | true    | Creates java sources (-sources.jar) if its not a pom artifact              |
-| MVN_PROFILES    | Boolean | true    | Uses all available profiles                                                |
-| MVN_UPDATE      | Boolean | false   | Updates parent, properties, dependencies                                   |
-| MVN_REPORT      | Boolean | false   | Generates report about version updates                                     |
-| MVN_OPTIONS     | String  | ''      | Adds additional maven options                                              |
-| GPG_PASSPHRASE  | String  | ''      | Signs artifacts (.asc) with GPG 2.1                                        |
-| JAVA_VERSION    | String  | ''      | Sets compiler java version                                                 |
-| ENCODING        | String  | ''      | Sets compiler encoding                                                     |
-| MVN_RELEASE     | Boolean | true    | (Nexus) Releases the deployment                                            |
-| MVN_DEPLOY_ID   | String  | ''      | (Nexus) Deploys artifacts (id = Settings.xml)                              |
+| Parameter          | Type    | Default |  Description                                                               |
+|:-------------------|:--------|:--------|:---------------------------------------------------------------------------|
+| PROJECT_VERSION    | String  | ''      | Sets project version in pom                                                |
+| SEMANTIC_FORMAT    | String  | ''      | Updates semantic version from regex pattern (overwrites PROJECT_VERSION)   |
+| MVN_TAG            | Boolean | false   | Tags the project (by PROJECT_VERSION) if not already exists                |
+| MVN_TAG_BREAK      | Boolean | false   | Tags the project (by PROJECT_VERSION) and fails if already exists          |
+| MVN_CLEAN          | Boolean | true    | cleans target and resolves dependencies                                    |
+| MVN_CLEAN_CACHE    | Boolean | false   | Purges local maven repository cache                                        |
+| MVN_SKIP_TEST      | Boolean | false   | skips all tests                                                            |
+| MVN_JAVA_DOC       | Boolean | true    | Creates java doc (javadoc.jar) if its not a pom artifact                   |
+| MVN_SOURCE         | Boolean | true    | Creates java sources (sources.jar) if its not a pom artifact               |
+| MVN_PROFILES       | Boolean | true    | Uses all available profiles                                                |
+| MVN_UPDATE         | Boolean | false   | Updates parent, properties, dependencies                                   |
+| MVN_REPORT         | Boolean | false   | Generates report about version updates                                     |
+| MVN_OPTIONS        | String  | ''      | Adds additional maven options                                              |
+| GPG_PASSPHRASE     | String  | ''      | Signs artifacts (.asc) with GPG 1                                        |
+| GPG_PASSPHRASE_ALT | String  | ''      | Signs artifacts (.asc) with GPG 2.1                                        |
+| JAVA_VERSION       | String  | ''      | Sets compiler java version                                                 |
+| ENCODING           | String  | ''      | Sets compiler encoding                                                     |
+| MVN_RELEASE        | Boolean | true    | (Nexus) Releases the deployment                                            |
+| MVN_DEPLOY_ID      | String  | ''      | (Nexus) Deploys artifacts (id = Settings.xml)                              |
 
 ### SEMANTIC_FORMAT
 * Syntax \[1.2.3\]

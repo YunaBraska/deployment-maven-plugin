@@ -11,7 +11,8 @@ public class MavenCommands {
     public static final String CMD_MVN_TAG_XX = "scm:tag -Dtag=";
     public static final String CMD_MVN_SKIP_TEST = "-Dmaven.test.skip=true";
     public static final String CMD_MVN_VERSION_XX = "versions:set -DnewVersion=";
-    public static final String CMD_MVN_GPG_SIGN_XX = "berlin.yuna:maven-gpg-plugin:sign -Darguments=-D--pinentry-mode -Darguments=-Dloopback -Dgpg.passphrase=";
+    public static final String CMD_MVN_GPG_SIGN_XX = "gpg:sign -Darguments=-D--pinentry-mode -Darguments=-Dloopback -Dgpg.passphrase=";
+    public static final String CMD_MVN_GPG_SIGN_ALT_XX = "berlin.yuna:maven-gpg-plugin:sign -Darguments=-D--pinentry-mode -Darguments=-Dloopback -Dgpg.passphrase=";
     public static String MVN_DEPLOY_LAYOUT = "default";
 
     //TODO configurable

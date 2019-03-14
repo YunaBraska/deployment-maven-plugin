@@ -14,10 +14,10 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import static berlin.yuna.mavendeploy.logic.GpgUtil.downloadMavenGpgIfNotExists;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_CLEAN;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_CLEAN_CACHE;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_FAILSAFE_XX;
+import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_GPG_SIGN_ALT_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_GPG_SIGN_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_JAVADOC;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_REPORT;
@@ -33,6 +33,7 @@ import static berlin.yuna.mavendeploy.config.MavenCommands.MVN_DEPLOY_LAYOUT;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_PLUGIN;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_STAGING_URL;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_URL;
+import static berlin.yuna.mavendeploy.logic.GpgUtil.downloadMavenGpgIfNotExists;
 import static java.lang.String.format;
 import static org.slf4j.LoggerFactory.getLogger;
 
@@ -49,6 +50,7 @@ public class Ci {
     private String JAVA_VERSION = null;
     private String ENCODING = null;
     private String GPG_PASSPHRASE = null;
+    private String GPG_PASSPHRASE_ALT = null;
     private String PROJECT_VERSION = null;
     private String MVN_OPTIONS = "";
 
@@ -71,7 +73,7 @@ public class Ci {
     private static final Logger LOG = getLogger(Ci.class);
 
     public Ci(final String... args) {
-        final CommandLineReader clr = new CommandLineReader(args == null? new String[]{""} : args);
+        final CommandLineReader clr = new CommandLineReader(args == null ? new String[]{""} : args);
         //Project
         PROJECT_DIR = getOrElse(clr.getValue("PROJECT_DIR"), PROJECT_DIR);
         ENCODING = getOrElse(clr.getValue("ENCODING"), ENCODING);
@@ -98,6 +100,7 @@ public class Ci {
 
         //GPG
         GPG_PASSPHRASE = getOrElse(clr.getValue("GPG_PASSPHRASE"), GPG_PASSPHRASE);
+        GPG_PASSPHRASE_ALT = getOrElse(clr.getValue("GPG_PASSPHRASE_ALT"), GPG_PASSPHRASE_ALT);
         pom = parsePomFile(PROJECT_DIR);
         IS_POM = isPomArtifact(pom);
 
@@ -109,30 +112,31 @@ public class Ci {
     protected String prepareMaven() {
         final StringBuilder mvnCommand = new StringBuilder();
         mvnCommand.append("mvn").append(" ");
-        mvnCommand.append(ifDo(MVN_CLEAN_CACHE, CMD_MVN_CLEAN_CACHE));
-        mvnCommand.append(ifDo(MVN_CLEAN, "clean"));
+        mvnCommand.append(ifDo(MVN_CLEAN_CACHE, CMD_MVN_CLEAN_CACHE, "MVN_CLEAN_CACHE"));
+        mvnCommand.append(ifDo(MVN_CLEAN, "clean", "MVN_CLEAN"));
         mvnCommand.append(isEmpty(MVN_DEPLOY_ID) ? "verify" : "deploy").append(" ");
-        mvnCommand.append(ifDo(MVN_SKIP_TEST, CMD_MVN_SKIP_TEST));
+        mvnCommand.append(ifDo(MVN_SKIP_TEST, CMD_MVN_SKIP_TEST, "MVN_SKIP_TEST"));
         mvnCommand.append(ifDo(MVN_CLEAN, CMD_MVN_CLEAN));
-        mvnCommand.append(ifDo(MVN_UPDATE, CMD_MVN_UPDATE));
-        mvnCommand.append(ifDo(PROJECT_VERSION, CMD_MVN_VERSION_XX + PROJECT_VERSION));
-        mvnCommand.append(ifDo(!IS_POM && MVN_JAVA_DOC, CMD_MVN_JAVADOC));
-        mvnCommand.append(ifDo(!IS_POM && MVN_SOURCE, CMD_MVN_SOURCE));
-        mvnCommand.append(ifDo(hasNewTag(), CMD_MVN_TAG_XX + PROJECT_VERSION));
-        mvnCommand.append(ifDo(GPG_PASSPHRASE, CMD_MVN_GPG_SIGN_XX + GPG_PASSPHRASE));
-        mvnCommand.append(ifDo(MVN_DEPLOY_ID, prepareNexusDeployUrl()));
-        mvnCommand.append(ifDo(MVN_OPTIONS, MVN_OPTIONS));
-        mvnCommand.append(ifDo(ENCODING, "-Dproject.build.sourceEncoding=" + ENCODING));
+        mvnCommand.append(ifDo(MVN_UPDATE, CMD_MVN_UPDATE, "MVN_UPDATE"));
+        mvnCommand.append(ifDo(PROJECT_VERSION, CMD_MVN_VERSION_XX + PROJECT_VERSION, "PROJECT_VERSION"));
+        mvnCommand.append(ifDo(!IS_POM && MVN_JAVA_DOC, CMD_MVN_JAVADOC, "MVN_JAVA_DOC"));
+        mvnCommand.append(ifDo(!IS_POM && MVN_SOURCE, CMD_MVN_SOURCE, "MVN_SOURCE"));
+        mvnCommand.append(ifDo(hasNewTag(), CMD_MVN_TAG_XX + PROJECT_VERSION, "MVN_TAG"));
+        mvnCommand.append(ifDo(GPG_PASSPHRASE, CMD_MVN_GPG_SIGN_XX + GPG_PASSPHRASE, "GPG_PASSPHRASE"));
+        mvnCommand.append(ifDo(GPG_PASSPHRASE_ALT, CMD_MVN_GPG_SIGN_ALT_XX + GPG_PASSPHRASE_ALT, "GPG_PASSPHRASE_ALT"));
+        mvnCommand.append(ifDo(MVN_DEPLOY_ID, prepareNexusDeployUrl(), "MVN_DEPLOY_ID"));
+        mvnCommand.append(ifDo(MVN_OPTIONS, MVN_OPTIONS, "MVN_OPTIONS"));
+        mvnCommand.append(ifDo(ENCODING, "-Dproject.build.sourceEncoding=" + ENCODING, "ENCODING"));
         mvnCommand.append(ifDo(ENCODING, "-Dproject.reporting.outputEncoding=" + ENCODING));
         mvnCommand.append(ifDo(ENCODING, "-Dproject.encoding=" + ENCODING));
-        mvnCommand.append(ifDo(JAVA_VERSION, "-Dmaven.compiler.source=" + JAVA_VERSION));
+        mvnCommand.append(ifDo(JAVA_VERSION, "-Dmaven.compiler.source=" + JAVA_VERSION, "JAVA_VERSION"));
         mvnCommand.append(ifDo(JAVA_VERSION, "-Dmaven.compiler.target=" + JAVA_VERSION));
-        mvnCommand.append(ifDo(MVN_PROFILES, prepareMavenProfileParam()));
-        mvnCommand.append(ifDo(!MVN_SKIP_TEST, prepareSurFire()));
+        mvnCommand.append(ifDo(MVN_PROFILES, prepareMavenProfileParam(), "MVN_PROFILES"));
+        mvnCommand.append(ifDo(!MVN_SKIP_TEST, prepareSurFire(), "MVN_SKIP_TEST"));
         mvnCommand.append(ifDo(!MVN_SKIP_TEST, prepareFailSafe()));
-        mvnCommand.append(ifDo(MVN_REPORT, CMD_MVN_REPORT));
+        mvnCommand.append(ifDo(MVN_REPORT, CMD_MVN_REPORT, "MVN_REPORT"));
 
-        if (!isEmpty(GPG_PASSPHRASE)) {
+        if (!isEmpty(GPG_PASSPHRASE_ALT)) {
             downloadMavenGpgIfNotExists(PROJECT_DIR);
         }
         return mvnCommand.toString().trim();
@@ -210,6 +214,19 @@ public class Ci {
 
     private String ifDo(final boolean trigger, final String arg) {
         return trigger ? arg + " " : "";
+    }
+
+    private String ifDo(final String trigger, final String arg, final String description) {
+        return ifDo(!isEmpty(trigger), arg, description);
+    }
+
+    private String ifDo(final boolean trigger, final String arg, final String description) {
+        if (trigger) {
+            LOG.info("[{}] [true]", description);
+            return arg + " ";
+        }
+        LOG.info("[{}] [false]", description);
+        return "";
     }
 
     private String getOrElse(final String test, final String fallback) {
