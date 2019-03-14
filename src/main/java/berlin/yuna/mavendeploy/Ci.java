@@ -4,28 +4,29 @@ import berlin.yuna.clu.logic.CommandLineReader;
 import berlin.yuna.clu.logic.Terminal;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.apache.maven.model.io.xpp3.MavenXpp3Writer;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FileReader;
-import java.io.FileWriter;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static berlin.yuna.mavendeploy.GpgUtil.downloadMavenGpgIfNotExists;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_CLEAN;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_CLEAN_CACHE;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_FAILSAFE_XX;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_GPG_SIGN_XX;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_JAVADOC;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_REPORT;
+import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_SKIP_TEST;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_SOURCE;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_SURFIRE_XX;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_TAG_XX;
 import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_UPDATE;
+import static berlin.yuna.mavendeploy.MavenCommands.CMD_MVN_VERSION_XX;
 import static berlin.yuna.mavendeploy.MavenCommands.FILE_MVN_FAILSAFE;
 import static berlin.yuna.mavendeploy.MavenCommands.FILE_MVN_SURFIRE;
 import static berlin.yuna.mavendeploy.MavenCommands.MVN_DEPLOY_LAYOUT;
@@ -37,13 +38,13 @@ import static org.slf4j.LoggerFactory.getLogger;
 
 class Ci {
 
-    private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME = Pattern.compile("(?<prefix>.*refs\\/.*\\/)(?<branchName>.*)(?<suffix>@.*)");
+    private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME = Pattern.compile(
+            "(?<prefix>.*refs\\/.*\\/)(?<branchName>.*)(?<suffix>@.*)");
 
     public static void main(final String[] args) {
         new Ci(args).run();
     }
 
-    private final SemanticService semanticService;
     private final Model pom;
     private File PROJECT_DIR = new File(System.getProperty("user.dir"));
 
@@ -55,6 +56,7 @@ class Ci {
 
     private final boolean IS_POM;
     private boolean MVN_CLEAN = true;
+    private boolean MVN_SKIP_TEST = false;
     private boolean MVN_UPDATE = true;
     private boolean MVN_JAVA_DOC = true;
     private boolean MVN_PROFILES = true;
@@ -72,10 +74,11 @@ class Ci {
         final CommandLineReader clr = new CommandLineReader(args);
         //Project
         PROJECT_DIR = getOrElse(clr.getValue("PROJECT_DIR"), PROJECT_DIR);
-        JAVA_VERSION = getOrElse(clr.getValue("JAVA_VERSION"), JAVA_VERSION);
         ENCODING = getOrElse(clr.getValue("ENCODING"), ENCODING);
         PROJECT_VERSION = getOrElse(clr.getValue("PROJECT_VERSION"), PROJECT_VERSION);
         MVN_OPTIONS = getOrElse(clr.getValue("MVN_OPTIONS"), MVN_OPTIONS);
+        JAVA_VERSION = getOrElse(clr.getValue("JAVA_VERSION"), JAVA_VERSION);
+        SEMANTIC_FORMAT = getOrElse(clr.getValue("SEMANTIC_FORMAT"), SEMANTIC_FORMAT);
 
         //Boolean
         MVN_PROFILES = getOrElse(clr.getValue("MVN_PROFILES"), MVN_PROFILES);
@@ -86,66 +89,51 @@ class Ci {
         MVN_SOURCE = getOrElse(clr.getValue("MVN_SOURCE"), MVN_SOURCE);
         MVN_TAG = getOrElse(clr.getValue("MVN_TAG"), MVN_TAG);
         MVN_RELEASE = getOrElse(clr.getValue("MVN_RELEASE"), MVN_RELEASE);
+        MVN_SKIP_TEST = getOrElse(clr.getValue("MVN_SKIP_TEST"), MVN_SKIP_TEST);
 
         //DEOPLY (Nexus only currently)
         MVN_DEPLOY_ID = getOrElse(clr.getValue("MVN_DEPLOY_ID"), MVN_DEPLOY_ID);
-        SEMANTIC_FORMAT = getOrElse(clr.getValue("SEMANTIC_FORMAT"), SEMANTIC_FORMAT);
 
         //GPG
         GPG_PASSPHRASE = getOrElse(clr.getValue("GPG_PASSPHRASE"), GPG_PASSPHRASE);
         IS_POM = isPomArtifact();
         pom = parsePomFile(PROJECT_DIR);
-        semanticService = new SemanticService(SEMANTIC_FORMAT);
+
+        PROJECT_VERSION = isEmpty(SEMANTIC_FORMAT) ?
+                PROJECT_VERSION :
+                new SemanticService(SEMANTIC_FORMAT).getNextSemanticVersion(pom.getVersion(), PROJECT_VERSION);
     }
 
     public void run() {
         //TODO: read pom file
         //TODO: release on git changes (git status)
-        downloadMavenGpgIfNotExists();
-        newTerminal().execute(prepareMavenCommand());
+        if (!isEmpty(GPG_PASSPHRASE)) {
+            downloadMavenGpgIfNotExists(PROJECT_DIR);
+        }
+        System.out.println(prepareMavenCommand());
     }
 
     protected String prepareMavenCommand() {
         final StringBuilder mvnCommand = new StringBuilder();
         mvnCommand.append("mvn").append(" ");
-        mvnCommand.append(MVN_CLEAN ? CMD_MVN_CLEAN_CACHE : "").append(" ");
+        mvnCommand.append(ifDo(MVN_CLEAN, CMD_MVN_CLEAN_CACHE));
         mvnCommand.append("clean").append(" ");
         mvnCommand.append(isEmpty(MVN_DEPLOY_ID) ? "verify" : "deploy").append(" ");
-        mvnCommand.append(CMD_MVN_CLEAN).append(" ");
-        mvnCommand.append(MVN_UPDATE ? CMD_MVN_UPDATE : "").append(" ");
-        mvnCommand.append(!IS_POM && MVN_JAVA_DOC ? CMD_MVN_JAVADOC : "").append(" ");
-        mvnCommand.append(!IS_POM && MVN_SOURCE ? CMD_MVN_SOURCE : "").append(" ");
-        mvnCommand.append(hasNewTag() ? CMD_MVN_TAG_XX + PROJECT_VERSION : "").append(" ");
-        mvnCommand.append(isEmpty(GPG_PASSPHRASE) ? "" : CMD_MVN_GPG_SIGN_XX + GPG_PASSPHRASE).append(" ");
-        mvnCommand.append(isEmpty(MVN_DEPLOY_ID) ? "" : prepareNexusDeployUrl()).append(" ");
+        mvnCommand.append(ifDo(MVN_SKIP_TEST, CMD_MVN_SKIP_TEST));
+        mvnCommand.append(ifDo(true, CMD_MVN_CLEAN));
+        mvnCommand.append(ifDo(MVN_UPDATE, CMD_MVN_UPDATE));
+        mvnCommand.append(ifDo(PROJECT_VERSION, CMD_MVN_VERSION_XX));
+        mvnCommand.append(ifDo(!IS_POM && MVN_JAVA_DOC, CMD_MVN_JAVADOC));
+        mvnCommand.append(ifDo(!IS_POM && MVN_SOURCE, CMD_MVN_SOURCE));
+        mvnCommand.append(ifDo(hasNewTag(), CMD_MVN_TAG_XX + PROJECT_VERSION));
+        mvnCommand.append(ifDo(GPG_PASSPHRASE, CMD_MVN_GPG_SIGN_XX + GPG_PASSPHRASE));
+        mvnCommand.append(ifDo(MVN_DEPLOY_ID, prepareNexusDeployUrl()));
         mvnCommand.append(generateMavenOptions(MVN_OPTIONS, ENCODING, JAVA_VERSION)).append(" ");
-        mvnCommand.append(partMvnProfiles()).append(" ");
+        mvnCommand.append(ifDo(MVN_PROFILES, prepareMavenProfileParam()));
         mvnCommand.append(prepareSurFire()).append(" ");
         mvnCommand.append(prepareFailSafe()).append(" ");
         mvnCommand.append(CMD_MVN_REPORT).append(" ");
-
-        if (!isEmpty(SEMANTIC_FORMAT)) {
-            setNextSemanticVersion();
-        }
         return mvnCommand.toString();
-    }
-
-    public void setNextSemanticVersion() {
-        final String branchName = findOriginalBranchName();
-        if (!isEmpty(branchName)) {
-            final String result = semanticService.getNextSemanticVersion(pom.getVersion(), branchName);
-            pom.setVersion(result);
-            LOG.info("Update version from [{}] to [{}]", pom.getModelVersion(), result);
-            writePomFile(PROJECT_DIR, pom);
-        }
-    }
-
-    private void writePomFile(final File projectDir, final Model pomFile) {
-        try {
-            new MavenXpp3Writer().write(new FileWriter(new File(projectDir, "pom.xml")), pomFile);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
     }
 
     private Model parsePomFile(final File projectDir) {
@@ -156,18 +144,9 @@ class Ci {
         }
     }
 
-    public String findOriginalBranchName() {
-        final String branchRef = "git reflog show --all | grep $(git log --pretty=format:'%h' -n 1)";
-        final Matcher matcher = PATTERN_ORIGINAL_BRANCH_NAME.matcher(newTerminal().execute(branchRef).consoleInfo());
-        if (matcher.find()) {
-            return matcher.group("branchName");
-        }
-        return null;
-    }
-
     private String prepareSurFire() {
         try {
-            final File failSafeConf = File.createTempFile("surFireExcludes", ".conf");
+            final File failSafeConf = File.createTempFile("mvnSurFireExcludes_", ".conf");
             Files.write(failSafeConf.toPath(), FILE_MVN_SURFIRE.getBytes());
             return CMD_MVN_SURFIRE_XX + failSafeConf.getAbsolutePath();
         } catch (IOException e) {
@@ -177,7 +156,7 @@ class Ci {
 
     private String prepareFailSafe() {
         try {
-            final File failSafeConf = File.createTempFile("failSafeIncludes", ".conf");
+            final File failSafeConf = File.createTempFile("mvnFailSafeIncludes_", ".conf");
             Files.write(failSafeConf.toPath(), FILE_MVN_FAILSAFE.getBytes());
             return CMD_MVN_FAILSAFE_XX + failSafeConf.getAbsolutePath();
         } catch (IOException e) {
@@ -187,21 +166,6 @@ class Ci {
 
     private String prepareNexusDeployUrl() {
         return SONATYPE_PLUGIN + " -DaltDeploymentRepository=" + MVN_DEPLOY_ID + "::" + MVN_DEPLOY_LAYOUT + "::" + SONATYPE_STAGING_URL + " -DnexusUrl=" + SONATYPE_URL + " -DserverId=" + MVN_DEPLOY_ID + " -DautoReleaseAfterClose=false";
-    }
-
-    private void downloadMavenGpgIfNotExists() {
-        //FIXME: find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin
-        final String MVN_REPO_PATH = newTerminal().execute(
-                "mvn help:evaluate -Dexpression=settings.localRepository | grep -v '\\[INFO\\]'").consoleInfo();
-        if (!isEmpty(GPG_PASSPHRASE) && !new File(MVN_REPO_PATH, "berlin/yuna/maven-gpg-plugin").exists()) {
-            LOG.warn("START INSTALLING GPG PLUGIN FORK FROM [berlin.yuna]");
-            final Terminal terminal = newTerminal().timeoutMs(-1).dir(System.getProperty("java.io.tmpdir"));
-            terminal.execute("rm -rf maven-gpg-plugin");
-            terminal.execute("git clone https://github.com/YunaBraska/maven-gpg-plugin maven-gpg-plugin");
-            terminal.execute("mvn clean install -f=maven-gpg-plugin -Drat.ignoreErrors=true --quiet");
-            terminal.execute("rm -rf maven-gpg-plugin");
-            LOG.warn("FINISHED INSTALLING GPG PLUGIN FORK FROM [berlin.yuna]");
-        }
     }
 
     private String generateMavenOptions(final String previousMavenOptions, final String encoding, final String javaVersion) {
@@ -238,16 +202,13 @@ class Ci {
         return test == null || test.trim().isEmpty();
     }
 
-    private String partMvnProfiles() {
-        if (MVN_PROFILES) {
-            LOG.info("Read maven profiles");
-            //TODO: read pom file
-            final String command = "mvn help:all-profiles | grep \"Profile Id\" | cut -d' ' -f 5 | xargs | tr ' ' ','";
-            final String mvnProfiles = newTerminal().timeoutMs(-1).execute(command).consoleInfo();
-            LOG.info("Found maven profiles [{}]", mvnProfiles.trim());
-            return isEmpty(mvnProfiles) ? "" : "--activate-profiles=" + mvnProfiles.trim();
-        }
-        return "";
+    private String prepareMavenProfileParam() {
+        LOG.info("Read maven profiles");
+        //TODO: read pom file
+        final String command = "mvn help:all-profiles | grep \"Profile Id\" | cut -d' ' -f 5 | xargs | tr ' ' ','";
+        final String mvnProfiles = newTerminal().timeoutMs(-1).execute(command).consoleInfo();
+        LOG.info("Found maven profiles [{}]", mvnProfiles.trim());
+        return isEmpty(mvnProfiles) ? "" : "--activate-profiles=" + mvnProfiles.trim();
     }
 
     private Boolean isPomArtifact() {
@@ -255,8 +216,12 @@ class Ci {
                 "1");
     }
 
-    private Pattern getOrElse(final String test, final Pattern fallback) {
-        return !isEmpty(test) ? Pattern.compile(test) : fallback;
+    private String ifDo(final String trigger, final String arg) {
+        return ifDo(!isEmpty(trigger), arg);
+    }
+
+    private String ifDo(final boolean trigger, final String arg) {
+        return trigger ? arg + " " : "";
     }
 
     private String getOrElse(final String test, final String fallback) {
@@ -278,7 +243,6 @@ class Ci {
     private Terminal newTerminal() {
         return new Terminal()
                 .breakOnError(true)
-                .consumerInfo(System.out::println)
                 .consumerError(System.err::println)
                 .dir(PROJECT_DIR).timeoutMs(32000);
     }

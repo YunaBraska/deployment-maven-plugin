@@ -15,23 +15,24 @@ This is an example/alternative to [maven-oss-parent](https://github.com/YunaBras
 * \[GIT\] for tagging
 
 ### Parameters
-| Parameter       | Type    | Default |  Description                                  |
-|:----------------|:--------|:--------|:----------------------------------------------|
-| PROJECT_VERSION | String  | ''      | Sets project version in pom                   |
-| SEMANTIC_FORMAT | String  | ''      | Updates semantic version from regex pattern   |
-| MVN_TAG         | Boolean | true    | Tags the project if not already done          |
-| MVN_TAG_BREAK   | Boolean | false   | Fails at "MVN_TAG" if tag already exists      |
-| MVN_CLEAN       | Boolean | true    | Purges local maven repository cache           |
-| MVN_JAVA_DOC    | Boolean | true    | Creates java doc (-javadoc.jar)               |
-| MVN_SOURCE      | Boolean | true    | Creates java sources (-sources.jar)           |
-| MVN_PROFILES    | Boolean | true    | Uses all available profiles                   |
-| MVN_UPDATE      | Boolean | true    | Updates parent, props, dependencies           |
-| MVN_RELEASE     | Boolean | true    | (Nexus) Releases the deployment               |
-| MVN_DEPLOY_ID   | String  | ''      | (Nexus) Deploys artifacts (id = Settings.xml) |
-| MVN_OPTIONS     | String  | ''      | Adds additional maven options                 |
-| GPG_PASSPHRASE  | String  | ''      | Signs artifacts (.asc) with GPG 2.1           |
-| JAVA_VERSION    | String  | 1.8     | Sets compiler java version                    |
-| ENCODING        | String  | UTF-8   | Sets compiler encoding                        |
+| Parameter       | Type    | Default |  Description                                                               |
+|:----------------|:--------|:--------|:---------------------------------------------------------------------------|
+| PROJECT_VERSION | String  | ''      | Sets project version in pom                                                |
+| SEMANTIC_FORMAT | String  | ''      | Updates semantic version from regex pattern (overwrites PROJECT_VERSION)   |
+| MVN_TAG         | Boolean | true    | Tags the project if not already done                                       |
+| MVN_TAG_BREAK   | Boolean | false   | Fails at "MVN_TAG" if tag already exists                                   |
+| MVN_CLEAN       | Boolean | true    | Purges local maven repository cache                                        |
+| MVN_SKIP_TEST   | Boolean | false   | skips all tests                                                            |
+| MVN_JAVA_DOC    | Boolean | true    | Creates java doc (-javadoc.jar)                                            |
+| MVN_SOURCE      | Boolean | true    | Creates java sources (-sources.jar)                                        |
+| MVN_PROFILES    | Boolean | true    | Uses all available profiles                                                |
+| MVN_UPDATE      | Boolean | true    | Updates parent, props, dependencies                                        |
+| MVN_RELEASE     | Boolean | true    | (Nexus) Releases the deployment                                            |
+| MVN_DEPLOY_ID   | String  | ''      | (Nexus) Deploys artifacts (id = Settings.xml)                              |
+| MVN_OPTIONS     | String  | ''      | Adds additional maven options                                              |
+| GPG_PASSPHRASE  | String  | ''      | Signs artifacts (.asc) with GPG 2.1                                        |
+| JAVA_VERSION    | String  | 1.8     | Sets compiler java version                                                 |
+| ENCODING        | String  | UTF-8   | Sets compiler encoding                                                     |
 
 ### SEMANTIC_FORMAT
 * Syntax \[1.2.3\]
@@ -52,7 +53,6 @@ ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PR
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
 ### TODO
-* [ ] implement skip test
 * [ ] external settings "--settings "
 * [ ] release process
 * [ ] set always autoReleaseAfterClose=false and add "mvn nexus-staging:release" to release process

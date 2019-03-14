@@ -9,6 +9,8 @@ public class MavenCommands {
     static final String CMD_MVN_JAVADOC = "javadoc:jar -Dnodeprecatedlist -Dquiet=true";
     static final String CMD_MVN_SOURCE = "source:jar-no-fork";
     static final String CMD_MVN_TAG_XX = "scm:tag -Dtag=";
+    static final String CMD_MVN_SKIP_TEST = "-Dmaven.test.skip=true";
+    static final String CMD_MVN_VERSION_XX = "versions:set -DnewVersion=";
     static final String CMD_MVN_GPG_SIGN_XX = "berlin.yuna:maven-gpg-plugin:sign -Darguments=-D--pinentry-mode -Darguments=-Dloopback -Dgpg.passphrase=";
     static String MVN_DEPLOY_LAYOUT = "default";
 
