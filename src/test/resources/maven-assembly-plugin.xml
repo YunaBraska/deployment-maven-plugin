@@ -1,0 +1,22 @@
+<assembly>
+    <id>kit</id>
+    <formats>
+        <format>jar</format>
+    </formats>
+    <fileSets>
+        <fileSet>
+            <directory>src/main/resources</directory>
+            <outputDirectory>doc</outputDirectory>
+            <includes>
+                <include>*.*</include>
+            </includes>
+        </fileSet>
+    </fileSets>
+    <files>
+        <file>
+            <source>${project.basedir}${artifactId}.${packaging}</source>
+            <outputDirectory>${project.basedir}</outputDirectory>
+            <destName>my-project.jar</destName>
+        </file>
+    </files>
+</assembly>

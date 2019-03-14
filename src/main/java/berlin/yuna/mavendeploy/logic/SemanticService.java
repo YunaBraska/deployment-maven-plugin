@@ -1,17 +1,18 @@
-package berlin.yuna.mavendeploy;
+package berlin.yuna.mavendeploy.logic;
 
-import berlin.yuna.clu.logic.Terminal;
-
+import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-class SemanticService {
+public class SemanticService {
 
+    private final File WORK_DIR;
     private final String[] SEMANTIC_FORMAT;
     private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME = Pattern.compile(
             "(?<prefix>.*refs\\/.*\\/)(?<branchName>.*)(?<suffix>@.*)");
 
-    SemanticService(final String semanticFormat) {
+    public SemanticService(final String semanticFormat, final File workDir) {
+        WORK_DIR = workDir;
         SEMANTIC_FORMAT = semanticFormat.split("::");
     }
 
@@ -34,9 +35,8 @@ class SemanticService {
     }
 
     public String findOriginalBranchName() {
-        final String branchRef = "git reflog show --all | grep $(git log --pretty=format:'%h' -n 1)";
-        final String branchName = new Terminal().consumerError(System.err::println).execute(branchRef).consoleInfo();
-        final Matcher matcher = PATTERN_ORIGINAL_BRANCH_NAME.matcher(branchName);
+        final String refLog = new GitService(WORK_DIR).getLastRefLog();
+        final Matcher matcher = PATTERN_ORIGINAL_BRANCH_NAME.matcher(refLog);
         if (matcher.find()) {
             return matcher.group("branchName");
         }

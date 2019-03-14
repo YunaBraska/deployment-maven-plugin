@@ -19,20 +19,22 @@ This is an example/alternative to [maven-oss-parent](https://github.com/YunaBras
 |:----------------|:--------|:--------|:---------------------------------------------------------------------------|
 | PROJECT_VERSION | String  | ''      | Sets project version in pom                                                |
 | SEMANTIC_FORMAT | String  | ''      | Updates semantic version from regex pattern (overwrites PROJECT_VERSION)   |
-| MVN_TAG         | Boolean | true    | Tags the project if not already done                                       |
-| MVN_TAG_BREAK   | Boolean | false   | Fails at "MVN_TAG" if tag already exists                                   |
-| MVN_CLEAN       | Boolean | true    | Purges local maven repository cache                                        |
+| MVN_TAG         | Boolean | true    | Tags the project with PROJECT_VERSION if not already exists                |
+| MVN_TAG_BREAK   | Boolean | false   | Tags the project with PROJECT_VERSION and fails if already exists          |
+| MVN_CLEAN       | Boolean | true    | cleans target and resolves dependencies                                    |
+| MVN_CLEAN_CACHE | Boolean | false   | Purges local maven repository cache                                        |
 | MVN_SKIP_TEST   | Boolean | false   | skips all tests                                                            |
-| MVN_JAVA_DOC    | Boolean | true    | Creates java doc (-javadoc.jar)                                            |
-| MVN_SOURCE      | Boolean | true    | Creates java sources (-sources.jar)                                        |
+| MVN_JAVA_DOC    | Boolean | true    | Creates java doc (-javadoc.jar) if its not a pom artifact                  |
+| MVN_SOURCE      | Boolean | true    | Creates java sources (-sources.jar) if its not a pom artifact              |
 | MVN_PROFILES    | Boolean | true    | Uses all available profiles                                                |
-| MVN_UPDATE      | Boolean | true    | Updates parent, props, dependencies                                        |
-| MVN_RELEASE     | Boolean | true    | (Nexus) Releases the deployment                                            |
-| MVN_DEPLOY_ID   | String  | ''      | (Nexus) Deploys artifacts (id = Settings.xml)                              |
+| MVN_UPDATE      | Boolean | false   | Updates parent, properties, dependencies                                   |
+| MVN_REPORT      | Boolean | false   | Generates report about version updates                                     |
 | MVN_OPTIONS     | String  | ''      | Adds additional maven options                                              |
 | GPG_PASSPHRASE  | String  | ''      | Signs artifacts (.asc) with GPG 2.1                                        |
-| JAVA_VERSION    | String  | 1.8     | Sets compiler java version                                                 |
-| ENCODING        | String  | UTF-8   | Sets compiler encoding                                                     |
+| JAVA_VERSION    | String  | ''      | Sets compiler java version                                                 |
+| ENCODING        | String  | ''      | Sets compiler encoding                                                     |
+| MVN_RELEASE     | Boolean | true    | (Nexus) Releases the deployment                                            |
+| MVN_DEPLOY_ID   | String  | ''      | (Nexus) Deploys artifacts (id = Settings.xml)                              |
 
 ### SEMANTIC_FORMAT
 * Syntax \[1.2.3\]
@@ -53,18 +55,17 @@ ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PR
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
 ### TODO
+* [ ] painful... write in other language than bash...
+* [ ] option/param remove snapshot
 * [ ] external settings "--settings "
 * [ ] release process
 * [ ] set always autoReleaseAfterClose=false and add "mvn nexus-staging:release" to release process
-* [ ] tag only at release
 * [ ] release needs a new version to be set manually
-* [ ] option/param remove snapshot
 * [ ] set scm url if not exists or changed
 * [ ] reset readme urls, description and title
-* [ ] painful... write in other language than bash...
 * [ ] option/param git commit changes
-* [ ] Deploy Dynamic nexus
-* [ ] Deploy artifactory
+* [ ] Deploy dynamic to nexus
+* [ ] Deploy dynamic to artifactory
 
 * [ ] find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin
 * [ ] org.sonatype.plugins
