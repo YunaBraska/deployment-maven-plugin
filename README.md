@@ -8,7 +8,7 @@
 
 ### Description
 This is an example/alternative to [maven-oss-parent](https://github.com/YunaBraska/maven-oss-parent) to separate the deployment from build process and keep original the pom.xml small
-Automatically 
+Auto handle surfire and failsafe, auto semantic version increase by branch pattern  
 
 ### Requirements
 * \[JAVA\] for maven 

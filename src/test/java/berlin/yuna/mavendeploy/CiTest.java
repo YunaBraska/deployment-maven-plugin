@@ -25,7 +25,6 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
 import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
-import static org.junit.Assert.assertTrue;
 
 public class CiTest {
 
@@ -62,6 +61,7 @@ public class CiTest {
                 + " --MVN_TAG=true"
                 + " --MVN_REPORT=true"
                 + " --MVN_TAG_BREAK=true"
+                + " --SEMANTIC_FORMAT=\"\\.::release::feature::bugfix|hotfix\""
                 + " --GPG_PASSPHRASE=${gppPassword-1}"
                 + " --GPG_PASSPHRASE_ALT=${gppPassword-2}"
                 + " --MVN_DEPLOY_ID=nexus"
@@ -81,7 +81,8 @@ public class CiTest {
         assertThat(mavenCommand, containsString(SONATYPE_URL));
         assertThat(mavenCommand, containsString(SONATYPE_PLUGIN));
         assertThat(mavenCommand, containsString(SONATYPE_STAGING_URL));
-        assertThat(mavenCommand, containsString(CMD_MVN_VERSION_XX + "3.2.1.2.3"));
+        assertThat(mavenCommand, not(containsString(CMD_MVN_VERSION_XX + "3.2.1.2.3")));
+        assertThat(mavenCommand, containsString(CMD_MVN_VERSION_XX));
         assertThat(mavenCommand, containsString(CMD_MVN_GPG_SIGN_XX + "${gppPassword-1}"));
         assertThat(mavenCommand, containsString(CMD_MVN_GPG_SIGN_ALT_XX + "${gppPassword-2}"));
         assertThat(mavenCommand, containsString(CMD_MVN_SURFIRE_XX));

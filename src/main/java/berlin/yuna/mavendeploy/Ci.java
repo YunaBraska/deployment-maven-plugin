@@ -68,7 +68,8 @@ public class Ci {
     private boolean MVN_RELEASE = true;
 
     private String MVN_DEPLOY_ID = null;
-    private String SEMANTIC_FORMAT = "\\.::release::feature::bugfix|hotfix::custom";
+    private String SEMANTIC_FORMAT = null;
+//    private String SEMANTIC_FORMAT = "\\.::release::feature::bugfix|hotfix::custom";
 
     private static final Logger LOG = getLogger(Ci.class);
 
