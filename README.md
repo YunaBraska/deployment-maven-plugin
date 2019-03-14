@@ -65,6 +65,7 @@ ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PR
 * [ ] option/param git commit changes
 * [ ] Deploy dynamic to nexus
 * [ ] Deploy dynamic to artifactory
+* [ ] Wrap into maven plugin
 
 * [ ] find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin
 * [ ] org.sonatype.plugins
