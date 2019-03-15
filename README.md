@@ -22,8 +22,8 @@ Auto handle surfire and failsafe, auto semantic version increase by branch patte
 
 ### How to call
 ````bash
+mvn deployment:run -Dargs="--MVN_JAVA_DOC=true --MVN_SOURCE=true --MVN_UPDATE=true"
 #Will create java doc, java sources, and updates dependencies
-mvn deployment:run -Dargs="-MVN_PROFILES=false --MVN_JAVA_DOC=true --MVN_SOURCE=true --MVN_UPDATE=true"
 ````
 
 ### SEMANTIC_FORMAT
