@@ -47,9 +47,18 @@ mvn deployment:run -Dargs='--MVN_SKIP_TEST=true --SEMANTIC_FORMAT="\[.-\]::relea
 * Example \[1-2.3.4-5\]
 ````"[.-]::release::feature::bugfix\|hotfix::custom_1.*[0-9]::custom_2.*[A-Z]"````
 
+### plugin
+````xml
+<plugin>
+    <groupId>berlin.yuna</groupId>
+    <artifactId>deployment-maven-plugin</artifactId>
+    <version>0.0.1</version>
+</plugin>
+````
+
 ### Example
 ````bash
-ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PROFILES=true --MVN_CLEAN=true --MVN_UPDATE=true --MVN_JAVA_DOC=true --MVN_SOURCE=true --GIT_TAG=true
+mvn clean deployment:run -Dargs="-MVN_PROFILES=false --MVN_SKIP_TEST=true --MVN_JAVA_DOC=true --MVN_SOURCE=true --MVN_UPDATE=true"
 ````
 
 ### Technical links
@@ -60,6 +69,8 @@ ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PR
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
 ### TODO
+* [ ] check that its failing on test error
+* [ ] check environment cause does not work: "getClass().getClassLoader().getResource"
 * [ ] option/param remove snapshot
 * [ ] if arg is present than automatically say true without writing "true" as value
 * [ ] external settings "--settings "
@@ -71,7 +82,6 @@ ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PR
 * [ ] option/param git commit changes
 * [ ] Deploy dynamic to nexus
 * [ ] Deploy dynamic to artifactory
-* [ ] Wrap into maven plugin
 
 * [ ] find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin
 * [ ] org.sonatype.plugins

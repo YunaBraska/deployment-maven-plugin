@@ -10,6 +10,8 @@ import org.apache.maven.plugins.annotations.Parameter;
 import java.io.File;
 import java.util.List;
 
+import static java.lang.String.format;
+
 @Mojo(name = "run")
 public class MainMojo extends AbstractMojo {
 
@@ -23,9 +25,15 @@ public class MainMojo extends AbstractMojo {
         final Log log = getLog();
         log.info("Preparing information");
         final String mavenCommand = new Ci(log, args.toArray(new String[0])).prepareMaven();
-        log.info("Run setup");
-        new Terminal().consumerInfo(log::info).consumerError(log::error).dir(basedir).execute(mavenCommand);
-        log.info("done setup");
+        final int status = new Terminal()
+                .dir(basedir)
+                .consumerInfo(log::info)
+                .consumerError(log::error)
+                .execute(mavenCommand)
+                .status();
+        if (status != 0) {
+            throw new RuntimeException(format("Status [%s]", status));
+        }
     }
 
     public void setBasedir(final File basedir) {
