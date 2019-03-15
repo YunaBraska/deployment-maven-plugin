@@ -1,5 +1,7 @@
 package berlin.yuna.mavendeploy;
 
+import org.apache.maven.plugin.logging.SystemStreamLog;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -42,7 +44,8 @@ public class CiTest {
                 + " --MVN_SOURCE=false"
                 + " --MVN_TAG=false"
                 + " --MVN_TAG_BREAK=false";
-        assertThat(new Ci(args).prepareMaven(), is(equalTo("mvn verify -Dmaven.test.skip=true")));
+        assertThat(new Ci(new SystemStreamLog(), args).prepareMaven(),
+                   is(equalTo("mvn verify -Dmaven.test.skip=true")));
     }
 
     @Test
@@ -67,7 +70,7 @@ public class CiTest {
                 + " --MVN_DEPLOY_ID=nexus"
                 + " --PROJECT_DIR=/Users/yunamorgenstern/Documents/projects/system-util";
 
-        final Ci ci = new Ci(args);
+        final Ci ci = new Ci(new SystemStreamLog(), args);
         final String mavenCommand = ci.prepareMaven();
         assertThat(mavenCommand, containsString(CMD_MVN_CLEAN));
         assertThat(mavenCommand, containsString("clean"));
@@ -94,11 +97,5 @@ public class CiTest {
         assertThat(mavenCommand, containsString(" -Dproject.reporting.outputEncoding=UTF-8"));
         assertThat(mavenCommand, containsString(" -Dmaven.compiler.source=1.8"));
         assertThat(mavenCommand, containsString(" -Dmaven.compiler.target=1.8"));
-    }
-
-    @Test
-    public void runCI_shouldNotReturnAnyError() {
-        Ci.main(null);
-        assertThat(WORK_DIR, is(not(nullValue())));
     }
 }

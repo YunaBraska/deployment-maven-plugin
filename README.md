@@ -10,9 +10,12 @@
 This is an example/alternative to [maven-oss-parent](https://github.com/YunaBraska/maven-oss-parent) to separate the deployment from build process and keep original the pom.xml small
 Auto handle surfire and failsafe, auto semantic version increase by branch pattern  
 
+### How to use
+mvn deployment:run -Dargs='--MVN_SKIP_TEST=true --SEMANTIC_FORMAT="\[.-\]::release::feature::bugfix"'
+
 ### Requirements
 * \[JAVA\] for maven 
-* \[MAVEN\] to run maven commands 
+* \[MAVEN\] to run maven commands
 * \[GIT\] for tagging
 
 ### Parameters
@@ -58,6 +61,7 @@ ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PR
 
 ### TODO
 * [ ] option/param remove snapshot
+* [ ] if arg is present than automatically say true without writing "true" as value
 * [ ] external settings "--settings "
 * [ ] release process
 * [ ] set always autoReleaseAfterClose=false and add "mvn nexus-staging:release" to release process

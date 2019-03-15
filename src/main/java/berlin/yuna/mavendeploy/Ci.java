@@ -3,11 +3,12 @@ package berlin.yuna.mavendeploy;
 import berlin.yuna.clu.logic.CommandLineReader;
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.logic.GitService;
+import berlin.yuna.mavendeploy.logic.GpgUtil;
 import berlin.yuna.mavendeploy.logic.SemanticService;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
+import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
-import org.slf4j.Logger;
 
 import java.io.File;
 import java.io.FileReader;
@@ -33,16 +34,9 @@ import static berlin.yuna.mavendeploy.config.MavenCommands.MVN_DEPLOY_LAYOUT;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_PLUGIN;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_STAGING_URL;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_URL;
-import static berlin.yuna.mavendeploy.logic.GpgUtil.downloadMavenGpgIfNotExists;
 import static java.lang.String.format;
-import static org.slf4j.LoggerFactory.getLogger;
 
 public class Ci {
-
-    public static void main(final String[] args) {
-        System.out.println(new Ci(args).prepareMaven());
-        System.exit(0);
-    }
 
     private final Model pom;
     private File PROJECT_DIR = new File(System.getProperty("user.dir"));
@@ -71,9 +65,10 @@ public class Ci {
     private String SEMANTIC_FORMAT = null;
 //    private String SEMANTIC_FORMAT = "\\.::release::feature::bugfix|hotfix::custom";
 
-    private static final Logger LOG = getLogger(Ci.class);
+    private final Log LOG;
 
-    public Ci(final String... args) {
+    public Ci(final Log LOG, final String... args) {
+        this.LOG = LOG;
         final CommandLineReader clr = new CommandLineReader(args == null ? new String[]{""} : args);
         //Project
         PROJECT_DIR = getOrElse(clr.getValue("PROJECT_DIR"), PROJECT_DIR);
@@ -107,7 +102,8 @@ public class Ci {
 
         PROJECT_VERSION = isEmpty(SEMANTIC_FORMAT) ?
                 PROJECT_VERSION :
-                new SemanticService(SEMANTIC_FORMAT, PROJECT_DIR).getNextSemanticVersion(pom.getVersion(), PROJECT_VERSION);
+                new SemanticService(SEMANTIC_FORMAT, PROJECT_DIR).getNextSemanticVersion(pom.getVersion(),
+                                                                                         PROJECT_VERSION);
     }
 
     protected String prepareMaven() {
@@ -138,7 +134,7 @@ public class Ci {
         mvnCommand.append(ifDo(MVN_REPORT, CMD_MVN_REPORT, "MVN_REPORT"));
 
         if (!isEmpty(GPG_PASSPHRASE_ALT)) {
-            downloadMavenGpgIfNotExists(PROJECT_DIR);
+            new GpgUtil(LOG).downloadMavenGpgIfNotExists(PROJECT_DIR);
         }
         return mvnCommand.toString().trim();
     }
@@ -188,7 +184,7 @@ public class Ci {
         if (MVN_TAG_BREAK && PROJECT_VERSION.equalsIgnoreCase(lastGitTag)) {
             throw new RuntimeException(format("GIT_TAG [%s] already exists", PROJECT_VERSION));
         } else {
-            LOG.info("New GIT_TAG [{}]", PROJECT_VERSION);
+            LOG.info(format("New GIT_TAG [%s]", PROJECT_VERSION));
         }
     }
 
@@ -197,10 +193,10 @@ public class Ci {
     }
 
     private String prepareMavenProfileParam() {
-        LOG.info("Read maven profiles");
+        LOG.debug("Read maven profiles");
         final String command = "mvn help:all-profiles | grep \"Profile Id\" | cut -d' ' -f 5 | xargs | tr ' ' ','";
         final String mvnProfiles = newTerminal().timeoutMs(-1).execute(command).consoleInfo();
-        LOG.info("Found maven profiles [{}]", mvnProfiles.trim());
+        LOG.info(format("Found maven profiles [%s]", mvnProfiles.trim()));
         return isEmpty(mvnProfiles) ? "" : "--activate-profiles=" + mvnProfiles.trim();
     }
 
@@ -223,10 +219,10 @@ public class Ci {
 
     private String ifDo(final boolean trigger, final String arg, final String description) {
         if (trigger) {
-            LOG.info("[{}] [true]", description);
+            LOG.debug(format("[%s] [true]", description));
             return arg + " ";
         }
-        LOG.info("[{}] [false]", description);
+        LOG.debug(format("[%s] [false]", description));
         return "";
     }
 
@@ -247,9 +243,9 @@ public class Ci {
     }
 
     private Terminal newTerminal() {
-        return new Terminal(Ci.class)
+        return new Terminal()
                 .breakOnError(true)
-                .consumerError(System.err::println)
+                .consumerError(LOG::error)
                 .dir(PROJECT_DIR).timeoutMs(32000);
     }
 }
