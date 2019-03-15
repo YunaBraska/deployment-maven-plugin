@@ -1,9 +1,9 @@
 package berlin.yuna.mavendeploy;
 
 import berlin.yuna.clu.logic.Terminal;
+import berlin.yuna.mavendeploy.plugin.MainMojo;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.apache.maven.plugin.MojoExecutionException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
@@ -32,10 +32,10 @@ public class CiComponentTest {
 
     @Test
     public void pluginMojo() {
-        final PluginMojo pluginMojo = new PluginMojo();
-        pluginMojo.setBasedir(WORK_DIR);
-        pluginMojo.setArgs(singletonList(prepareArgs()));
-        pluginMojo.execute();
+        final MainMojo mainMojo = new MainMojo();
+        mainMojo.setBasedir(WORK_DIR);
+        mainMojo.setArgs(singletonList(prepareArgs()));
+        mainMojo.execute();
     }
 
     private String prepareArgs() {

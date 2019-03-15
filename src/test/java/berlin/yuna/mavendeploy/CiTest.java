@@ -1,7 +1,7 @@
 package berlin.yuna.mavendeploy;
 
+import berlin.yuna.mavendeploy.logic.Ci;
 import org.apache.maven.plugin.logging.SystemStreamLog;
-import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -64,7 +64,7 @@ public class CiTest {
                 + " --MVN_TAG=true"
                 + " --MVN_REPORT=true"
                 + " --MVN_TAG_BREAK=true"
-                + " --SEMANTIC_FORMAT=\"\\.::release::feature::bugfix|hotfix\""
+                + " --SEMANTIC_FORMAT=\"\\.::release.*::feature.*::bugfix.*|hotfix.*\""
                 + " --GPG_PASSPHRASE=${gppPassword-1}"
                 + " --GPG_PASSPHRASE_ALT=${gppPassword-2}"
                 + " --MVN_DEPLOY_ID=nexus"

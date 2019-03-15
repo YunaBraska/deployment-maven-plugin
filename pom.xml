@@ -127,7 +127,7 @@
                     <appendAssemblyId>false</appendAssemblyId>
                     <archive>
                         <manifest>
-                            <mainClass>berlin.yuna.mavendeploy.Ci</mainClass>
+                            <mainClass>berlin.yuna.mavendeploy.logic.Ci</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

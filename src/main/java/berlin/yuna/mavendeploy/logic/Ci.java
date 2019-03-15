@@ -1,10 +1,7 @@
-package berlin.yuna.mavendeploy;
+package berlin.yuna.mavendeploy.logic;
 
 import berlin.yuna.clu.logic.CommandLineReader;
 import berlin.yuna.clu.logic.Terminal;
-import berlin.yuna.mavendeploy.logic.GitService;
-import berlin.yuna.mavendeploy.logic.GpgUtil;
-import berlin.yuna.mavendeploy.logic.SemanticService;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.plugin.logging.Log;
@@ -38,7 +35,6 @@ import static java.lang.String.format;
 
 public class Ci {
 
-    private final Model pom;
     private File PROJECT_DIR = new File(System.getProperty("user.dir"));
 
     private String JAVA_VERSION = null;
@@ -97,7 +93,8 @@ public class Ci {
         //GPG
         GPG_PASSPHRASE = getOrElse(clr.getValue("GPG_PASSPHRASE"), GPG_PASSPHRASE);
         GPG_PASSPHRASE_ALT = getOrElse(clr.getValue("GPG_PASSPHRASE_ALT"), GPG_PASSPHRASE_ALT);
-        pom = parsePomFile(PROJECT_DIR);
+
+        final Model pom = parsePomFile(PROJECT_DIR);
         IS_POM = isPomArtifact(pom);
 
         PROJECT_VERSION = isEmpty(SEMANTIC_FORMAT) ?
@@ -106,7 +103,7 @@ public class Ci {
                                                                                          PROJECT_VERSION);
     }
 
-    protected String prepareMaven() {
+    public String prepareMaven() {
         final StringBuilder mvnCommand = new StringBuilder();
         mvnCommand.append("mvn").append(" ");
         mvnCommand.append(ifDo(MVN_CLEAN_CACHE, CMD_MVN_CLEAN_CACHE, "MVN_CLEAN_CACHE"));
@@ -148,23 +145,16 @@ public class Ci {
     }
 
     private String prepareSurFire() {
-        try {
-            final File failSafeConf = File.createTempFile("mvnSurFireExcludes_", ".conf");
-            Files.write(failSafeConf.toPath(), FILE_MVN_SURFIRE.getBytes());
-            return CMD_MVN_SURFIRE_XX + failSafeConf.getAbsolutePath();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        final File failSafeConf = createTmpConf("mvnSurFireExcludes_");
+        writeFile(failSafeConf, FILE_MVN_SURFIRE);
+        return CMD_MVN_SURFIRE_XX + failSafeConf.getAbsolutePath();
+
     }
 
     private String prepareFailSafe() {
-        try {
-            final File failSafeConf = File.createTempFile("mvnFailSafeIncludes_", ".conf");
-            Files.write(failSafeConf.toPath(), FILE_MVN_FAILSAFE.getBytes());
-            return CMD_MVN_FAILSAFE_XX + failSafeConf.getAbsolutePath();
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        final File failSafeConf = createTmpConf("mvnFailSafeIncludes_");
+        writeFile(failSafeConf, FILE_MVN_FAILSAFE);
+        return CMD_MVN_FAILSAFE_XX + failSafeConf.getAbsolutePath();
     }
 
     private String prepareNexusDeployUrl() {
@@ -247,5 +237,21 @@ public class Ci {
                 .breakOnError(true)
                 .consumerError(LOG::error)
                 .dir(PROJECT_DIR).timeoutMs(32000);
+    }
+
+    private File createTmpConf(final String prefix) {
+        try {
+            return File.createTempFile(prefix, ".conf");
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private void writeFile(final File file, final String content) {
+        try {
+            Files.write(file.toPath(), content.getBytes());
+        } catch (IOException e) {
+            throw new RuntimeException(e);
+        }
     }
 }

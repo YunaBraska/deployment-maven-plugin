@@ -9,7 +9,7 @@ public class SemanticService {
     private final File WORK_DIR;
     private final String[] SEMANTIC_FORMAT;
     private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME = Pattern.compile(
-            "(?<prefix>.*refs\\/.*\\/)(?<branchName>.*?)(?<suffix>@.*?)");
+            "(?<prefix>.*refs\\/.*?\\/)(?<branchName>.*?)(?<suffix>@.*?)");
 
     public SemanticService(final String semanticFormat, final File workDir) {
         WORK_DIR = workDir;

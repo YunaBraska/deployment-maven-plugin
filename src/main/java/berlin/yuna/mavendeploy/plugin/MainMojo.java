@@ -1,6 +1,7 @@
-package berlin.yuna.mavendeploy;
+package berlin.yuna.mavendeploy.plugin;
 
 import berlin.yuna.clu.logic.Terminal;
+import berlin.yuna.mavendeploy.logic.Ci;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -10,7 +11,7 @@ import java.io.File;
 import java.util.List;
 
 @Mojo(name = "run")
-public class PluginMojo extends AbstractMojo {
+public class MainMojo extends AbstractMojo {
 
     @Parameter(defaultValue = "${project.basedir}", readonly = true)
     private File basedir;
