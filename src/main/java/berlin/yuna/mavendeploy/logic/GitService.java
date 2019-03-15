@@ -24,8 +24,8 @@ public class GitService {
         return terminal.execute("git describe --tags --always | sed 's/\\(.*\\)-.*/\\1/'").consoleInfo().trim();
     }
 
-    public String getLastRefLog() {
-        return terminal.execute("git reflog show --all | grep \"refs/\"  | grep \": commit:\" | head -n1").consoleInfo();
+    public String getLastRefLog(final int commitNumber) {
+        return terminal.execute("git reflog show --all | grep \"refs/\"  | grep \": commit:\" | head -n" + commitNumber + " | tail -n1").consoleInfo();
     }
 
 }

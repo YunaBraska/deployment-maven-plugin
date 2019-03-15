@@ -17,10 +17,12 @@ public class SemanticService {
     }
 
     public String getNextSemanticVersion(final String currentVersion, final String fallback) {
-        final String branchName = findOriginalBranchName();
-        final int semanticPosition = getSemanticPosition(branchName);
-        if (branchName != null && !branchName.trim().isEmpty() && semanticPosition != -1) {
-            return getNextSemanticVersion(currentVersion, semanticPosition);
+        for (int commitNumber = 1; commitNumber < 12; commitNumber++) {
+            final String branchName = findOriginalBranchName(commitNumber);
+            final int semanticPosition = getSemanticPosition(branchName);
+            if (branchName != null && !branchName.trim().isEmpty() && semanticPosition != -1) {
+                return getNextSemanticVersion(currentVersion, semanticPosition);
+            }
         }
         return fallback;
     }
@@ -34,8 +36,8 @@ public class SemanticService {
         return nextVersion.delete((nextVersion.length() - 1), nextVersion.length()).toString();
     }
 
-    public String findOriginalBranchName() {
-        final String refLog = new GitService(WORK_DIR).getLastRefLog();
+    public String findOriginalBranchName(final int commitNumber) {
+        final String refLog = new GitService(WORK_DIR).getLastRefLog(commitNumber);
         final Matcher matcher = PATTERN_ORIGINAL_BRANCH_NAME.matcher(refLog);
         if (matcher.find()) {
             return matcher.group("branchName");
