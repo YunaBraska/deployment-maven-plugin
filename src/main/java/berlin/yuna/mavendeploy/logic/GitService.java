@@ -25,7 +25,7 @@ public class GitService {
     }
 
     public String getLastRefLog() {
-        return terminal.execute("git reflog show --all | grep $(git log --pretty=format:'%h' -n 1)").consoleInfo();
+        return terminal.execute("git reflog show --all | grep \"refs/\"  | grep \": commit:\" | head -n1").consoleInfo();
     }
 
 }

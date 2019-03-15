@@ -25,9 +25,9 @@ mvn deployment:run -Dargs='--MVN_SKIP_TEST=true --SEMANTIC_FORMAT="\[.-\]::relea
 | SEMANTIC_FORMAT    | String  | ''      | Updates semantic version from regex pattern (overwrites PROJECT_VERSION)   |
 | MVN_TAG            | Boolean | false   | Tags the project (by PROJECT_VERSION) if not already exists                |
 | MVN_TAG_BREAK      | Boolean | false   | Tags the project (by PROJECT_VERSION) and fails if already exists          |
-| MVN_CLEAN          | Boolean | true    | cleans target and resolves dependencies                                    |
+| MVN_CLEAN          | Boolean | false   | cleans target and resolves dependencies                                    |
 | MVN_CLEAN_CACHE    | Boolean | false   | Purges local maven repository cache                                        |
-| MVN_SKIP_TEST      | Boolean | false   | skips all tests                                                            |
+| MVN_SKIP_TEST      | Boolean | true    | skips all tests                                                            |
 | MVN_JAVA_DOC       | Boolean | true    | Creates java doc (javadoc.jar) if its not a pom artifact                   |
 | MVN_SOURCE         | Boolean | true    | Creates java sources (sources.jar) if its not a pom artifact               |
 | MVN_PROFILES       | Boolean | true    | Uses all available profiles                                                |

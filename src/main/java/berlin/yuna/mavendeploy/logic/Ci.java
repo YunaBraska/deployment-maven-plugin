@@ -45,9 +45,9 @@ public class Ci {
     private String MVN_OPTIONS = "";
 
     private final boolean IS_POM;
-    private boolean MVN_CLEAN = true;
+    private boolean MVN_CLEAN = false;
     private boolean MVN_CLEAN_CACHE = false;
-    private boolean MVN_SKIP_TEST = false;
+    private boolean MVN_SKIP_TEST = true;
     private boolean MVN_UPDATE = false;
     private boolean MVN_JAVA_DOC = true;
     private boolean MVN_PROFILES = true;
