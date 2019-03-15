@@ -7,54 +7,81 @@
 [![Gitter][Gitter-image]][Gitter-Url] 
 
 ### Description
-This is an example/alternative to [maven-oss-parent](https://github.com/YunaBraska/maven-oss-parent) how to separate the deployment from build process in maven which I am using for my deployments to keep also the pom.xml small and not have a parent which is needed to be also in maven central 
+This is an example/alternative to [maven-oss-parent](https://github.com/YunaBraska/maven-oss-parent) to separate the deployment from build process and keep original the pom.xml small
+Auto handle surfire and failsafe, auto semantic version increase by branch pattern  
+
+### How to use
+mvn deployment:run -Dargs='--MVN_SKIP_TEST=true --SEMANTIC_FORMAT="\[.-\]::release::feature::bugfix"'
 
 ### Requirements
 * \[JAVA\] for maven 
-* \[MAVEN\] to run maven commands 
+* \[MAVEN\] to run maven commands
 * \[GIT\] for tagging
 
 ### Parameters
-| Parameter       | Type    | Default |  Description                                  |
-|:----------------|:--------|:--------|:----------------------------------------------|
-| PROJECT_VERSION | String  | ''      | Sets project version in pom                   |
-| MVN_TAG         | Boolean | true    | Tags the project if not already done          |
-| MVN_CLEAN       | Boolean | true    | Purges local maven repository cache           |
-| MVN_JAVA_DOC    | Boolean | true    | Creates java doc (-javadoc.jar)               |
-| MVN_SOURCE      | Boolean | true    | Creates java sources (-sources.jar)           |
-| MVN_PROFILES    | Boolean | true    | Uses all available profiles                   |
-| MVN_UPDATE      | Boolean | true    | Updates parent, props, dependencies           |
-| MVN_RELEASE     | Boolean | true    | (Nexus) Releases the deployment               |
-| MVN_DEPLOY_ID   | String  | ''      | (Nexus) Deploys artifacts (id = Settings.xml) |
-| MVN_OPTIONS     | String  | ''      | Adds additional maven options                 |
-| GPG_PASSPHRASE  | String  | ''      | Signs artifacts (.asc) with GPG 2.1           |
-| JAVA_VERSION    | String  | 1.8     | Sets compiler java version                    |
-| ENCODING        | String  | UTF-8   | Sets compiler encoding                        |
+| Parameter          | Type    | Default |  Description                                                               |
+|:-------------------|:--------|:--------|:---------------------------------------------------------------------------|
+| PROJECT_VERSION    | String  | ''      | Sets project version in pom                                                |
+| SEMANTIC_FORMAT    | String  | ''      | Updates semantic version from regex pattern (overwrites PROJECT_VERSION)   |
+| MVN_TAG            | Boolean | false   | Tags the project (by PROJECT_VERSION) if not already exists                |
+| MVN_TAG_BREAK      | Boolean | false   | Tags the project (by PROJECT_VERSION) and fails if already exists          |
+| MVN_CLEAN          | Boolean | true    | cleans target and resolves dependencies                                    |
+| MVN_CLEAN_CACHE    | Boolean | false   | Purges local maven repository cache                                        |
+| MVN_SKIP_TEST      | Boolean | false   | skips all tests                                                            |
+| MVN_JAVA_DOC       | Boolean | true    | Creates java doc (javadoc.jar) if its not a pom artifact                   |
+| MVN_SOURCE         | Boolean | true    | Creates java sources (sources.jar) if its not a pom artifact               |
+| MVN_PROFILES       | Boolean | true    | Uses all available profiles                                                |
+| MVN_UPDATE         | Boolean | false   | Updates parent, properties, dependencies                                   |
+| MVN_REPORT         | Boolean | false   | Generates report about version updates                                     |
+| MVN_OPTIONS        | String  | ''      | Adds additional maven options                                              |
+| GPG_PASSPHRASE     | String  | ''      | Signs artifacts (.asc) with GPG 1                                        |
+| GPG_PASSPHRASE_ALT | String  | ''      | Signs artifacts (.asc) with GPG 2.1                                        |
+| JAVA_VERSION       | String  | ''      | Sets compiler java version                                                 |
+| ENCODING           | String  | ''      | Sets compiler encoding                                                     |
+| MVN_RELEASE        | Boolean | true    | (Nexus) Releases the deployment                                            |
+| MVN_DEPLOY_ID      | String  | ''      | (Nexus) Deploys artifacts (id = Settings.xml)                              |
 
+### SEMANTIC_FORMAT
+* Syntax \[1.2.3\]
+````"<separator>::<major>::<minor>::<patch>"````
+* Example \[1-2.3.4-5\]
+````"[.-]::release::feature::bugfix\|hotfix::custom_1.*[0-9]::custom_2.*[A-Z]"````
+
+### plugin
+````xml
+<plugin>
+    <groupId>berlin.yuna</groupId>
+    <artifactId>deployment-maven-plugin</artifactId>
+    <version>0.0.1</version>
+</plugin>
+````
 
 ### Example
 ````bash
-ci.bash --PROJECT_VERSION=3.2.1.2.3 --JAVA_VERSION=1.8 --ENCODING=UTF-8 --MVN_PROFILES=true --MVN_CLEAN=true --MVN_UPDATE=true --MVN_JAVA_DOC=true --MVN_SOURCE=true --GIT_TAG=true
+mvn clean deployment:run -Dargs="-MVN_PROFILES=false --MVN_SKIP_TEST=true --MVN_JAVA_DOC=true --MVN_SOURCE=true --MVN_UPDATE=true"
 ````
 
 ### Technical links
-* https://maven.apache.org/plugins/maven-javadoc-plugin/
-* https://maven.apache.org/plugins/maven-source-plugin/
-* http://maven.apache.org/plugins/maven-gpg-plugin/sign-mojo.html
-* http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html
-* https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-
+* [maven-javadoc-plugin](https://maven.apache.org/plugins/maven-javadoc-plugin/)
+* [maven-source-plugin](https://maven.apache.org/plugins/maven-source-plugin/)
+* [maven-surefire-plugin](http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html)
+* [maven-gpg-plugin](http://maven.apache.org/plugins/maven-gpg-plugin/usage.html)
+* [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
 ### TODO
+* [ ] check that its failing on test error
+* [ ] check environment cause does not work: "getClass().getClassLoader().getResource"
+* [ ] option/param remove snapshot
+* [ ] if arg is present than automatically say true without writing "true" as value
+* [ ] external settings "--settings "
 * [ ] release process
 * [ ] set always autoReleaseAfterClose=false and add "mvn nexus-staging:release" to release process
-* [ ] tag only at release
-* [ ] option/param to fail if tag already exists
 * [ ] release needs a new version to be set manually
-* [ ] option/param remove snapshot
-* [ ] no artifact process (like: javadoc, sources,...) if its just pom artifact
 * [ ] set scm url if not exists or changed
 * [ ] reset readme urls, description and title
-* [ ] painful... write in other language than bash...
+* [ ] option/param git commit changes
+* [ ] Deploy dynamic to nexus
+* [ ] Deploy dynamic to artifactory
 
 * [ ] find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin
 * [ ] org.sonatype.plugins
