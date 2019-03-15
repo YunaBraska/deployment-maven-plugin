@@ -81,6 +81,7 @@ mvn deployment:run -Dargs="--MVN_JAVA_DOC=true --MVN_SOURCE=true --MVN_UPDATE=tr
 * [ ] option/param git commit changes
 * [ ] Deploy dynamic to nexus
 * [ ] Deploy dynamic to artifactory
+* [ ] try to use https://github.com/TimMoore/mojo-executor
 
 * [ ] find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin
 * [ ] org.sonatype.plugins
