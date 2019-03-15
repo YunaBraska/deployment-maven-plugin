@@ -10,13 +10,27 @@
 This is an example/alternative to [maven-oss-parent](https://github.com/YunaBraska/maven-oss-parent) to separate the deployment from build process and keep original the pom.xml small
 Auto handle surfire and failsafe, auto semantic version increase by branch pattern  
 
-### How to use
-mvn deployment:run -Dargs='--MVN_SKIP_TEST=true --SEMANTIC_FORMAT="\[.-\]::release::feature::bugfix"'
 
-### Requirements
-* \[JAVA\] for maven 
-* \[MAVEN\] to run maven commands
-* \[GIT\] for tagging
+### plugin
+````xml
+<plugin>
+    <groupId>berlin.yuna</groupId>
+    <artifactId>deployment-maven-plugin</artifactId>
+    <version>0.0.1</version>
+</plugin>
+````
+
+### How to call
+````bash
+#Will create java doc, java sources, and updates dependencies
+mvn deployment:run -Dargs="-MVN_PROFILES=false --MVN_JAVA_DOC=true --MVN_SOURCE=true --MVN_UPDATE=true"
+````
+
+### SEMANTIC_FORMAT
+* Syntax \[1.2.3\]
+````"<separator>::<major>::<minor>::<patch>"````
+* Example \[1-2.3.4-5\]
+````"[.-]::release::feature::bugfix\|hotfix::custom_1.*[0-9]::custom_2.*[A-Z]"````
 
 ### Parameters
 | Parameter          | Type    | Default |  Description                                                               |
@@ -41,25 +55,10 @@ mvn deployment:run -Dargs='--MVN_SKIP_TEST=true --SEMANTIC_FORMAT="\[.-\]::relea
 | MVN_RELEASE        | Boolean | true    | (Nexus) Releases the deployment                                            |
 | MVN_DEPLOY_ID      | String  | ''      | (Nexus) Deploys artifacts (id = Settings.xml)                              |
 
-### SEMANTIC_FORMAT
-* Syntax \[1.2.3\]
-````"<separator>::<major>::<minor>::<patch>"````
-* Example \[1-2.3.4-5\]
-````"[.-]::release::feature::bugfix\|hotfix::custom_1.*[0-9]::custom_2.*[A-Z]"````
-
-### plugin
-````xml
-<plugin>
-    <groupId>berlin.yuna</groupId>
-    <artifactId>deployment-maven-plugin</artifactId>
-    <version>0.0.1</version>
-</plugin>
-````
-
-### Example
-````bash
-mvn clean deployment:run -Dargs="-MVN_PROFILES=false --MVN_SKIP_TEST=true --MVN_JAVA_DOC=true --MVN_SOURCE=true --MVN_UPDATE=true"
-````
+### Requirements
+* \[JAVA\] for maven 
+* \[MAVEN\] to run maven commands
+* \[GIT\] for tagging
 
 ### Technical links
 * [maven-javadoc-plugin](https://maven.apache.org/plugins/maven-javadoc-plugin/)
