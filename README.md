@@ -1,4 +1,4 @@
-# maven-deployment
+# deployment-maven-plugin
 
 [![License][License-Image]][License-Url]
 [![Build][Build-Status-Image]][Build-Status-Url] 
