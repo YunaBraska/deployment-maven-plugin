@@ -55,7 +55,7 @@ public class Ci {
     private boolean MVN_TAG = false;
     private boolean MVN_TAG_BREAK = false;
     private boolean MVN_REPORT = false;
-    private boolean MVN_RELEASE = true;
+    private boolean MVN_RELEASE = false;
 
     private String MVN_DEPLOY_ID = null;
     private String SEMANTIC_FORMAT = null;
@@ -70,25 +70,25 @@ public class Ci {
         PROJECT_DIR = getOrElse(clr.getValue("PROJECT_DIR"), PROJECT_DIR);
         ENCODING = getOrElse(clr.getValue("ENCODING"), ENCODING);
         PROJECT_VERSION = getOrElse(clr.getValue("PROJECT_VERSION"), PROJECT_VERSION);
-        MVN_OPTIONS = getOrElse(clr.getValue("MVN_OPTIONS"), MVN_OPTIONS);
+        MVN_OPTIONS = getOrElse(clr.getValue("OPTIONS"), MVN_OPTIONS);
         JAVA_VERSION = getOrElse(clr.getValue("JAVA_VERSION"), JAVA_VERSION);
         SEMANTIC_FORMAT = getOrElse(clr.getValue("SEMANTIC_FORMAT"), SEMANTIC_FORMAT);
 
         //Boolean
-        MVN_PROFILES = getOrElse(clr.getValue("MVN_PROFILES"), MVN_PROFILES);
-        MVN_CLEAN = getOrElse(clr.getValue("MVN_CLEAN"), MVN_CLEAN);
-        MVN_CLEAN_CACHE = getOrElse(clr.getValue("MVN_CLEAN_CACHE"), MVN_CLEAN_CACHE);
-        MVN_UPDATE = getOrElse(clr.getValue("MVN_UPDATE"), MVN_UPDATE);
-        MVN_JAVA_DOC = getOrElse(clr.getValue("MVN_JAVA_DOC"), MVN_JAVA_DOC);
-        MVN_SOURCE = getOrElse(clr.getValue("MVN_SOURCE"), MVN_SOURCE);
-        MVN_TAG = getOrElse(clr.getValue("MVN_TAG"), MVN_TAG);
-        MVN_TAG_BREAK = getOrElse(clr.getValue("MVN_TAG_BREAK"), MVN_TAG_BREAK);
-        MVN_RELEASE = getOrElse(clr.getValue("MVN_RELEASE"), MVN_RELEASE);
-        MVN_SKIP_TEST = getOrElse(clr.getValue("MVN_SKIP_TEST"), MVN_SKIP_TEST);
-        MVN_REPORT = getOrElse(clr.getValue("MVN_REPORT"), MVN_REPORT);
+        MVN_PROFILES = getOrElse(clr.getValue("PROFILES"), MVN_PROFILES);
+        MVN_CLEAN = getOrElse(clr.getValue("CLEAN"), MVN_CLEAN);
+        MVN_CLEAN_CACHE = getOrElse(clr.getValue("CLEAN_CACHE"), MVN_CLEAN_CACHE);
+        MVN_UPDATE = getOrElse(clr.getValue("UPDATE"), MVN_UPDATE);
+        MVN_JAVA_DOC = getOrElse(clr.getValue("JAVA_DOC"), MVN_JAVA_DOC);
+        MVN_SOURCE = getOrElse(clr.getValue("SOURCE"), MVN_SOURCE);
+        MVN_TAG = getOrElse(clr.getValue("TAG"), MVN_TAG);
+        MVN_TAG_BREAK = getOrElse(clr.getValue("TAG_BREAK"), MVN_TAG_BREAK);
+        MVN_RELEASE = getOrElse(clr.getValue("RELEASE"), MVN_RELEASE);
+        MVN_SKIP_TEST = getOrElse(clr.getValue("SKIP_TEST"), MVN_SKIP_TEST);
+        MVN_REPORT = getOrElse(clr.getValue("REPORT"), MVN_REPORT);
 
         //DEOPLY (Nexus only currently)
-        MVN_DEPLOY_ID = getOrElse(clr.getValue("MVN_DEPLOY_ID"), MVN_DEPLOY_ID);
+        MVN_DEPLOY_ID = getOrElse(clr.getValue("DEPLOY_ID"), MVN_DEPLOY_ID);
 
         //GPG
         GPG_PASSPHRASE = getOrElse(clr.getValue("GPG_PASSPHRASE"), GPG_PASSPHRASE);
