@@ -39,8 +39,8 @@ public class Ci {
 
     private String JAVA_VERSION = null;
     private String ENCODING = null;
-    private String GPG_PASSPHRASE = null;
-    private String GPG_PASSPHRASE_ALT = null;
+    private String GPG_PASS = null;
+    private String GPG_PASS_ALT = null;
     private String PROJECT_VERSION = null;
     private String MVN_OPTIONS = "";
 
@@ -55,7 +55,7 @@ public class Ci {
     private boolean MVN_TAG = false;
     private boolean MVN_TAG_BREAK = false;
     private boolean MVN_REPORT = false;
-    private boolean MVN_RELEASE = true;
+    private boolean MVN_RELEASE = false;
 
     private String MVN_DEPLOY_ID = null;
     private String SEMANTIC_FORMAT = null;
@@ -68,31 +68,31 @@ public class Ci {
         final CommandLineReader clr = new CommandLineReader(args == null ? new String[]{""} : args);
         //Project
         PROJECT_DIR = getOrElse(clr.getValue("PROJECT_DIR"), PROJECT_DIR);
-        ENCODING = getOrElse(clr.getValue("ENCODING"), ENCODING);
-        PROJECT_VERSION = getOrElse(clr.getValue("PROJECT_VERSION"), PROJECT_VERSION);
-        MVN_OPTIONS = getOrElse(clr.getValue("MVN_OPTIONS"), MVN_OPTIONS);
-        JAVA_VERSION = getOrElse(clr.getValue("JAVA_VERSION"), JAVA_VERSION);
-        SEMANTIC_FORMAT = getOrElse(clr.getValue("SEMANTIC_FORMAT"), SEMANTIC_FORMAT);
+        ENCODING = getString(clr, "ENCODING", ENCODING);
+        PROJECT_VERSION = getString(clr, "PROJECT_VERSION", PROJECT_VERSION);
+        MVN_OPTIONS = getString(clr, "OPTIONS", MVN_OPTIONS);
+        JAVA_VERSION = getString(clr, "JAVA_VERSION", JAVA_VERSION);
+        SEMANTIC_FORMAT = getString(clr, "SEMANTIC_FORMAT", SEMANTIC_FORMAT);
 
         //Boolean
-        MVN_PROFILES = getOrElse(clr.getValue("MVN_PROFILES"), MVN_PROFILES);
-        MVN_CLEAN = getOrElse(clr.getValue("MVN_CLEAN"), MVN_CLEAN);
-        MVN_CLEAN_CACHE = getOrElse(clr.getValue("MVN_CLEAN_CACHE"), MVN_CLEAN_CACHE);
-        MVN_UPDATE = getOrElse(clr.getValue("MVN_UPDATE"), MVN_UPDATE);
-        MVN_JAVA_DOC = getOrElse(clr.getValue("MVN_JAVA_DOC"), MVN_JAVA_DOC);
-        MVN_SOURCE = getOrElse(clr.getValue("MVN_SOURCE"), MVN_SOURCE);
-        MVN_TAG = getOrElse(clr.getValue("MVN_TAG"), MVN_TAG);
-        MVN_TAG_BREAK = getOrElse(clr.getValue("MVN_TAG_BREAK"), MVN_TAG_BREAK);
-        MVN_RELEASE = getOrElse(clr.getValue("MVN_RELEASE"), MVN_RELEASE);
-        MVN_SKIP_TEST = getOrElse(clr.getValue("MVN_SKIP_TEST"), MVN_SKIP_TEST);
-        MVN_REPORT = getOrElse(clr.getValue("MVN_REPORT"), MVN_REPORT);
+        MVN_PROFILES = getBoolean(clr, "PROFILES", MVN_PROFILES);
+        MVN_CLEAN = getBoolean(clr, "CLEAN", MVN_CLEAN);
+        MVN_CLEAN_CACHE = getBoolean(clr, "CLEAN_CACHE", MVN_CLEAN_CACHE);
+        MVN_UPDATE = getBoolean(clr, "UPDATE", MVN_UPDATE);
+        MVN_JAVA_DOC = getBoolean(clr, "JAVA_DOC", MVN_JAVA_DOC);
+        MVN_SOURCE = getBoolean(clr, "SOURCE", MVN_SOURCE);
+        MVN_TAG = getBoolean(clr, "TAG", MVN_TAG);
+        MVN_TAG_BREAK = getBoolean(clr, "TAG_BREAK", MVN_TAG_BREAK);
+        MVN_RELEASE = getBoolean(clr, "RELEASE", MVN_RELEASE);
+        MVN_SKIP_TEST = getBoolean(clr, "SKIP_TEST", MVN_SKIP_TEST);
+        MVN_REPORT = getBoolean(clr, "REPORT", MVN_REPORT);
 
         //DEOPLY (Nexus only currently)
-        MVN_DEPLOY_ID = getOrElse(clr.getValue("MVN_DEPLOY_ID"), MVN_DEPLOY_ID);
+        MVN_DEPLOY_ID = getString(clr, "DEPLOY_ID", MVN_DEPLOY_ID);
 
         //GPG
-        GPG_PASSPHRASE = getOrElse(clr.getValue("GPG_PASSPHRASE"), GPG_PASSPHRASE);
-        GPG_PASSPHRASE_ALT = getOrElse(clr.getValue("GPG_PASSPHRASE_ALT"), GPG_PASSPHRASE_ALT);
+        GPG_PASS = getString(clr, "GPG_PASS", GPG_PASS);
+        GPG_PASS_ALT = getString(clr, "GPG_PASS_ALT", GPG_PASS_ALT);
 
         final Model pom = parsePomFile(PROJECT_DIR);
         IS_POM = isPomArtifact(pom);
@@ -100,37 +100,37 @@ public class Ci {
         PROJECT_VERSION = isEmpty(SEMANTIC_FORMAT) ?
                 PROJECT_VERSION :
                 new SemanticService(SEMANTIC_FORMAT, PROJECT_DIR).getNextSemanticVersion(pom.getVersion(),
-                                                                                         PROJECT_VERSION);
+                        PROJECT_VERSION);
     }
 
     public String prepareMaven() {
         final StringBuilder mvnCommand = new StringBuilder();
         mvnCommand.append("mvn").append(" ");
-        mvnCommand.append(ifDo(MVN_CLEAN_CACHE, CMD_MVN_CLEAN_CACHE, "MVN_CLEAN_CACHE"));
-        mvnCommand.append(ifDo(MVN_CLEAN, "clean", "MVN_CLEAN"));
+        mvnCommand.append(ifDo(MVN_CLEAN_CACHE, CMD_MVN_CLEAN_CACHE, "CLEAN_CACHE"));
+        mvnCommand.append(ifDo(MVN_CLEAN, "clean", "CLEAN"));
         mvnCommand.append(isEmpty(MVN_DEPLOY_ID) ? "verify" : "deploy").append(" ");
-        mvnCommand.append(ifDo(MVN_SKIP_TEST, CMD_MVN_SKIP_TEST, "MVN_SKIP_TEST"));
+        mvnCommand.append(ifDo(MVN_SKIP_TEST, CMD_MVN_SKIP_TEST, "SKIP_TEST"));
         mvnCommand.append(ifDo(MVN_CLEAN, CMD_MVN_CLEAN));
-        mvnCommand.append(ifDo(MVN_UPDATE, CMD_MVN_UPDATE, "MVN_UPDATE"));
+        mvnCommand.append(ifDo(MVN_UPDATE, CMD_MVN_UPDATE, "UPDATE"));
         mvnCommand.append(ifDo(PROJECT_VERSION, CMD_MVN_VERSION_XX + PROJECT_VERSION, "PROJECT_VERSION"));
-        mvnCommand.append(ifDo(!IS_POM && MVN_JAVA_DOC, CMD_MVN_JAVADOC, "MVN_JAVA_DOC"));
-        mvnCommand.append(ifDo(!IS_POM && MVN_SOURCE, CMD_MVN_SOURCE, "MVN_SOURCE"));
-        mvnCommand.append(ifDo(hasNewTag(), CMD_MVN_TAG_XX + PROJECT_VERSION, "MVN_TAG"));
-        mvnCommand.append(ifDo(GPG_PASSPHRASE, CMD_MVN_GPG_SIGN_XX + GPG_PASSPHRASE, "GPG_PASSPHRASE"));
-        mvnCommand.append(ifDo(GPG_PASSPHRASE_ALT, CMD_MVN_GPG_SIGN_ALT_XX + GPG_PASSPHRASE_ALT, "GPG_PASSPHRASE_ALT"));
-        mvnCommand.append(ifDo(MVN_DEPLOY_ID, prepareNexusDeployUrl(), "MVN_DEPLOY_ID"));
-        mvnCommand.append(ifDo(MVN_OPTIONS, MVN_OPTIONS, "MVN_OPTIONS"));
+        mvnCommand.append(ifDo(!IS_POM && MVN_JAVA_DOC, CMD_MVN_JAVADOC, "JAVA_DOC"));
+        mvnCommand.append(ifDo(!IS_POM && MVN_SOURCE, CMD_MVN_SOURCE, "SOURCE"));
+        mvnCommand.append(ifDo(hasNewTag(), CMD_MVN_TAG_XX + PROJECT_VERSION, "TAG"));
+        mvnCommand.append(ifDo(GPG_PASS, CMD_MVN_GPG_SIGN_XX + GPG_PASS, "GPG_PASSPHRASE"));
+        mvnCommand.append(ifDo(GPG_PASS_ALT, CMD_MVN_GPG_SIGN_ALT_XX + GPG_PASS_ALT, "GPG_PASSPHRASE_ALT"));
+        mvnCommand.append(ifDo(MVN_DEPLOY_ID, prepareNexusDeployUrl(), "DEPLOY_ID"));
+        mvnCommand.append(ifDo(MVN_OPTIONS, MVN_OPTIONS, "OPTIONS"));
         mvnCommand.append(ifDo(ENCODING, "-Dproject.build.sourceEncoding=" + ENCODING, "ENCODING"));
         mvnCommand.append(ifDo(ENCODING, "-Dproject.reporting.outputEncoding=" + ENCODING));
         mvnCommand.append(ifDo(ENCODING, "-Dproject.encoding=" + ENCODING));
         mvnCommand.append(ifDo(JAVA_VERSION, "-Dmaven.compiler.source=" + JAVA_VERSION, "JAVA_VERSION"));
         mvnCommand.append(ifDo(JAVA_VERSION, "-Dmaven.compiler.target=" + JAVA_VERSION));
-        mvnCommand.append(ifDo(MVN_PROFILES, prepareMavenProfileParam(), "MVN_PROFILES"));
-        mvnCommand.append(ifDo(!MVN_SKIP_TEST, prepareSurFire(), "MVN_SKIP_TEST"));
+        mvnCommand.append(ifDo(MVN_PROFILES, prepareMavenProfileParam(), "PROFILES"));
+        mvnCommand.append(ifDo(!MVN_SKIP_TEST, prepareSurFire(), "SKIP_TEST"));
         mvnCommand.append(ifDo(!MVN_SKIP_TEST, prepareFailSafe()));
-        mvnCommand.append(ifDo(MVN_REPORT, CMD_MVN_REPORT, "MVN_REPORT"));
+        mvnCommand.append(ifDo(MVN_REPORT, CMD_MVN_REPORT, "REPORT"));
 
-        if (!isEmpty(GPG_PASSPHRASE_ALT)) {
+        if (!isEmpty(GPG_PASS_ALT)) {
             new GpgUtil(LOG).downloadMavenGpgIfNotExists(PROJECT_DIR);
         }
         return mvnCommand.toString().trim();
@@ -183,11 +183,14 @@ public class Ci {
     }
 
     private String prepareMavenProfileParam() {
-        LOG.debug("Read maven profiles");
-        final String command = "mvn help:all-profiles | grep \"Profile Id\" | cut -d' ' -f 5 | xargs | tr ' ' ','";
-        final String mvnProfiles = newTerminal().timeoutMs(-1).execute(command).consoleInfo();
-        LOG.info(format("Found maven profiles [%s]", mvnProfiles.trim()));
-        return isEmpty(mvnProfiles) ? "" : "--activate-profiles=" + mvnProfiles.trim();
+        if (MVN_PROFILES) {
+            LOG.debug("Read maven profiles");
+            final String command = "mvn help:all-profiles | grep \"Profile Id\" | cut -d' ' -f 5 | xargs | tr ' ' ','";
+            final String mvnProfiles = newTerminal().timeoutMs(-1).execute(command).consoleInfo();
+            LOG.info(format("Found maven profiles [%s]", mvnProfiles.trim()));
+            return isEmpty(mvnProfiles) ? "" : "--activate-profiles=" + mvnProfiles.trim();
+        }
+        return "";
     }
 
     private Boolean isPomArtifact(final Model pom) {
@@ -216,6 +219,23 @@ public class Ci {
         return "";
     }
 
+    private String getString(final CommandLineReader clr, final String key, final String fallback) {
+        return getOrElse(clr.getValue(key), fallback);
+    }
+
+    private boolean getBoolean(final CommandLineReader clr, final String key, final boolean fallback) {
+        final boolean present = clr.isPresent(key);
+        final String value = clr.getValue(key);
+        if (present && isEmpty(value)) {
+            return true;
+        }
+        return getOrElse(value, fallback);
+    }
+
+    private boolean getOrElse(final String test, final boolean fallback) {
+        return !isEmpty(test) ? Boolean.valueOf(test) : fallback;
+    }
+
     private String getOrElse(final String test, final String fallback) {
         return !isEmpty(test) ? test : fallback;
     }
@@ -226,10 +246,6 @@ public class Ci {
             throw new RuntimeException(format("Path [%s] does not exist", file));
         }
         return file;
-    }
-
-    private boolean getOrElse(final String test, final boolean fallback) {
-        return !isEmpty(test) ? Boolean.valueOf(test) : fallback;
     }
 
     private Terminal newTerminal() {

@@ -21,14 +21,9 @@ public class MainMojoComponentTest {
 
     private String prepareArgs() {
         return " --PROJECT_DIR=" + WORK_DIR
-                + " --MVN_PROFILES=false"
-                + " --MVN_CLEAN=true"
-                + " --MVN_CLEAN_CACHE=false"
-                + " --MVN_SKIP_TEST=true"
-                + " --MVN_UPDATE=false"
-                + " --MVN_JAVA_DOC=false"
-                + " --MVN_SOURCE=false"
-                + " --MVN_TAG=false"
-                + " --MVN_TAG_BREAK=false";
+                + " --PROFILES=false"
+                + " --CLEAN=true"
+                + " --JAVA_DOC=false"
+                + " --SOURCE=false";
     }
 }
