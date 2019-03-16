@@ -31,6 +31,8 @@ import static berlin.yuna.mavendeploy.config.MavenCommands.MVN_DEPLOY_LAYOUT;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_PLUGIN;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_STAGING_URL;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_URL;
+import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_SNAPSHOT;
+import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_VERSION;
 import static java.lang.String.format;
 
 public class Ci {
@@ -56,6 +58,7 @@ public class Ci {
     private boolean MVN_TAG_BREAK = false;
     private boolean MVN_REPORT = false;
     private boolean MVN_RELEASE = false;
+    private boolean MVN_REMOVE_SNAPSHOT = false;
 
     private String MVN_DEPLOY_ID = null;
     private String SEMANTIC_FORMAT = null;
@@ -86,6 +89,7 @@ public class Ci {
         MVN_RELEASE = getBoolean(clr, "RELEASE", MVN_RELEASE);
         MVN_SKIP_TEST = getBoolean(clr, "SKIP_TEST", MVN_SKIP_TEST);
         MVN_REPORT = getBoolean(clr, "REPORT", MVN_REPORT);
+        MVN_REMOVE_SNAPSHOT = getBoolean(clr, "REMOVE_SNAPSHOT", MVN_REMOVE_SNAPSHOT);
 
         //DEOPLY (Nexus only currently)
         MVN_DEPLOY_ID = getString(clr, "DEPLOY_ID", MVN_DEPLOY_ID);
@@ -112,7 +116,9 @@ public class Ci {
         mvnCommand.append(ifDo(MVN_SKIP_TEST, CMD_MVN_SKIP_TEST, "SKIP_TEST"));
         mvnCommand.append(ifDo(MVN_CLEAN, CMD_MVN_CLEAN));
         mvnCommand.append(ifDo(MVN_UPDATE, CMD_MVN_UPDATE, "UPDATE"));
-        mvnCommand.append(ifDo(PROJECT_VERSION, CMD_MVN_VERSION_XX + PROJECT_VERSION, "PROJECT_VERSION"));
+        mvnCommand.append(ifDo((!isEmpty(PROJECT_VERSION) || MVN_REMOVE_SNAPSHOT), CMD_MVN_VERSION_XX));
+        mvnCommand.append(ifDo(PROJECT_VERSION, XX_CMD_MVN_VERSION + PROJECT_VERSION, "PROJECT_VERSION"));
+        mvnCommand.append(ifDo(MVN_REMOVE_SNAPSHOT, XX_CMD_MVN_SNAPSHOT, "REMOVE_SNAPSHOT"));
         mvnCommand.append(ifDo(!IS_POM && MVN_JAVA_DOC, CMD_MVN_JAVADOC, "JAVA_DOC"));
         mvnCommand.append(ifDo(!IS_POM && MVN_SOURCE, CMD_MVN_SOURCE, "SOURCE"));
         mvnCommand.append(ifDo(hasNewTag(), CMD_MVN_TAG_XX + PROJECT_VERSION, "TAG"));
@@ -129,6 +135,7 @@ public class Ci {
         mvnCommand.append(ifDo(!MVN_SKIP_TEST, prepareSurFire(), "SKIP_TEST"));
         mvnCommand.append(ifDo(!MVN_SKIP_TEST, prepareFailSafe()));
         mvnCommand.append(ifDo(MVN_REPORT, CMD_MVN_REPORT, "REPORT"));
+        mvnCommand.append(ifDo((!isEmpty(PROJECT_VERSION) || MVN_REMOVE_SNAPSHOT || MVN_REPORT), "-DgenerateBackupPoms=false "));
 
         if (!isEmpty(GPG_PASS_ALT)) {
             new GpgUtil(LOG).downloadMavenGpgIfNotExists(PROJECT_DIR);
@@ -211,12 +218,8 @@ public class Ci {
     }
 
     private String ifDo(final boolean trigger, final String arg, final String description) {
-        if (trigger) {
-            LOG.debug(format("[%s] [true]", description));
-            return arg + " ";
-        }
-        LOG.debug(format("[%s] [false]", description));
-        return "";
+        LOG.debug(format("[%s] [%s]", trigger, description));
+        return trigger ? arg + " " : "";
     }
 
     private String getString(final CommandLineReader clr, final String key, final String fallback) {

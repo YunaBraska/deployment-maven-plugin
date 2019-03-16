@@ -21,6 +21,8 @@ import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_VERSION_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_PLUGIN;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_STAGING_URL;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_URL;
+import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_SNAPSHOT;
+import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_VERSION;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -62,6 +64,7 @@ public class CiTest {
                 + " --JAVA_VERSION=1.8"
                 + " --ENCODING=UTF-8"
                 + " --PROFILES=true"
+                + " --REMOVE_SNAPSHOT"
                 + " --CLEAN=true"
                 + " --CLEAN_CACHE=true"
                 + " --SKIP_TEST=false"
@@ -91,7 +94,10 @@ public class CiTest {
         assertThat(mavenCommand, containsString(SONATYPE_URL));
         assertThat(mavenCommand, containsString(SONATYPE_PLUGIN));
         assertThat(mavenCommand, containsString(SONATYPE_STAGING_URL));
-        assertThat(mavenCommand, not(containsString(CMD_MVN_VERSION_XX + "3.2.1.2.3")));
+        assertThat(mavenCommand, containsString(CMD_MVN_VERSION_XX));
+        assertThat(mavenCommand, containsString(XX_CMD_MVN_VERSION));
+        assertThat(mavenCommand, containsString(XX_CMD_MVN_SNAPSHOT));
+        assertThat(mavenCommand, not(containsString( "3.2.1.2.3")));
         assertThat(mavenCommand, containsString(CMD_MVN_VERSION_XX));
         assertThat(mavenCommand, containsString(CMD_MVN_GPG_SIGN_XX + "${gppPassword-1}"));
         assertThat(mavenCommand, containsString(CMD_MVN_GPG_SIGN_ALT_XX + "${gppPassword-2}"));

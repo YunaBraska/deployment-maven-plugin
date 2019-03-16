@@ -4,13 +4,15 @@ public class MavenCommands {
 
     public static final String CMD_MVN_CLEAN = "generate-resources generate-sources dependency:resolve-plugins";
     public static final String CMD_MVN_REPORT = "versions:display-dependency-updates versions:display-plugin-updates";
-    public static final String CMD_MVN_UPDATE = "versions:update-parent versions:update-properties versions:update-child-modules versions:use-latest-releases versions:use-next-snapshots versions:commit -DallowSnapshots=true -DgenerateBackupPoms=false";
+    public static final String CMD_MVN_UPDATE = "versions:update-parent versions:update-properties versions:update-child-modules versions:use-latest-releases versions:use-next-snapshots versions:commit -DallowSnapshots=true";
     public static final String CMD_MVN_CLEAN_CACHE = "dependency:purge-local-repository";
     public static final String CMD_MVN_JAVADOC = "javadoc:jar -Dnodeprecatedlist -Dquiet=true";
     public static final String CMD_MVN_SOURCE = "source:jar-no-fork";
     public static final String CMD_MVN_TAG_XX = "scm:tag -Dtag=";
     public static final String CMD_MVN_SKIP_TEST = "-Dmaven.test.skip=true";
-    public static final String CMD_MVN_VERSION_XX = "versions:set -DnewVersion=";
+    public static final String CMD_MVN_VERSION_XX = "versions:set";
+    public static final String XX_CMD_MVN_SNAPSHOT = "versions:set -DnewVersion=";
+    public static final String XX_CMD_MVN_VERSION = "versions:set -DnewVersion=";
     public static final String CMD_MVN_GPG_SIGN_XX = "gpg:sign -Darguments=-D--pinentry-mode -Darguments=-Dloopback -Dgpg.passphrase=";
     public static final String CMD_MVN_GPG_SIGN_ALT_XX = "berlin.yuna:maven-gpg-plugin:sign -Darguments=-D--pinentry-mode -Darguments=-Dloopback -Dgpg.passphrase=";
     public static String MVN_DEPLOY_LAYOUT = "default";
