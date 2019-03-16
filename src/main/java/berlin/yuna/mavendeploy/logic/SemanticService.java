@@ -24,6 +24,7 @@ public class SemanticService {
             final String branchName = gitService.findOriginalBranchName(commitNumber);
             final int semanticPosition = getSemanticPosition(branchName);
             if (branchName != null && !branchName.trim().isEmpty() && semanticPosition != -1) {
+                this.branchName = branchName;
                 return getNextSemanticVersion(currentVersion, semanticPosition);
             }
         }
