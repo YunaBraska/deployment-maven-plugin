@@ -25,7 +25,7 @@ public class GitService {
     }
 
     public String getLastGitTag() {
-        return terminal.execute("git fetch --tags; git describe --tags --always | sed 's/\\(.*\\)-.*/\\1/'").consoleInfo().trim();
+        return terminal.execute("git fetch --tags --force; git describe --tags --always | sed 's/\\(.*\\)-.*/\\1/'").consoleInfo().trim();
     }
 
     public String getLastRefLog(final int commitNumber) {
