@@ -41,6 +41,7 @@ public class CiTest {
                 + " --CLEAN_CACHE=true"
                 + " --JAVA_DOC=false"
                 + " --SOURCE=false"
+                + " --COMMIT=false"
                 + " --PROFILES=false";
         final String mavenCommand = new Ci(new SystemStreamLog(), args).prepareMaven();
         assertThat(mavenCommand, containsString(CMD_MVN_CLEAN_CACHE));
@@ -52,6 +53,7 @@ public class CiTest {
         final String args = " --PROJECT_DIR=" + WORK_DIR
                 + " --PROFILES=false"
                 + " --JAVA_DOC=false"
+                + " --COMMIT=false"
                 + " --SOURCE=false";
         assertThat(new Ci(new SystemStreamLog(), args).prepareMaven(),
                    is(equalTo("mvn verify -Dmaven.test.skip=true")));
@@ -71,6 +73,7 @@ public class CiTest {
                 + " --UPDATE=true"
                 + " --JAVA_DOC=true"
                 + " --SOURCE=true"
+                + " --COMMIT=false"
                 + " --TAG=true"
                 + " --REPORT=true"
                 + " --TAG_BREAK=true"

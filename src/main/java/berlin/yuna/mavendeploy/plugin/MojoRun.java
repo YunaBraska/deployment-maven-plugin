@@ -42,10 +42,10 @@ public class MojoRun extends AbstractMojo {
                 .execute(mavenCommand)
                 .status();
 
-        //FIXME: doesn't see changes while running?
+        if (!"false".equalsIgnoreCase(ci.getCommandLineReader().getValue("COMMIT"))) {
             final String commitMessage = prepareCommitMessage(ci);
-            log.debug("Committing " + commitMessage);
             new Terminal().dir(basedir).execute("mvn scm:checkin -Dmessage='" + commitMessage + "'");
+        }
 
         if (gitStash) {
             log.warn("Load uncommitted git changes");

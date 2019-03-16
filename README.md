@@ -41,7 +41,7 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 | TAG                 | Boolean | false   | Tags the project (by PROJECT_VERSION) if not already exists                |
 | TAG_BREAK           | Boolean | false   | Tags the project (by PROJECT_VERSION) and fails if already exists          |
 | UPDATE              | Boolean | false   | Updates parent, properties, dependencies                                   |
-| COMMIT              | String  | ''      | Custom commit message on changes                                           |
+| COMMIT              | String  | ''      | Custom commit message on changes - "false" = deactivate commits            |
 ### Building
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
@@ -80,7 +80,6 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
 ### TODO
-* [ ] option/param git commit changes (git stash; mvnCommand; git commit; git stash pop) (default "\[SEMANTEC|CI\] version update")
 * [ ] option/param UPDATE_MINOR UPDATE MAJOR
 * [ ] not tag when last commit was tag commit
 * [ ] external settings "--settings "

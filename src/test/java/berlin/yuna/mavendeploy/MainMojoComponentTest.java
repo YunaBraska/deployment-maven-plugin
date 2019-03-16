@@ -24,6 +24,7 @@ public class MainMojoComponentTest {
                 + " --PROFILES=false"
                 + " --CLEAN=true"
                 + " --JAVA_DOC=false"
+                + " --COMMIT=false"
                 + " --SOURCE=false";
     }
 }
