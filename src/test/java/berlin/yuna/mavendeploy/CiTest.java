@@ -33,17 +33,24 @@ public class CiTest {
     private static final File WORK_DIR = new File(System.getProperty("user.dir"));
 
     @Test
-    public void prepareMavenCommand_WithAllFalse_shouldGetMinimalCommand() {
-        final String args = "--PROJECT_DIR=" + WORK_DIR
-                + " --MVN_PROFILES=false"
-                + " --MVN_CLEAN=false"
-                + " --MVN_CLEAN_CACHE=false"
-                + " --MVN_SKIP_TEST=true"
-                + " --MVN_UPDATE=false"
-                + " --MVN_JAVA_DOC=false"
-                + " --MVN_SOURCE=false"
-                + " --MVN_TAG=false"
-                + " --MVN_TAG_BREAK=false";
+    public void prepareMaven_WithKeyAndWithoutValue_shouldResolve() {
+        final String args = " --PROJECT_DIR=" + WORK_DIR
+                + " --UPDATE"
+                + " --CLEAN_CACHE=true"
+                + " --JAVA_DOC=false"
+                + " --SOURCE=false"
+                + " --PROFILES=false";
+        final String mavenCommand = new Ci(new SystemStreamLog(), args).prepareMaven();
+        assertThat(mavenCommand, containsString(CMD_MVN_CLEAN_CACHE));
+        assertThat(mavenCommand, containsString(CMD_MVN_UPDATE));
+    }
+    
+    @Test
+    public void prepareMaven_WithAllFalse_shouldGetMinimalCommand() {
+        final String args = " --PROJECT_DIR=" + WORK_DIR
+                + " --PROFILES=false"
+                + " --JAVA_DOC=false"
+                + " --SOURCE=false";
         assertThat(new Ci(new SystemStreamLog(), args).prepareMaven(),
                    is(equalTo("mvn verify -Dmaven.test.skip=true")));
     }
@@ -54,20 +61,20 @@ public class CiTest {
                 + " --PROJECT_VERSION=3.2.1.2.3"
                 + " --JAVA_VERSION=1.8"
                 + " --ENCODING=UTF-8"
-                + " --MVN_PROFILES=true"
-                + " --MVN_CLEAN=true"
-                + " --MVN_CLEAN_CACHE=true"
-                + " --MVN_SKIP_TEST=false"
-                + " --MVN_UPDATE=true"
-                + " --MVN_JAVA_DOC=true"
-                + " --MVN_SOURCE=true"
-                + " --MVN_TAG=true"
-                + " --MVN_REPORT=true"
-                + " --MVN_TAG_BREAK=true"
+                + " --PROFILES=true"
+                + " --CLEAN=true"
+                + " --CLEAN_CACHE=true"
+                + " --SKIP_TEST=false"
+                + " --UPDATE=true"
+                + " --JAVA_DOC=true"
+                + " --SOURCE=true"
+                + " --TAG=true"
+                + " --REPORT=true"
+                + " --TAG_BREAK=true"
                 + " --SEMANTIC_FORMAT=\"\\.::release.*::feature.*::bugfix.*|hotfix.*\""
-                + " --GPG_PASSPHRASE=${gppPassword-1}"
-                + " --GPG_PASSPHRASE_ALT=${gppPassword-2}"
-                + " --MVN_DEPLOY_ID=nexus"
+                + " --GPG_PASS=${gppPassword-1}"
+                + " --GPG_PASS_ALT=${gppPassword-2}"
+                + " --DEPLOY_ID=nexus"
                 + " --PROJECT_DIR=/Users/yunamorgenstern/Documents/projects/system-util";
 
         final Ci ci = new Ci(new SystemStreamLog(), args);

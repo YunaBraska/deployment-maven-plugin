@@ -22,7 +22,7 @@ Auto handle surfire and failsafe, auto semantic version increase by branch patte
 
 ### How to call
 ````bash
-mvn deployment:run -Dargs="--MVN_JAVA_DOC=true --MVN_SOURCE=true --MVN_UPDATE=true"
+mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 #Will create java doc, java sources, and updates dependencies
 ````
 
@@ -33,27 +33,27 @@ mvn deployment:run -Dargs="--MVN_JAVA_DOC=true --MVN_SOURCE=true --MVN_UPDATE=tr
 ````"[.-]::release::feature::bugfix\|hotfix::custom_1.*[0-9]::custom_2.*[A-Z]"````
 
 ### Parameters
-| Parameter          | Type    | Default |  Description                                                               |
-|:-------------------|:--------|:--------|:---------------------------------------------------------------------------|
-| PROJECT_VERSION    | String  | ''      | Sets project version in pom                                                |
-| SEMANTIC_FORMAT    | String  | ''      | Updates semantic version from regex pattern (overwrites PROJECT_VERSION)   |
-| TAG                | Boolean | false   | Tags the project (by PROJECT_VERSION) if not already exists                |
-| TAG_BREAK          | Boolean | false   | Tags the project (by PROJECT_VERSION) and fails if already exists          |
-| CLEAN              | Boolean | false   | cleans target and resolves dependencies                                    |
-| CLEAN_CACHE        | Boolean | false   | Purges local maven repository cache                                        |
-| SKIP_TEST          | Boolean | true    | skips all tests                                                            |
-| JAVA_DOC           | Boolean | true    | Creates java doc (javadoc.jar) if its not a pom artifact                   |
-| SOURCE             | Boolean | true    | Creates java sources (sources.jar) if its not a pom artifact               |
-| PROFILES           | Boolean | true    | Uses all available profiles                                                |
-| UPDATE             | Boolean | false   | Updates parent, properties, dependencies                                   |
-| REPORT             | Boolean | false   | Generates report about version updates                                     |
-| OPTIONS            | String  | ''      | Adds additional maven options                                              |
-| RELEASE            | Boolean | false   | (Nexus) Releases the deployment                                            |
-| DEPLOY_ID          | String  | ''      | (Nexus) Deploys artifacts (id = Settings.xml)                              |
-| GPG_PASSPHRASE     | String  | ''      | Signs artifacts (.asc) with GPG 1                                        |
-| GPG_PASSPHRASE_ALT | String  | ''      | Signs artifacts (.asc) with GPG 2.1                                        |
-| JAVA_VERSION       | String  | ''      | Sets compiler java version                                                 |
-| ENCODING           | String  | ''      | Sets compiler encoding                                                     |
+| Parameter           | Type    | Default |  Description                                                               |
+|:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
+| PROJECT_VERSION     | String  | ''      | Sets project version in pom                                                |
+| SEMANTIC_FORMAT     | String  | ''      | Updates semantic version from regex pattern (overwrites PROJECT_VERSION)   |
+| TAG                 | Boolean | false   | Tags the project (by PROJECT_VERSION) if not already exists                |
+| TAG_BREAK           | Boolean | false   | Tags the project (by PROJECT_VERSION) and fails if already exists          |
+| CLEAN               | Boolean | false   | cleans target and resolves dependencies                                    |
+| CLEAN_CACHE         | Boolean | false   | Purges local maven repository cache                                        |
+| SKIP_TEST           | Boolean | true    | skips all tests                                                            |
+| JAVA_DOC            | Boolean | true    | Creates java doc (javadoc.jar) if its not a pom artifact                   |
+| SOURCE              | Boolean | true    | Creates java sources (sources.jar) if its not a pom artifact               |
+| PROFILES            | Boolean | true    | Uses all available profiles                                                |
+| UPDATE              | Boolean | false   | Updates parent, properties, dependencies                                   |
+| REPORT              | Boolean | false   | Generates report about version updates                                     |
+| OPTIONS             | String  | ''      | Adds additional maven options                                              |
+| RELEASE             | Boolean | false   | (Nexus) Releases the deployment                                            |
+| DEPLOY_ID           | String  | ''      | (Nexus) Deploys artifacts (id = Settings.xml)                              |
+| GPG_PASS            | String  | ''      | Signs artifacts (.asc) with GPG 2.1                                        |
+| GPG_PASS_ALT        | String  | ''      | Signs artifacts (.asc) with GPG 1                                        |
+| JAVA_VERSION        | String  | ''      | Sets compiler java version                                                 |
+| ENCODING            | String  | ''      | Sets compiler encoding                                                     |
 
 ### Requirements
 * \[JAVA\] for maven 
@@ -69,6 +69,7 @@ mvn deployment:run -Dargs="--MVN_JAVA_DOC=true --MVN_SOURCE=true --MVN_UPDATE=tr
 
 ### TODO
 * [ ] if arg is present than automatically say true without writing "true" as value
+* [ ] not tag when last commit was tag commit
 * [ ] option/param remove snapshot
 * [ ] external settings "--settings "
 * [ ] release process
