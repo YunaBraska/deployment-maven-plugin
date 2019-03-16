@@ -64,6 +64,7 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 * [maven-javadoc-plugin](https://maven.apache.org/plugins/maven-javadoc-plugin/)
 * [maven-source-plugin](https://maven.apache.org/plugins/maven-source-plugin/)
 * [maven-surefire-plugin](http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html)
+* [versions-maven-plugin](https://www.mojohaus.org/versions-maven-plugin/set-mojo.html)
 * [maven-gpg-plugin](http://maven.apache.org/plugins/maven-gpg-plugin/usage.html)
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
