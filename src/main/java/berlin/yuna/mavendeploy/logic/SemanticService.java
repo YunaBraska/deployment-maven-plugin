@@ -8,7 +8,12 @@ public class SemanticService {
 
     private final File WORK_DIR;
     private final String[] SEMANTIC_FORMAT;
+<<<<<<< Updated upstream
     private String branchName;
+=======
+    private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME = Pattern.compile(
+            "(?<prefix>.*refs\\/.*?\\/)(?<branchName>.*?)(?<suffix>@.*?)");
+>>>>>>> Stashed changes
 
     public String getBranchName() {
         return branchName;
