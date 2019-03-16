@@ -7,8 +7,8 @@
 [![Gitter][Gitter-image]][Gitter-Url] 
 
 ### Description
-This is an example/alternative to [maven-oss-parent](https://github.com/YunaBraska/maven-oss-parent) to separate the deployment from build process and keep original the pom.xml small
-Auto handle surfire and failsafe, auto semantic version increase by branch pattern  
+This is an example/alternative to [maven-oss-parent](https://github.com/YunaBraska/maven-oss-parent) to separate the deployment from build process and keep original the pom.xml small.
+Auto handles surfire and failsafe, auto semantic version increase by branch pattern  
 
 
 ### plugin
@@ -32,28 +32,38 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 * Example \[1-2.3.4-5\]
 ````"[.-]::release::feature::bugfix\|hotfix::custom_1.*[0-9]::custom_2.*[A-Z]"````
 
-### Parameters
+### Versioning
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
 | PROJECT_VERSION     | String  | ''      | Sets project version in pom                                                |
 | SEMANTIC_FORMAT     | String  | ''      | Updates semantic version from regex pattern (overwrites PROJECT_VERSION)   |
+| REMOVE_SNAPSHOT     | Boolean | false   | Removes snapshot from version                                              |
 | TAG                 | Boolean | false   | Tags the project (by PROJECT_VERSION) if not already exists                |
 | TAG_BREAK           | Boolean | false   | Tags the project (by PROJECT_VERSION) and fails if already exists          |
+| UPDATE              | Boolean | false   | Updates parent, properties, dependencies                                   |
+### Building
+| Parameter           | Type    | Default |  Description                                                               |
+|:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
 | CLEAN               | Boolean | false   | cleans target and resolves dependencies                                    |
 | CLEAN_CACHE         | Boolean | false   | Purges local maven repository cache                                        |
-| SKIP_TEST           | Boolean | true    | skips all tests                                                            |
 | JAVA_DOC            | Boolean | true    | Creates java doc (javadoc.jar) if its not a pom artifact                   |
 | SOURCE              | Boolean | true    | Creates java sources (sources.jar) if its not a pom artifact               |
 | PROFILES            | Boolean | true    | Uses all available profiles                                                |
-| UPDATE              | Boolean | false   | Updates parent, properties, dependencies                                   |
+| GPG_PASS            | String  | ''      | Signs artifacts (.asc) with GPG 2.1                                        |
+| GPG_PASS_ALT        | String  | ''      | Signs artifacts (.asc) with GPG 1                                          |
+### Deployment
+| Parameter           | Type    | Default |  Description                                                               |
+|:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
+| DEPLOY_ID           | String  | ''      | (Nexus) Deploys artifacts (id = Settings.xml)                              |
+| RELEASE             | Boolean | false   | (Nexus) Releases the deployment                                            |
+### Misc
+| Parameter           | Type    | Default |  Description                                                               |
+|:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
 | REPORT              | Boolean | false   | Generates report about version updates                                     |
 | OPTIONS             | String  | ''      | Adds additional maven options                                              |
-| RELEASE             | Boolean | false   | (Nexus) Releases the deployment                                            |
-| DEPLOY_ID           | String  | ''      | (Nexus) Deploys artifacts (id = Settings.xml)                              |
-| GPG_PASS            | String  | ''      | Signs artifacts (.asc) with GPG 2.1                                        |
-| GPG_PASS_ALT        | String  | ''      | Signs artifacts (.asc) with GPG 1                                        |
-| JAVA_VERSION        | String  | ''      | Sets compiler java version                                                 |
 | ENCODING            | String  | ''      | Sets compiler encoding                                                     |
+| SKIP_TEST           | Boolean | true    | skips all tests                                                            |
+| JAVA_VERSION        | String  | ''      | Sets compiler java version                                                 |
 
 ### Requirements
 * \[JAVA\] for maven 
@@ -68,16 +78,15 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
 ### TODO
-* [ ] if arg is present than automatically say true without writing "true" as value
+* [ ] option/param git commit changes (git stash; mvnCommand; git commit; git stash pop) (default "\[SEMANTEC|CI\] version update")
+* [ ] option/param UPDATE_MINOR UPDATE MAJOR
 * [ ] not tag when last commit was tag commit
-* [ ] option/param remove snapshot
 * [ ] external settings "--settings "
 * [ ] release process
 * [ ] set always autoReleaseAfterClose=false and add "mvn nexus-staging:release" to release process
 * [ ] release needs a new version to be set manually
 * [ ] set scm url if not exists or changed
 * [ ] reset readme urls, description and title
-* [ ] option/param git commit changes
 * [ ] Deploy dynamic to nexus
 * [ ] Deploy dynamic to artifactory
 * [ ] try to use https://github.com/TimMoore/mojo-executor

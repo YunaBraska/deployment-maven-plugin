@@ -10,8 +10,8 @@
 
     <name>${project.artifactId}</name>
     <description>This is an example/alternative to maven-oss-parent to separate the deployment from build process and
-        keep original the pom.xml small
-        Auto handle surfire and failsafe, auto semantic version increase by branch pattern
+        keep original the pom.xml small.
+        Auto handles surfire and failsafe, auto semantic version increase by branch pattern
     </description>
     <url>${git-project.url}</url>
 
