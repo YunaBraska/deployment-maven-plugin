@@ -50,7 +50,7 @@ public class MojoRun extends AbstractMojo {
 
         if (gitStash) {
             log.warn("Load uncommitted git changes");
-            gitService.gitStashPop();
+            gitService.gitLoadStash();
         }
         if (status != 0) {
             throw new RuntimeException(format("Status [%s]", status));

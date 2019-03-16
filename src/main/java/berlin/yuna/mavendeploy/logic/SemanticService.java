@@ -1,26 +1,18 @@
 package berlin.yuna.mavendeploy.logic;
 
-import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class SemanticService {
 
-    private final File WORK_DIR;
     private final String[] SEMANTIC_FORMAT;
-<<<<<<< Updated upstream
     private String branchName;
-=======
-    private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME = Pattern.compile(
-            "(?<prefix>.*refs\\/.*?\\/)(?<branchName>.*?)(?<suffix>@.*?)");
->>>>>>> Stashed changes
 
     public String getBranchName() {
         return branchName;
     }
 
-    SemanticService(final String semanticFormat, final File workDir) {
-        WORK_DIR = workDir;
+    SemanticService(final String semanticFormat) {
         SEMANTIC_FORMAT = semanticFormat.split("::");
     }
 

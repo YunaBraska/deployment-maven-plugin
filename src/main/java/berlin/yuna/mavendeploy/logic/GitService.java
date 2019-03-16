@@ -40,8 +40,8 @@ public class GitService {
         return terminal.execute("git stash").consoleInfo().trim();
     }
 
-    public String gitStashPop() {
-        return terminal.execute("git stash pop").consoleInfo().trim();
+    public String gitLoadStash() {
+        return terminal.execute("git checkout stash -- .").consoleInfo().trim();
     }
 
     public void commitAndPush(final String commitMessage) {

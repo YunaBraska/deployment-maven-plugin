@@ -105,7 +105,7 @@ public class Ci {
         pom = parsePomFile(PROJECT_DIR);
         IS_POM = isPomArtifact(pom);
 
-        semanticService = new SemanticService(isEmpty(SEMANTIC_FORMAT) ? "\\.:none" : SEMANTIC_FORMAT, PROJECT_DIR);
+        semanticService = new SemanticService(isEmpty(SEMANTIC_FORMAT) ? "\\.:none" : SEMANTIC_FORMAT);
         gitService = new GitService(PROJECT_DIR);
 
         PROJECT_VERSION = isEmpty(SEMANTIC_FORMAT) ?
