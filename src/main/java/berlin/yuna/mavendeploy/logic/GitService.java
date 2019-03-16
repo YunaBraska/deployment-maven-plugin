@@ -3,12 +3,16 @@ package berlin.yuna.mavendeploy.logic;
 import berlin.yuna.clu.logic.Terminal;
 
 import java.io.File;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 //FIXME: add GitLibrary like JGit
 public class GitService {
 
     private final File workDir;
     private final Terminal terminal;
+    private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME = Pattern.compile(
+            "(?<prefix>.*refs\\/.*?\\/)(?<branchName>.*?)(?<suffix>@.*?)");
 
     public GitService(final File workDir) {
         this.workDir = workDir;
@@ -28,4 +32,28 @@ public class GitService {
         return terminal.execute("git reflog show --all | grep \"refs/\"  | grep \": commit:\" | head -n" + commitNumber + " | tail -n1").consoleInfo();
     }
 
+    public boolean gitHasChanges() {
+        return Boolean.valueOf(terminal.execute("if [[ `git status --porcelain` ]]; then echo true; else echo false; fi").consoleInfo().trim());
+    }
+
+    public String gitStash() {
+        return terminal.execute("git stash").consoleInfo().trim();
+    }
+
+    public String gitStashPop() {
+        return terminal.execute("git stash pop").consoleInfo().trim();
+    }
+
+    public void commitAndPush(final String commitMessage) {
+        terminal.execute("git add .; git commit -a -m \"" + commitMessage + "\"; git push origin head");
+    }
+
+    public String findOriginalBranchName(final int commitNumber) {
+        final String refLog = getLastRefLog(commitNumber);
+        final Matcher matcher = PATTERN_ORIGINAL_BRANCH_NAME.matcher(refLog);
+        if (matcher.find()) {
+            return matcher.group("branchName");
+        }
+        return null;
+    }
 }

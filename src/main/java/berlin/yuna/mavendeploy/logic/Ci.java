@@ -38,6 +38,10 @@ import static java.lang.String.format;
 public class Ci {
 
     private File PROJECT_DIR = new File(System.getProperty("user.dir"));
+    final CommandLineReader clr;
+    final Model pom;
+    final SemanticService semanticService;
+    final GitService gitService;
 
     private String JAVA_VERSION = null;
     private String ENCODING = null;
@@ -68,7 +72,7 @@ public class Ci {
 
     public Ci(final Log LOG, final String... args) {
         this.LOG = LOG;
-        final CommandLineReader clr = new CommandLineReader(args == null ? new String[]{""} : args);
+        clr = new CommandLineReader(args == null ? new String[]{""} : args);
         //Project
         PROJECT_DIR = getOrElse(clr.getValue("PROJECT_DIR"), PROJECT_DIR);
         ENCODING = getString(clr, "ENCODING", ENCODING);
@@ -98,13 +102,23 @@ public class Ci {
         GPG_PASS = getString(clr, "GPG_PASS", GPG_PASS);
         GPG_PASS_ALT = getString(clr, "GPG_PASS_ALT", GPG_PASS_ALT);
 
-        final Model pom = parsePomFile(PROJECT_DIR);
+        pom = parsePomFile(PROJECT_DIR);
         IS_POM = isPomArtifact(pom);
 
+        semanticService = new SemanticService(SEMANTIC_FORMAT, PROJECT_DIR);
+        gitService = new GitService(PROJECT_DIR);
+
         PROJECT_VERSION = isEmpty(SEMANTIC_FORMAT) ?
-                PROJECT_VERSION :
-                new SemanticService(SEMANTIC_FORMAT, PROJECT_DIR).getNextSemanticVersion(pom.getVersion(),
-                        PROJECT_VERSION);
+                PROJECT_VERSION : semanticService.getNextSemanticVersion(pom.getVersion(), gitService, PROJECT_VERSION);
+    }
+
+    public String getProjectVersion() {
+        return isEmpty(PROJECT_VERSION) ? pom.getVersion() : PROJECT_VERSION;
+    }
+
+    public String getBranchName() {
+        final String branchName = semanticService.getBranchName();
+        return branchName == null ? gitService.findOriginalBranchName(1) : branchName;
     }
 
     public String prepareMaven() {
@@ -143,6 +157,10 @@ public class Ci {
         return mvnCommand.toString().trim();
     }
 
+    public CommandLineReader getCommandLineReader() {
+        return clr;
+    }
+
     private Model parsePomFile(final File projectDir) {
         try {
             return new MavenXpp3Reader().read(new FileReader(new File(projectDir, "pom.xml")));
@@ -170,7 +188,7 @@ public class Ci {
 
     private boolean hasNewTag() {
         if ((MVN_TAG || MVN_TAG_BREAK) && !isEmpty(PROJECT_VERSION)) {
-            final String lastGitTag = new GitService(PROJECT_DIR).getLastGitTag();
+            final String lastGitTag = gitService.getLastGitTag();
             printTagMessage(lastGitTag);
             return !PROJECT_VERSION.equalsIgnoreCase(lastGitTag);
         }
