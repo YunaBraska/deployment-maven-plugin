@@ -105,7 +105,7 @@ public class Ci {
         pom = parsePomFile(PROJECT_DIR);
         IS_POM = isPomArtifact(pom);
 
-        semanticService = new SemanticService(isEmpty(SEMANTIC_FORMAT)? "\\.:none" : SEMANTIC_FORMAT, PROJECT_DIR);
+        semanticService = new SemanticService(isEmpty(SEMANTIC_FORMAT) ? "\\.:none" : SEMANTIC_FORMAT, PROJECT_DIR);
         gitService = new GitService(PROJECT_DIR);
 
         PROJECT_VERSION = isEmpty(SEMANTIC_FORMAT) ?
@@ -131,7 +131,7 @@ public class Ci {
         mvnCommand.append(ifDo(MVN_CLEAN, CMD_MVN_CLEAN));
         mvnCommand.append(ifDo(MVN_UPDATE, CMD_MVN_UPDATE, "UPDATE"));
         mvnCommand.append(ifDo((!isEmpty(PROJECT_VERSION) || MVN_REMOVE_SNAPSHOT), CMD_MVN_VERSION_XX));
-        mvnCommand.append(ifDo(PROJECT_VERSION, XX_CMD_MVN_VERSION + PROJECT_VERSION, "PROJECT_VERSION"));
+        mvnCommand.append(ifDo(PROJECT_VERSION, XX_CMD_MVN_VERSION + PROJECT_VERSION, format("PROJECT_VERSION [%s]", PROJECT_VERSION)));
         mvnCommand.append(ifDo(MVN_REMOVE_SNAPSHOT, XX_CMD_MVN_SNAPSHOT, "REMOVE_SNAPSHOT"));
         mvnCommand.append(ifDo(!IS_POM && MVN_JAVA_DOC, CMD_MVN_JAVADOC, "JAVA_DOC"));
         mvnCommand.append(ifDo(!IS_POM && MVN_SOURCE, CMD_MVN_SOURCE, "SOURCE"));

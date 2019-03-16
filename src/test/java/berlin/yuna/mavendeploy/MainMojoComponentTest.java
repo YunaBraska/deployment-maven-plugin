@@ -1,6 +1,6 @@
 package berlin.yuna.mavendeploy;
 
-import berlin.yuna.mavendeploy.plugin.MainMojo;
+import berlin.yuna.mavendeploy.plugin.MojoRun;
 import org.junit.Test;
 
 import java.io.File;
@@ -13,7 +13,7 @@ public class MainMojoComponentTest {
 
     @Test
     public void pluginMojo() {
-        final MainMojo mainMojo = new MainMojo();
+        final MojoRun mainMojo = new MojoRun();
         mainMojo.setBasedir(WORK_DIR);
         mainMojo.setArgs(singletonList(prepareArgs()));
         mainMojo.execute();

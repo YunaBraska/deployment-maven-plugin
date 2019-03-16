@@ -14,7 +14,7 @@ import java.util.List;
 import static java.lang.String.format;
 
 @Mojo(name = "run")
-public class MainMojo extends AbstractMojo {
+public class MojoRun extends AbstractMojo {
 
     @Parameter(defaultValue = "${project.basedir}", readonly = true)
     private File basedir;
@@ -28,6 +28,7 @@ public class MainMojo extends AbstractMojo {
         final boolean gitStash = gitService.gitHasChanges();
 
         if (gitStash) {
+            log.warn("Stashing uncommitted git changes");
             gitService.gitStash();
         }
 
@@ -42,10 +43,13 @@ public class MainMojo extends AbstractMojo {
                 .status();
 
         if (gitService.gitHasChanges()) {
-            gitService.commitAndPush(prepareCommitMessage(ci));
+            final String commitMessage = prepareCommitMessage(ci);
+            log.warn("Committing " + commitMessage);
+            gitService.commitAndPush(commitMessage);
         }
 
         if (gitStash) {
+            log.warn("Load uncommitted git changes");
             gitService.gitStashPop();
         }
         if (status != 0) {
