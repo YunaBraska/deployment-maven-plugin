@@ -20,7 +20,7 @@ public class SemanticService {
     }
 
     String getNextSemanticVersion(final String currentVersion, final GitService gitService, final String fallback) {
-        for (int commitNumber = 1; commitNumber < 12; commitNumber++) {
+        for (int commitNumber = 1; commitNumber < 32; commitNumber++) {
             final String branchName = gitService.findOriginalBranchName(commitNumber);
             final int semanticPosition = getSemanticPosition(branchName);
             if (branchName != null && !branchName.trim().isEmpty() && semanticPosition != -1) {
