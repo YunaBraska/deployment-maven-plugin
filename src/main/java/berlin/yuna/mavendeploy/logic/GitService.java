@@ -37,7 +37,7 @@ public class GitService {
     }
 
     public String gitStash() {
-        return terminal.execute("git stash").consoleInfo().trim();
+        return terminal.execute("git stash clear; git stash").consoleInfo().trim();
     }
 
     public String gitLoadStash() {
