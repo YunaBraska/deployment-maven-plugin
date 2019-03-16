@@ -1,6 +1,7 @@
 package berlin.yuna.mavendeploy.logic;
 
 import berlin.yuna.clu.logic.Terminal;
+import org.apache.maven.plugin.logging.Log;
 
 import java.io.File;
 import java.util.regex.Matcher;
@@ -14,9 +15,9 @@ public class GitService {
     private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME = Pattern.compile(
             "(?<prefix>.*refs\\/.*?\\/)(?<branchName>.*?)(?<suffix>@.*?)");
 
-    public GitService(final File workDir) {
+    public GitService(final Log log, final File workDir) {
         this.workDir = workDir;
-        terminal = new Terminal().timeoutMs(30000).breakOnError(true).dir(workDir).consumerError(System.err::println);
+        terminal = new Terminal().timeoutMs(30000).breakOnError(true).dir(workDir).consumerError(log::error);
     }
 
     public File clone(final String url, final String name) {

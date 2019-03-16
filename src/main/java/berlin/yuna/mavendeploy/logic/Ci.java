@@ -38,10 +38,10 @@ import static java.lang.String.format;
 public class Ci {
 
     private File PROJECT_DIR = new File(System.getProperty("user.dir"));
-    final CommandLineReader clr;
-    final Model pom;
-    final SemanticService semanticService;
-    final GitService gitService;
+    private final CommandLineReader clr;
+    private final Model pom;
+    private final SemanticService semanticService;
+    private final GitService gitService;
 
     private String JAVA_VERSION = null;
     private String ENCODING = null;
@@ -106,7 +106,7 @@ public class Ci {
         IS_POM = isPomArtifact(pom);
 
         semanticService = new SemanticService(isEmpty(SEMANTIC_FORMAT) ? "\\.:none" : SEMANTIC_FORMAT);
-        gitService = new GitService(PROJECT_DIR);
+        gitService = new GitService(LOG, PROJECT_DIR);
 
         PROJECT_VERSION = isEmpty(SEMANTIC_FORMAT) ?
                 PROJECT_VERSION : semanticService.getNextSemanticVersion(pom.getVersion(), gitService, PROJECT_VERSION);

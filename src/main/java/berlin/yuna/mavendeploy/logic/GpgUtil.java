@@ -34,7 +34,7 @@ public class GpgUtil {
         LOG.warn(format("START INSTALLING GPG PLUGIN FORK FROM [berlin.yuna] TO [%s]", MVN_REPO_PATH));
         terminal.timeoutMs(-1).clearConsole().dir(WORK_DIR);
         terminal.execute("rm -rf " + NAME_MAVEN_GPG_PLUGIN);
-        new GitService(WORK_DIR).clone(URL_MVN_GPG_PLUGIN, NAME_MAVEN_GPG_PLUGIN);
+        new GitService(LOG, WORK_DIR).clone(URL_MVN_GPG_PLUGIN, NAME_MAVEN_GPG_PLUGIN);
         terminal.execute("mvn clean install -f=maven-gpg-plugin -Drat.ignoreErrors=true --quiet");
         terminal.execute("rm -rf " + NAME_MAVEN_GPG_PLUGIN);
         LOG.warn(format("FINISHED INSTALLING GPG PLUGIN FORK FROM [berlin.yuna] TO [%s]", MVN_REPO_PATH));

@@ -24,7 +24,7 @@ public class MojoRun extends AbstractMojo {
 
     public void execute() {
         final Log log = getLog();
-        final GitService gitService = new GitService(basedir);
+        final GitService gitService = new GitService(log, basedir);
         final boolean gitStash = gitService.gitHasChanges();
 
         if (gitStash) {
@@ -43,12 +43,9 @@ public class MojoRun extends AbstractMojo {
                 .status();
 
         //FIXME: doesn't see changes while running?
-//        if (gitService.gitHasChanges()) {
             final String commitMessage = prepareCommitMessage(ci);
-            log.warn("Committing " + commitMessage);
-//            gitService.commitAndPush(commitMessage);
+            log.debug("Committing " + commitMessage);
             new Terminal().dir(basedir).execute("mvn scm:checkin -Dmessage='" + commitMessage + "'");
-//        }
 
         if (gitStash) {
             log.warn("Load uncommitted git changes");
