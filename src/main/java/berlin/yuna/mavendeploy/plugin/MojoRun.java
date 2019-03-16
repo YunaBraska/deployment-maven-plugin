@@ -43,11 +43,11 @@ public class MojoRun extends AbstractMojo {
                 .status();
 
         //FIXME: doesn't see changes while running?
-        final String commitMessage = prepareCommitMessage(ci);
         if (gitService.gitHasChanges()) {
+            final String commitMessage = prepareCommitMessage(ci);
             log.warn("Committing " + commitMessage);
+            gitService.commitAndPush(commitMessage);
         }
-        gitService.commitAndPush(commitMessage);
 
         if (gitStash) {
             log.warn("Load uncommitted git changes");
