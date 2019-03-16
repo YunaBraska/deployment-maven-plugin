@@ -46,7 +46,8 @@ public class MojoRun extends AbstractMojo {
         if (gitService.gitHasChanges()) {
             final String commitMessage = prepareCommitMessage(ci);
             log.warn("Committing " + commitMessage);
-            gitService.commitAndPush(commitMessage);
+//            gitService.commitAndPush(commitMessage);
+            new Terminal().dir(basedir).execute("mvn scm:checkin -Dmessage=" + commitMessage);
         }
 
         if (gitStash) {
