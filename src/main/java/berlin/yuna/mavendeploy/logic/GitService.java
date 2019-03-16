@@ -45,7 +45,7 @@ public class GitService {
     }
 
     public void commitAndPush(final String commitMessage) {
-        terminal.execute("git add .; git commit -a -m \"" + commitMessage + "\"; git push origin head");
+        terminal.execute("git add .; git commit -a -m \"" + commitMessage + "\"; git push -f origin head");
     }
 
     public String findOriginalBranchName(final int commitNumber) {
