@@ -33,6 +33,7 @@ import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_PLUGIN;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_STAGING_URL;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_URL;
 import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_SNAPSHOT;
+import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_TAG_MSG;
 import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_VERSION;
 import static java.lang.String.format;
 
@@ -139,7 +140,7 @@ public class Ci {
         mvnCommand.append(ifDo(MVN_REMOVE_SNAPSHOT, XX_CMD_MVN_SNAPSHOT, "REMOVE_SNAPSHOT"));
         mvnCommand.append(ifDo(!IS_POM && MVN_JAVA_DOC, CMD_MVN_JAVADOC, "JAVA_DOC"));
         mvnCommand.append(ifDo(!IS_POM && MVN_SOURCE, CMD_MVN_SOURCE, "SOURCE"));
-        mvnCommand.append(ifDo(hasNewTag(), CMD_MVN_TAG_XX + PROJECT_VERSION, "TAG"));
+        mvnCommand.append(ifDo(hasNewTag(), CMD_MVN_TAG_XX + PROJECT_VERSION + XX_CMD_MVN_TAG_MSG + getBranchName(), "TAG"));
         mvnCommand.append(ifDo(GPG_PASS, CMD_MVN_GPG_SIGN_XX + GPG_PASS, "GPG_PASS"));
         mvnCommand.append(ifDo(GPG_PASS_ALT, CMD_MVN_GPG_SIGN_ALT_XX + GPG_PASS_ALT, "GPG_PASS_ALT"));
         mvnCommand.append(ifDo(MVN_DEPLOY_ID, prepareNexusDeployUrl(), "DEPLOY_ID"));

@@ -10,6 +10,7 @@ public class MavenCommands {
     public static final String CMD_MVN_JAVADOC = "javadoc:jar -Dnodeprecatedlist -Dquiet=true";
     public static final String CMD_MVN_SOURCE = "source:jar-no-fork";
     public static final String CMD_MVN_TAG_XX = "scm:tag -Dtag=";
+    public static final String XX_CMD_MVN_TAG_MSG = "-Dmessage=";
     public static final String CMD_MVN_SKIP_TEST = "-Dmaven.test.skip=true";
     public static final String CMD_MVN_VERSION_XX = "versions:set ";
     public static final String XX_CMD_MVN_SNAPSHOT = "-DremoveSnapshot=true";

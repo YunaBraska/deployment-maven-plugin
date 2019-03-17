@@ -23,6 +23,7 @@ import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_PLUGIN;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_STAGING_URL;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_URL;
 import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_SNAPSHOT;
+import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_TAG_MSG;
 import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_VERSION;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
@@ -97,6 +98,7 @@ public class CiTest {
         assertThat(mavenCommand, containsString(CMD_MVN_JAVADOC));
         assertThat(mavenCommand, containsString(CMD_MVN_SOURCE));
         assertThat(mavenCommand, containsString(CMD_MVN_TAG_XX));
+        assertThat(mavenCommand, containsString(XX_CMD_MVN_TAG_MSG));
         assertThat(mavenCommand, containsString(SONATYPE_URL));
         assertThat(mavenCommand, containsString(SONATYPE_PLUGIN));
         assertThat(mavenCommand, containsString(SONATYPE_STAGING_URL));
