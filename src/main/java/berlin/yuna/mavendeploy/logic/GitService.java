@@ -26,7 +26,7 @@ public class GitService {
     }
 
     public String getLastGitTag() {
-        return terminal.execute("git fetch --tags --force; git describe --tags --always | sed 's/\\(.*\\)-.*/\\1/'").consoleInfo().trim();
+        return terminal.execute("git fetch --tags --force; git describe --tag --always --abbrev=0").consoleInfo().trim();
     }
 
     public String getLastRefLog(final int commitNumber) {
@@ -43,10 +43,6 @@ public class GitService {
 
     public String gitLoadStash() {
         return terminal.execute("git checkout stash -- .").consoleInfo().trim();
-    }
-
-    public void commitAndPush(final String commitMessage) {
-        terminal.execute("git add .; git commit -a -m \"" + commitMessage + "\"; git push -f origin head");
     }
 
     public String findOriginalBranchName(final int commitNumber) {

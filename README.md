@@ -40,7 +40,8 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 | REMOVE_SNAPSHOT     | Boolean | false   | Removes snapshot from version                                              |
 | TAG                 | Boolean | false   | Tags the project (by PROJECT_VERSION) if not already exists                |
 | TAG_BREAK           | Boolean | false   | Tags the project (by PROJECT_VERSION) and fails if already exists          |
-| UPDATE              | Boolean | false   | Updates parent, properties, dependencies                                   |
+| UPDATE_MAJOR        | Boolean | false   | Updates parent, properties, dependencies                                   |
+| UPDATE_MINOR        | Boolean | false   | Updates parent, properties, dependencies                                   |
 | COMMIT              | String  | ''      | Custom commit message on changes - "false" = deactivate commits            |
 ### Building
 | Parameter           | Type    | Default |  Description                                                               |
@@ -77,6 +78,7 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 * [maven-surefire-plugin](http://maven.apache.org/surefire/maven-surefire-plugin/test-mojo.html)
 * [versions-maven-plugin](https://www.mojohaus.org/versions-maven-plugin/set-mojo.html)
 * [maven-gpg-plugin](http://maven.apache.org/plugins/maven-gpg-plugin/usage.html)
+* [maven-scm-plugin](http://maven.apache.org/scm/maven-scm-plugin/plugin-info.html)
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
 ### TODO
