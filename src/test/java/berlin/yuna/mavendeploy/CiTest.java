@@ -16,7 +16,8 @@ import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_REPORT;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SOURCE;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SURFIRE_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_TAG_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_UPDATE;
+import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_UPDATE_MAJOR;
+import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_UPDATE_MINOR;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_VERSION_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_PLUGIN;
 import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_STAGING_URL;
@@ -37,7 +38,7 @@ public class CiTest {
     @Test
     public void prepareMaven_WithKeyAndWithoutValue_shouldResolve() {
         final String args = " --PROJECT_DIR=" + WORK_DIR
-                + " --UPDATE"
+                + " --UPDATE_MINOR"
                 + " --CLEAN_CACHE=true"
                 + " --JAVA_DOC=false"
                 + " --SOURCE=false"
@@ -45,7 +46,7 @@ public class CiTest {
                 + " --PROFILES=false";
         final String mavenCommand = new Ci(new SystemStreamLog(), args).prepareMaven();
         assertThat(mavenCommand, containsString(CMD_MVN_CLEAN_CACHE));
-        assertThat(mavenCommand, containsString(CMD_MVN_UPDATE));
+        assertThat(mavenCommand, containsString(CMD_MVN_UPDATE_MINOR));
     }
     
     @Test
@@ -70,7 +71,8 @@ public class CiTest {
                 + " --CLEAN=true"
                 + " --CLEAN_CACHE=true"
                 + " --SKIP_TEST=false"
-                + " --UPDATE=true"
+                + " --UPDATE_MINOR=true"
+                + " --UPDATE_MAJOR=true"
                 + " --JAVA_DOC=true"
                 + " --SOURCE=true"
                 + " --COMMIT=false"
@@ -89,7 +91,8 @@ public class CiTest {
         assertThat(mavenCommand, containsString("clean"));
         assertThat(mavenCommand, containsString("deploy"));
         assertThat(mavenCommand, containsString(CMD_MVN_REPORT));
-        assertThat(mavenCommand, containsString(CMD_MVN_UPDATE));
+        assertThat(mavenCommand, containsString(CMD_MVN_UPDATE_MAJOR));
+        assertThat(mavenCommand, containsString(CMD_MVN_UPDATE_MINOR));
         assertThat(mavenCommand, containsString(CMD_MVN_CLEAN_CACHE));
         assertThat(mavenCommand, containsString(CMD_MVN_JAVADOC));
         assertThat(mavenCommand, containsString(CMD_MVN_SOURCE));

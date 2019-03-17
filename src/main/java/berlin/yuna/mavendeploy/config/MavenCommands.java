@@ -4,7 +4,8 @@ public class MavenCommands {
 
     public static final String CMD_MVN_CLEAN = "generate-resources generate-sources dependency:resolve-plugins";
     public static final String CMD_MVN_REPORT = "versions:display-dependency-updates versions:display-plugin-updates";
-    public static final String CMD_MVN_UPDATE = "versions:update-parent versions:update-properties versions:update-child-modules versions:use-latest-releases versions:use-next-snapshots versions:commit -DallowSnapshots=true";
+    public static final String CMD_MVN_UPDATE_MAJOR = "versions:update-parent versions:update-properties versions:update-child-modules versions:use-latest-releases versions:use-latest-versions versions:use-next-snapshots versions:commit -DallowSnapshots=true -DallowMajorUpdates=true";
+    public static final String CMD_MVN_UPDATE_MINOR = "versions:update-parent versions:update-properties versions:update-child-modules versions:use-latest-releases versions:use-latest-versions ersions:use-next-snapshots versions:commit -DallowSnapshots=true -DallowMajorUpdates=false";
     public static final String CMD_MVN_CLEAN_CACHE = "dependency:purge-local-repository";
     public static final String CMD_MVN_JAVADOC = "javadoc:jar -Dnodeprecatedlist -Dquiet=true";
     public static final String CMD_MVN_SOURCE = "source:jar-no-fork";

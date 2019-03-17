@@ -23,7 +23,8 @@ import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SKIP_TEST;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SOURCE;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SURFIRE_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_TAG_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_UPDATE;
+import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_UPDATE_MAJOR;
+import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_UPDATE_MINOR;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_VERSION_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.FILE_MVN_FAILSAFE;
 import static berlin.yuna.mavendeploy.config.MavenCommands.FILE_MVN_SURFIRE;
@@ -54,7 +55,8 @@ public class Ci {
     private boolean MVN_CLEAN = false;
     private boolean MVN_CLEAN_CACHE = false;
     private boolean MVN_SKIP_TEST = true;
-    private boolean MVN_UPDATE = false;
+    private boolean MVN_UPDATE_MINOR = false;
+    private boolean MVN_UPDATE_MAJOR = false;
     private boolean MVN_JAVA_DOC = true;
     private boolean MVN_PROFILES = true;
     private boolean MVN_SOURCE = true;
@@ -85,7 +87,8 @@ public class Ci {
         MVN_PROFILES = getBoolean(clr, "PROFILES", MVN_PROFILES);
         MVN_CLEAN = getBoolean(clr, "CLEAN", MVN_CLEAN);
         MVN_CLEAN_CACHE = getBoolean(clr, "CLEAN_CACHE", MVN_CLEAN_CACHE);
-        MVN_UPDATE = getBoolean(clr, "UPDATE", MVN_UPDATE);
+        MVN_UPDATE_MINOR = getBoolean(clr, "UPDATE_MINOR", MVN_UPDATE_MINOR);
+        MVN_UPDATE_MAJOR = getBoolean(clr, "UPDATE_MAJOR", MVN_UPDATE_MAJOR);
         MVN_JAVA_DOC = getBoolean(clr, "JAVA_DOC", MVN_JAVA_DOC);
         MVN_SOURCE = getBoolean(clr, "SOURCE", MVN_SOURCE);
         MVN_TAG = getBoolean(clr, "TAG", MVN_TAG);
@@ -129,7 +132,8 @@ public class Ci {
         mvnCommand.append(isEmpty(MVN_DEPLOY_ID) ? "verify" : "deploy").append(" ");
         mvnCommand.append(ifDo(MVN_SKIP_TEST, CMD_MVN_SKIP_TEST, "SKIP_TEST"));
         mvnCommand.append(ifDo(MVN_CLEAN, CMD_MVN_CLEAN));
-        mvnCommand.append(ifDo(MVN_UPDATE, CMD_MVN_UPDATE, "UPDATE"));
+        mvnCommand.append(ifDo(MVN_UPDATE_MINOR, CMD_MVN_UPDATE_MINOR, "UPDATE_MINOR"));
+        mvnCommand.append(ifDo(MVN_UPDATE_MAJOR, CMD_MVN_UPDATE_MAJOR, "UPDATE_MAJOR"));
         mvnCommand.append(ifDo((!isEmpty(PROJECT_VERSION) || MVN_REMOVE_SNAPSHOT), CMD_MVN_VERSION_XX));
         mvnCommand.append(ifDo(PROJECT_VERSION, XX_CMD_MVN_VERSION + PROJECT_VERSION, format("PROJECT_VERSION [%s]", PROJECT_VERSION)));
         mvnCommand.append(ifDo(MVN_REMOVE_SNAPSHOT, XX_CMD_MVN_SNAPSHOT, "REMOVE_SNAPSHOT"));
@@ -210,7 +214,7 @@ public class Ci {
     private String prepareMavenProfileParam() {
         if (MVN_PROFILES) {
             LOG.debug("Read maven profiles");
-            final String command = "mvn help:all-profiles | grep \"Profile Id\" | cut -d' ' -f 5 | xargs | tr ' ' ','";
+            final String command = "mvn help:all-profiles | grep \"Profile Id\" | cut -d' ' -f 5 | xargs | tr ' ' ',' | tail -n 1";
             final String mvnProfiles = newTerminal().timeoutMs(-1).execute(command).consoleInfo();
             LOG.info(format("Found maven profiles [%s]", mvnProfiles.trim()));
             return isEmpty(mvnProfiles) ? "" : "--activate-profiles=" + mvnProfiles.trim();
