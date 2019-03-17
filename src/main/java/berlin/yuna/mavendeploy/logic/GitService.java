@@ -26,7 +26,14 @@ public class GitService {
     }
 
     public String getLastGitTag() {
-        return terminal.execute("git fetch --tags --force; git describe --tag --always --abbrev=0").consoleInfo().trim();
+        final String tag;
+        try {
+            terminal.execute("git fetch --tags --force");
+        } catch (Exception ignored) {
+        } finally {
+            tag = terminal.execute("git describe --tag --always --abbrev=0").consoleInfo().trim();
+        }
+        return tag;
     }
 
     public String getLastRefLog(final int commitNumber) {
