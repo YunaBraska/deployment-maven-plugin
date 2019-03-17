@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_CLEAN;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_CLEAN_CACHE;
@@ -19,6 +20,7 @@ import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_GPG_SIGN_ALT_
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_GPG_SIGN_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_JAVADOC;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_REPORT;
+import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SETTINGS_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SKIP_TEST;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SOURCE;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SURFIRE_XX;
@@ -65,9 +67,11 @@ public class Ci {
     private boolean MVN_TAG_BREAK = false;
     private boolean MVN_REPORT = false;
     private boolean MVN_RELEASE = false;
+    private boolean MVN_CREATE_SETTINGS = false;
     private boolean MVN_REMOVE_SNAPSHOT = false;
 
     private String MVN_DEPLOY_ID = null;
+    private String MVN_COMMIT_MSG = null;
     private String SEMANTIC_FORMAT = null;
 //    private String SEMANTIC_FORMAT = "\\.::release::feature::bugfix|hotfix::custom";
 
@@ -98,9 +102,11 @@ public class Ci {
         MVN_SKIP_TEST = getBoolean(clr, "SKIP_TEST", MVN_SKIP_TEST);
         MVN_REPORT = getBoolean(clr, "REPORT", MVN_REPORT);
         MVN_REMOVE_SNAPSHOT = getBoolean(clr, "REMOVE_SNAPSHOT", MVN_REMOVE_SNAPSHOT);
+        MVN_CREATE_SETTINGS = !isEmpty(clr.getValue("S_SERVER"));
 
         //DEOPLY (Nexus only currently)
         MVN_DEPLOY_ID = getString(clr, "DEPLOY_ID", MVN_DEPLOY_ID);
+        MVN_COMMIT_MSG = getString(clr, "MVN_COMMIT_MSG", MVN_COMMIT_MSG);
 
         //GPG
         GPG_PASS = getString(clr, "GPG_PASS", GPG_PASS);
@@ -125,12 +131,27 @@ public class Ci {
         return branchName == null ? gitService.findOriginalBranchName(1) : branchName;
     }
 
+    public String prepareCommitMessage() {
+        if (!isEmpty(MVN_COMMIT_MSG)) {
+            return MVN_COMMIT_MSG;
+        }
+        return format("[%s]", getProjectVersion())
+                + format("[%s]", getBranchName())
+                + ifDo(MVN_TAG || MVN_TAG_BREAK, "[TAG]")
+                + ifDo(MVN_UPDATE_MAJOR || MVN_UPDATE_MINOR, "[UPDATE]");
+    }
+
+    public boolean allowCommitMessage() {
+        return !"false".equalsIgnoreCase(MVN_COMMIT_MSG);
+    }
+
     public String prepareMaven() {
         final StringBuilder mvnCommand = new StringBuilder();
         mvnCommand.append("mvn").append(" ");
         mvnCommand.append(ifDo(MVN_CLEAN_CACHE, CMD_MVN_CLEAN_CACHE, "CLEAN_CACHE"));
         mvnCommand.append(ifDo(MVN_CLEAN, "clean", "CLEAN"));
         mvnCommand.append(isEmpty(MVN_DEPLOY_ID) ? "verify" : "deploy").append(" ");
+        mvnCommand.append(ifDo(MVN_CREATE_SETTINGS, CMD_MVN_SETTINGS_XX + buildSettings(clr), "SKIP_TEST"));
         mvnCommand.append(ifDo(MVN_SKIP_TEST, CMD_MVN_SKIP_TEST, "SKIP_TEST"));
         mvnCommand.append(ifDo(MVN_CLEAN, CMD_MVN_CLEAN));
         mvnCommand.append(ifDo(MVN_UPDATE_MINOR, CMD_MVN_UPDATE_MINOR, "UPDATE_MINOR"));
@@ -150,16 +171,29 @@ public class Ci {
         mvnCommand.append(ifDo(ENCODING, "-Dproject.encoding=" + ENCODING));
         mvnCommand.append(ifDo(JAVA_VERSION, "-Dmaven.compiler.source=" + JAVA_VERSION, "JAVA_VERSION"));
         mvnCommand.append(ifDo(JAVA_VERSION, "-Dmaven.compiler.target=" + JAVA_VERSION));
-        mvnCommand.append(ifDo(MVN_PROFILES, prepareMavenProfileParam(), "PROFILES"));
         mvnCommand.append(ifDo(!MVN_SKIP_TEST, prepareSurFire(), "SKIP_TEST"));
         mvnCommand.append(ifDo(!MVN_SKIP_TEST, prepareFailSafe()));
+        mvnCommand.append(ifDo(MVN_PROFILES, prepareMavenProfileParam(), "PROFILES"));
         mvnCommand.append(ifDo(MVN_REPORT, CMD_MVN_REPORT, "REPORT"));
-        mvnCommand.append(ifDo((!isEmpty(PROJECT_VERSION) || MVN_REMOVE_SNAPSHOT || MVN_REPORT), "-DgenerateBackupPoms=false "));
+        mvnCommand.append(ifDo((!isEmpty(PROJECT_VERSION) || MVN_REMOVE_SNAPSHOT || MVN_REPORT), "-DgenerateBackupPoms=false"));
 
         if (!isEmpty(GPG_PASS_ALT)) {
             new GpgUtil(LOG).downloadMavenGpgIfNotExists(PROJECT_DIR);
         }
         return mvnCommand.toString().trim();
+    }
+
+    private String buildSettings(final CommandLineReader clr) {
+        final SettingsXmlBuilder settingsBuilder = new SettingsXmlBuilder();
+        final List<String> serverList = clr.getValues("S_SERVER");
+        for (int i = 0; i < serverList.size(); i++) {
+            settingsBuilder.addServer(
+                    serverList.get(i),
+                    clr.getValue(i, "S_USERNAME"),
+                    clr.getValue(i, "S_PASSWORD")
+            );
+        }
+        return settingsBuilder.create().getAbsolutePath();
     }
 
     public CommandLineReader getCommandLineReader() {
@@ -242,7 +276,7 @@ public class Ci {
 
     private String ifDo(final boolean trigger, final String arg, final String description) {
         LOG.debug(format("[%s] [%s]", trigger, description));
-        return trigger ? arg + " " : "";
+        return trigger && !isEmpty(arg) ? arg + " " : "";
     }
 
     private String getString(final CommandLineReader clr, final String key, final String fallback) {

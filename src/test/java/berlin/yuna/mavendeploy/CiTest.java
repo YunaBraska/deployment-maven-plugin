@@ -29,7 +29,6 @@ import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.not;
-import static org.hamcrest.CoreMatchers.nullValue;
 import static org.hamcrest.MatcherAssert.assertThat;
 
 public class CiTest {
@@ -49,7 +48,7 @@ public class CiTest {
         assertThat(mavenCommand, containsString(CMD_MVN_CLEAN_CACHE));
         assertThat(mavenCommand, containsString(CMD_MVN_UPDATE_MINOR));
     }
-    
+
     @Test
     public void prepareMaven_WithAllFalse_shouldGetMinimalCommand() {
         final String args = " --PROJECT_DIR=" + WORK_DIR
@@ -58,7 +57,7 @@ public class CiTest {
                 + " --COMMIT=false"
                 + " --SOURCE=false";
         assertThat(new Ci(new SystemStreamLog(), args).prepareMaven(),
-                   is(equalTo("mvn verify -Dmaven.test.skip=true")));
+                is(equalTo("mvn verify -Dmaven.test.skip=true")));
     }
 
     @Test
@@ -84,7 +83,14 @@ public class CiTest {
                 + " --GPG_PASS=${gppPassword-1}"
                 + " --GPG_PASS_ALT=${gppPassword-2}"
                 + " --DEPLOY_ID=nexus"
-                + " --PROJECT_DIR=/Users/yunamorgenstern/Documents/projects/system-util";
+                + " --PROJECT_DIR=/Users/yunamorgenstern/Documents/projects/system-util"
+                + " --S_SERVER=server-1"
+                + " --S_USERNAME=server-1-user"
+                + " --S_PASSWORD=server-1-pass"
+                + " --S_SERVER=server-2"
+                + " --S_USERNAME=server-2-user"
+                + " --S_PASSWORD=server-2-pass"
+                + " --S_SERVER=server-3";
 
         final Ci ci = new Ci(new SystemStreamLog(), args);
         final String mavenCommand = ci.prepareMaven();
@@ -105,7 +111,7 @@ public class CiTest {
         assertThat(mavenCommand, containsString(CMD_MVN_VERSION_XX));
         assertThat(mavenCommand, containsString(XX_CMD_MVN_VERSION));
         assertThat(mavenCommand, containsString(XX_CMD_MVN_SNAPSHOT));
-        assertThat(mavenCommand, not(containsString( "3.2.1.2.3")));
+        assertThat(mavenCommand, not(containsString("3.2.1.2.3")));
         assertThat(mavenCommand, containsString(CMD_MVN_VERSION_XX));
         assertThat(mavenCommand, containsString(CMD_MVN_GPG_SIGN_XX + "${gppPassword-1}"));
         assertThat(mavenCommand, containsString(CMD_MVN_GPG_SIGN_ALT_XX + "${gppPassword-2}"));
@@ -118,5 +124,6 @@ public class CiTest {
         assertThat(mavenCommand, containsString(" -Dproject.reporting.outputEncoding=UTF-8"));
         assertThat(mavenCommand, containsString(" -Dmaven.compiler.source=1.8"));
         assertThat(mavenCommand, containsString(" -Dmaven.compiler.target=1.8"));
+        assertThat(mavenCommand, not(containsString("  ")));
     }
 }

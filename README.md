@@ -56,8 +56,14 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 ### Deployment
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
-| DEPLOY_ID           | String  | ''      | (Nexus) Deploys artifacts (id = Settings.xml)                              |
+| DEPLOY_ID           | String  | ''      | (Nexus) Deploys artifacts (server id = Settings.xml)                       |
 | RELEASE             | Boolean | false   | (Nexus) Releases the deployment                                            |
+### Create Settings.xml
+| Parameter           | Type    | Default |  Description                                                               |
+|:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
+| S_SERVER            | String | ''       | server id (multiple possible)                                              |
+| S_USERNAME          | String | ''       | username (multiple possible)                                               |
+| S_PASSWORD          | String | ''       | password (multiple possible)                                               |
 ### Misc
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
@@ -82,7 +88,7 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
 ### TODO
-* [ ] option/param UPDATE_MINOR UPDATE MAJOR
+* [ ] refactoring, javadoc, cleanups
 * [ ] not tag when last commit was tag commit
 * [ ] external settings "--settings "
 * [ ] release process
