@@ -71,6 +71,7 @@ public class Ci {
     private boolean MVN_REMOVE_SNAPSHOT = false;
 
     private String MVN_DEPLOY_ID = null;
+    private String MVN_COMMIT_MSG = null;
     private String SEMANTIC_FORMAT = null;
 //    private String SEMANTIC_FORMAT = "\\.::release::feature::bugfix|hotfix::custom";
 
@@ -105,6 +106,7 @@ public class Ci {
 
         //DEOPLY (Nexus only currently)
         MVN_DEPLOY_ID = getString(clr, "DEPLOY_ID", MVN_DEPLOY_ID);
+        MVN_COMMIT_MSG = getString(clr, "MVN_COMMIT_MSG", MVN_COMMIT_MSG);
 
         //GPG
         GPG_PASS = getString(clr, "GPG_PASS", GPG_PASS);
@@ -127,6 +129,20 @@ public class Ci {
     public String getBranchName() {
         final String branchName = semanticService.getBranchName();
         return branchName == null ? gitService.findOriginalBranchName(1) : branchName;
+    }
+
+    public String prepareCommitMessage() {
+        if (!isEmpty(MVN_COMMIT_MSG)) {
+            return MVN_COMMIT_MSG;
+        }
+        return format("[%s]", getProjectVersion())
+                + format("[%s]", getBranchName())
+                + ifDo(MVN_TAG || MVN_TAG_BREAK, "[TAG]")
+                + ifDo(MVN_UPDATE_MAJOR || MVN_UPDATE_MINOR, "[UPDATE]");
+    }
+
+    public boolean allowCommitMessage() {
+        return !"false".equalsIgnoreCase(MVN_COMMIT_MSG);
     }
 
     public String prepareMaven() {
@@ -159,7 +175,7 @@ public class Ci {
         mvnCommand.append(ifDo(!MVN_SKIP_TEST, prepareFailSafe()));
         mvnCommand.append(ifDo(MVN_PROFILES, prepareMavenProfileParam(), "PROFILES"));
         mvnCommand.append(ifDo(MVN_REPORT, CMD_MVN_REPORT, "REPORT"));
-        mvnCommand.append(ifDo((!isEmpty(PROJECT_VERSION) || MVN_REMOVE_SNAPSHOT || MVN_REPORT), "-DgenerateBackupPoms=false "));
+        mvnCommand.append(ifDo((!isEmpty(PROJECT_VERSION) || MVN_REMOVE_SNAPSHOT || MVN_REPORT), "-DgenerateBackupPoms=false"));
 
         if (!isEmpty(GPG_PASS_ALT)) {
             new GpgUtil(LOG).downloadMavenGpgIfNotExists(PROJECT_DIR);

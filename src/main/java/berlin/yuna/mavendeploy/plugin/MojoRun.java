@@ -42,8 +42,8 @@ public class MojoRun extends AbstractMojo {
                 .execute(mavenCommand)
                 .status();
 
-        if (!"false".equalsIgnoreCase(ci.getCommandLineReader().getValue("COMMIT"))) {
-            final String commitMessage = prepareCommitMessage(ci);
+        if (ci.allowCommitMessage()) {
+            final String commitMessage = ci.prepareCommitMessage();
             new Terminal().dir(basedir).execute("mvn scm:checkin -Dmessage='" + commitMessage + "'");
         }
 
@@ -55,14 +55,6 @@ public class MojoRun extends AbstractMojo {
         if (status != 0) {
             throw new RuntimeException(format("Status [%s]", status));
         }
-    }
-
-    private String prepareCommitMessage(final Ci ci) {
-        String message = ci.getCommandLineReader().getValue("COMMIT");
-        if (message == null || message.isEmpty()) {
-            message = format("[%s] [%s] [%s]", ci.getProjectVersion(), ci.getBranchName(), "update");
-        }
-        return message;
     }
 
     public void setBasedir(final File basedir) {
