@@ -47,6 +47,7 @@ public class MojoRun extends AbstractMojo {
             new Terminal().dir(basedir).execute("mvn scm:checkin -Dmessage='" + commitMessage + "'");
         }
 
+        //FIXME: finally
         if (gitStash) {
             log.warn("Load uncommitted git changes");
             gitService.gitLoadStash();

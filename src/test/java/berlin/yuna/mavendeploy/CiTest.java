@@ -124,5 +124,6 @@ public class CiTest {
         assertThat(mavenCommand, containsString(" -Dproject.reporting.outputEncoding=UTF-8"));
         assertThat(mavenCommand, containsString(" -Dmaven.compiler.source=1.8"));
         assertThat(mavenCommand, containsString(" -Dmaven.compiler.target=1.8"));
+        assertThat(mavenCommand, not(containsString("  ")));
     }
 }

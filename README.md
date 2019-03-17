@@ -88,6 +88,7 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
 ### TODO
+* [ ] refactoring, javadoc, cleanups
 * [ ] not tag when last commit was tag commit
 * [ ] external settings "--settings "
 * [ ] release process
