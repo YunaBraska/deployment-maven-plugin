@@ -11,6 +11,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_CLEAN;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_CLEAN_CACHE;
@@ -131,6 +132,7 @@ public class Ci {
         mvnCommand.append(ifDo(MVN_CLEAN_CACHE, CMD_MVN_CLEAN_CACHE, "CLEAN_CACHE"));
         mvnCommand.append(ifDo(MVN_CLEAN, "clean", "CLEAN"));
         mvnCommand.append(isEmpty(MVN_DEPLOY_ID) ? "verify" : "deploy").append(" ");
+        mvnCommand.append(isEmpty(clr.getValue("S_SERVER")) ? "" : "--settings=" + buildSettings(clr)).append(" ");
         mvnCommand.append(ifDo(MVN_SKIP_TEST, CMD_MVN_SKIP_TEST, "SKIP_TEST"));
         mvnCommand.append(ifDo(MVN_CLEAN, CMD_MVN_CLEAN));
         mvnCommand.append(ifDo(MVN_UPDATE_MINOR, CMD_MVN_UPDATE_MINOR, "UPDATE_MINOR"));
@@ -160,6 +162,19 @@ public class Ci {
             new GpgUtil(LOG).downloadMavenGpgIfNotExists(PROJECT_DIR);
         }
         return mvnCommand.toString().trim();
+    }
+
+    private String buildSettings(final CommandLineReader clr) {
+        final SettingsXmlBuilder settingsBuilder = new SettingsXmlBuilder();
+        final List<String> serverList = clr.getValues("S_SERVER");
+        for (int i = 0; i < serverList.size(); i++) {
+            settingsBuilder.addServer(
+                    serverList.get(i),
+                    clr.getValue(i, "S_USERNAME"),
+                    clr.getValue(i, "S_PASSWORD")
+            );
+        }
+        return settingsBuilder.create().getAbsolutePath();
     }
 
     public CommandLineReader getCommandLineReader() {
