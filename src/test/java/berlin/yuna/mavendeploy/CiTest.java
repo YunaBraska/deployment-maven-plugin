@@ -84,7 +84,6 @@ public class CiTest {
                 + " --RELEASE=true"
                 + " --NEXUS_BASE_URL=https://my.nexus.com"
                 + " --NEXUS_DEPLOY_URL=https://my.nexus.com/service/local/staging/deploy"
-                + " --PROJECT_DIR=/Users/yunamorgenstern/Documents/projects/system-util"
                 + " --S_SERVER=server-1"
                 + " --S_USERNAME=server-1-user"
                 + " --S_PASSWORD=server-1-pass"
@@ -125,5 +124,24 @@ public class CiTest {
         assertThat(mavenCommand, containsString(" -Dmaven.compiler.source=1.8"));
         assertThat(mavenCommand, containsString(" -Dmaven.compiler.target=1.8"));
         assertThat(mavenCommand, not(containsString("  ")));
+    }
+
+    @Test
+    public void prepareNexusDeploy_shouldBeSuccessful() {
+        final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
+                + " --PROFILES=false"
+                + " --S_SERVER=nexus"
+                + " --S_USERNAME=${username}"
+                + " --S_PASSWORD=${password}"
+                + " --DEPLOY_ID=nexus"
+                + " --RELEASE=false"
+                + " --NEXUS_BASE_URL=https://my.nexus.com"
+                + " --NEXUS_DEPLOY_URL=https://my.nexus.com/service/local/staging/deploy";
+
+
+        String dasd = "mvn deploy --settings=/var/folders/vc/q75r2bs126538_rxk4h4v_180000gn/T/settings_3847575738448535241.xml -Dmaven.test.skip=true javadoc:jar -Dnodeprecatedlist -Dquiet=true source:jar-no-fork org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:deploy -DaltDeploymentRepository=nexus::default::https://my.nexus.com/service/local/staging/deploy -DnexusUrl=https://my.nexus.com -DserverId=nexus -DautoReleaseAfterClose=false";
+        final Ci ci = new Ci(new SystemStreamLog(), args);
+        final String mavenCommand = ci.prepareMaven();
+        assertThat(mavenCommand, containsString(CMD_MVN_CLEAN));
     }
 }

@@ -48,8 +48,8 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
 | CLEAN               | Boolean | false   | cleans target and resolves dependencies                                    |
 | CLEAN_CACHE         | Boolean | false   | Purges local maven repository cache                                        |
-| JAVA_DOC            | Boolean | true    | Creates java doc (javadoc.jar) if its not a pom artifact                   |
-| SOURCE              | Boolean | true    | Creates java sources (sources.jar) if its not a pom artifact               |
+| JAVA_DOC            | Boolean | false   | Creates java doc (javadoc.jar) if its not a pom artifact                   |
+| SOURCE              | Boolean | false   | Creates java sources (sources.jar) if its not a pom artifact               |
 | PROFILES            | Boolean | true    | Uses all available profiles                                                |
 | GPG_PASS            | String  | ''      | Signs artifacts (.asc) with GPG 2.1                                        |
 | GPG_PASS_ALT        | String  | ''      | Signs artifacts (.asc) with GPG 1                                          |

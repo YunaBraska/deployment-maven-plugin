@@ -58,9 +58,9 @@ public class Ci {
     private boolean MVN_SKIP_TEST = true;
     private boolean MVN_UPDATE_MINOR = false;
     private boolean MVN_UPDATE_MAJOR = false;
-    private boolean MVN_JAVA_DOC = true;
+    private boolean MVN_JAVA_DOC = false;
     private boolean MVN_PROFILES = true;
-    private boolean MVN_SOURCE = true;
+    private boolean MVN_SOURCE = false;
     private boolean MVN_TAG = false;
     private boolean MVN_TAG_BREAK = false;
     private boolean MVN_REPORT = false;
@@ -220,7 +220,7 @@ public class Ci {
     }
 
     private String prepareNexusDeployUrl() {
-        return NEXUS_DEPLOY_XX + (MVN_RELEASE ? "release" : "deploy") + " -DaltDeploymentRepository=" + MVN_DEPLOY_ID + "::" + MVN_DEPLOY_LAYOUT + "::" + NEXUS_DEPLOY_URL + " -DnexusUrl=" + NEXUS_BASE_URL + " -DserverId=" + MVN_DEPLOY_ID + " -DautoReleaseAfterClose=" + (MVN_RELEASE ? "true" : "false");
+        return NEXUS_DEPLOY_XX + (MVN_RELEASE ? "release" : "deploy") + " -DaltDeploymentRepository=" + MVN_DEPLOY_ID + "::" + MVN_DEPLOY_LAYOUT + "::" + NEXUS_DEPLOY_URL + " -DnexusUrl=" + NEXUS_BASE_URL + " -DserverId=" + MVN_DEPLOY_ID + (MVN_RELEASE ? "" : " -DautoReleaseAfterClose=false");
     }
 
     private boolean hasNewTag() {
