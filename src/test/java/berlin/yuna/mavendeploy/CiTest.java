@@ -136,12 +136,32 @@ public class CiTest {
                 + " --DEPLOY_ID=nexus"
                 + " --RELEASE=false"
                 + " --NEXUS_BASE_URL=https://my.nexus.com"
-                + " --NEXUS_DEPLOY_URL=https://my.nexus.com/service/local/staging/deploy";
+                + " --NEXUS_DEPLOY_URL=https://my.nexus.com/service/local/staging/deploy/maven2";
 
 
-        String dasd = "mvn deploy --settings=/var/folders/vc/q75r2bs126538_rxk4h4v_180000gn/T/settings_3847575738448535241.xml -Dmaven.test.skip=true javadoc:jar -Dnodeprecatedlist -Dquiet=true source:jar-no-fork org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:deploy -DaltDeploymentRepository=nexus::default::https://my.nexus.com/service/local/staging/deploy -DnexusUrl=https://my.nexus.com -DserverId=nexus -DautoReleaseAfterClose=false";
         final Ci ci = new Ci(new SystemStreamLog(), args);
         final String mavenCommand = ci.prepareMaven();
-        assertThat(mavenCommand, containsString(CMD_MVN_CLEAN));
+        assertThat(mavenCommand, containsString("mvn deploy --settings="));
+        assertThat(mavenCommand, containsString("-Dmaven.test.skip=true org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:deploy -DaltDeploymentRepository=nexus::default::https://my.nexus.com/service/local/staging/deploy/maven2 -DnexusUrl=https://my.nexus.com -DserverId=nexus -DautoReleaseAfterClose=false"));
+    }
+
+    @Test
+    public void prepareNexusRelease_shouldBeSuccessful() {
+        final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
+                + " --PROFILES=false"
+                + " --S_SERVER=nexus"
+                + " --S_USERNAME=${username}"
+                + " --S_PASSWORD=${password}"
+                + " --DEPLOY_ID=nexus"
+                + " --RELEASE=true"
+                + " --NEXUS_BASE_URL=https://my.nexus.com"
+                + " --NEXUS_DEPLOY_URL=https://my.nexus.com/service/local/staging/deploy/maven2";
+
+
+        final Ci ci = new Ci(new SystemStreamLog(), args);
+        final String mavenCommand = ci.prepareMaven();
+        assertThat(mavenCommand, containsString("mvn deploy --settings="));
+        assertThat(mavenCommand, containsString("-Dmaven.test.skip=true org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:release -DaltDeploymentRepository=nexus::default::https://my.nexus.com/service/local/staging/deploy/maven2 -DnexusUrl=https://my.nexus.com -DserverId=nexus"));
+        assertThat(mavenCommand, not(containsString("-DautoReleaseAfterClose=false")));
     }
 }
