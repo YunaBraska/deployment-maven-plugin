@@ -31,9 +31,7 @@ import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_VERSION_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.FILE_MVN_FAILSAFE;
 import static berlin.yuna.mavendeploy.config.MavenCommands.FILE_MVN_SURFIRE;
 import static berlin.yuna.mavendeploy.config.MavenCommands.MVN_DEPLOY_LAYOUT;
-import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_PLUGIN;
-import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_STAGING_URL;
-import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_URL;
+import static berlin.yuna.mavendeploy.config.MavenCommands.NEXUS_DEPLOY_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_SNAPSHOT;
 import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_TAG_MSG;
 import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_VERSION;
@@ -72,45 +70,49 @@ public class Ci {
 
     private String MVN_DEPLOY_ID = null;
     private String MVN_COMMIT_MSG = null;
+    private String NEXUS_BASE_URL = null;
+    private String NEXUS_DEPLOY_URL = null;
     private String SEMANTIC_FORMAT = null;
-//    private String SEMANTIC_FORMAT = "\\.::release::feature::bugfix|hotfix::custom";
 
     private final Log LOG;
 
     public Ci(final Log LOG, final String... args) {
         this.LOG = LOG;
         clr = new CommandLineReader(args == null ? new String[]{""} : args);
-        //Project
-        PROJECT_DIR = getOrElse(clr.getValue("PROJECT_DIR"), PROJECT_DIR);
-        ENCODING = getString(clr, "ENCODING", ENCODING);
+        //Versioning
         PROJECT_VERSION = getString(clr, "PROJECT_VERSION", PROJECT_VERSION);
-        MVN_OPTIONS = getString(clr, "OPTIONS", MVN_OPTIONS);
-        JAVA_VERSION = getString(clr, "JAVA_VERSION", JAVA_VERSION);
         SEMANTIC_FORMAT = getString(clr, "SEMANTIC_FORMAT", SEMANTIC_FORMAT);
-
-        //Boolean
-        MVN_PROFILES = getBoolean(clr, "PROFILES", MVN_PROFILES);
-        MVN_CLEAN = getBoolean(clr, "CLEAN", MVN_CLEAN);
-        MVN_CLEAN_CACHE = getBoolean(clr, "CLEAN_CACHE", MVN_CLEAN_CACHE);
-        MVN_UPDATE_MINOR = getBoolean(clr, "UPDATE_MINOR", MVN_UPDATE_MINOR);
-        MVN_UPDATE_MAJOR = getBoolean(clr, "UPDATE_MAJOR", MVN_UPDATE_MAJOR);
-        MVN_JAVA_DOC = getBoolean(clr, "JAVA_DOC", MVN_JAVA_DOC);
-        MVN_SOURCE = getBoolean(clr, "SOURCE", MVN_SOURCE);
+        MVN_REMOVE_SNAPSHOT = getBoolean(clr, "REMOVE_SNAPSHOT", MVN_REMOVE_SNAPSHOT);
         MVN_TAG = getBoolean(clr, "TAG", MVN_TAG);
         MVN_TAG_BREAK = getBoolean(clr, "TAG_BREAK", MVN_TAG_BREAK);
-        MVN_RELEASE = getBoolean(clr, "RELEASE", MVN_RELEASE);
-        MVN_SKIP_TEST = getBoolean(clr, "SKIP_TEST", MVN_SKIP_TEST);
-        MVN_REPORT = getBoolean(clr, "REPORT", MVN_REPORT);
-        MVN_REMOVE_SNAPSHOT = getBoolean(clr, "REMOVE_SNAPSHOT", MVN_REMOVE_SNAPSHOT);
-        MVN_CREATE_SETTINGS = !isEmpty(clr.getValue("S_SERVER"));
+        MVN_UPDATE_MINOR = getBoolean(clr, "UPDATE_MINOR", MVN_UPDATE_MINOR);
+        MVN_UPDATE_MAJOR = getBoolean(clr, "UPDATE_MAJOR", MVN_UPDATE_MAJOR);
 
-        //DEOPLY (Nexus only currently)
-        MVN_DEPLOY_ID = getString(clr, "DEPLOY_ID", MVN_DEPLOY_ID);
+        PROJECT_DIR = getOrElse(clr.getValue("PROJECT_DIR"), PROJECT_DIR);
+        ENCODING = getString(clr, "ENCODING", ENCODING);
+        MVN_OPTIONS = getString(clr, "OPTIONS", MVN_OPTIONS);
+        JAVA_VERSION = getString(clr, "JAVA_VERSION", JAVA_VERSION);
         MVN_COMMIT_MSG = getString(clr, "MVN_COMMIT_MSG", MVN_COMMIT_MSG);
 
-        //GPG
+        //Building
+        MVN_CLEAN = getBoolean(clr, "CLEAN", MVN_CLEAN);
+        MVN_CLEAN_CACHE = getBoolean(clr, "CLEAN_CACHE", MVN_CLEAN_CACHE);
+        MVN_JAVA_DOC = getBoolean(clr, "JAVA_DOC", MVN_JAVA_DOC);
+        MVN_SOURCE = getBoolean(clr, "SOURCE", MVN_SOURCE);
+        MVN_PROFILES = getBoolean(clr, "PROFILES", MVN_PROFILES);
         GPG_PASS = getString(clr, "GPG_PASS", GPG_PASS);
         GPG_PASS_ALT = getString(clr, "GPG_PASS_ALT", GPG_PASS_ALT);
+
+
+        MVN_SKIP_TEST = getBoolean(clr, "SKIP_TEST", MVN_SKIP_TEST);
+        MVN_REPORT = getBoolean(clr, "REPORT", MVN_REPORT);
+        MVN_CREATE_SETTINGS = !isEmpty(clr.getValue("S_SERVER")) || MVN_CREATE_SETTINGS;
+
+        //DEPLOY (Nexus only currently)
+        MVN_DEPLOY_ID = getString(clr, "DEPLOY_ID", MVN_DEPLOY_ID);
+        MVN_RELEASE = getBoolean(clr, "RELEASE", MVN_RELEASE);
+        NEXUS_BASE_URL = getString(clr, "NEXUS_BASE_URL", NEXUS_BASE_URL);
+        NEXUS_DEPLOY_URL = getString(clr, "NEXUS_DEPLOY_URL", NEXUS_DEPLOY_URL);
 
         pom = parsePomFile(PROJECT_DIR);
         IS_POM = isPomArtifact(pom);
@@ -196,10 +198,6 @@ public class Ci {
         return settingsBuilder.create().getAbsolutePath();
     }
 
-    public CommandLineReader getCommandLineReader() {
-        return clr;
-    }
-
     private Model parsePomFile(final File projectDir) {
         try {
             return new MavenXpp3Reader().read(new FileReader(new File(projectDir, "pom.xml")));
@@ -222,7 +220,7 @@ public class Ci {
     }
 
     private String prepareNexusDeployUrl() {
-        return SONATYPE_PLUGIN + " -DaltDeploymentRepository=" + MVN_DEPLOY_ID + "::" + MVN_DEPLOY_LAYOUT + "::" + SONATYPE_STAGING_URL + " -DnexusUrl=" + SONATYPE_URL + " -DserverId=" + MVN_DEPLOY_ID + " -DautoReleaseAfterClose=false";
+        return NEXUS_DEPLOY_XX + (MVN_RELEASE ? "release" : "deploy") + " -DaltDeploymentRepository=" + MVN_DEPLOY_ID + "::" + MVN_DEPLOY_LAYOUT + "::" + NEXUS_DEPLOY_URL + " -DnexusUrl=" + NEXUS_BASE_URL + " -DserverId=" + MVN_DEPLOY_ID + " -DautoReleaseAfterClose=" + (MVN_RELEASE ? "true" : "false");
     }
 
     private boolean hasNewTag() {

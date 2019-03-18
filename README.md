@@ -58,6 +58,8 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
 | DEPLOY_ID           | String  | ''      | (Nexus) Deploys artifacts (server id = Settings.xml)                       |
 | RELEASE             | Boolean | false   | (Nexus) Releases the deployment                                            |
+| NEXUS_BASE_URL      | String  | ''      | (Nexus) The nexus base url (e.g https://my.nexus.com)                      |
+| NEXUS_DEPLOY_URL    | String  | ''      | (Nexus) Staging url (e.g https://my.nexus.com/service/local/staging/deploy)|
 ### Create Settings.xml
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
@@ -90,14 +92,12 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 ### TODO
 * [ ] refactoring, javadoc, cleanups
 * [ ] not tag when last commit was tag commit
-* [ ] external settings "--settings "
-* [ ] release process
 * [ ] set always autoReleaseAfterClose=false and add "mvn nexus-staging:release" to release process
-* [ ] release needs a new version to be set manually
 * [ ] set scm url if not exists or changed
 * [ ] reset readme urls, description and title
 * [ ] Deploy dynamic to nexus
 * [ ] Deploy dynamic to artifactory
+* [ ] try to use JGit for git service
 * [ ] try to use https://github.com/TimMoore/mojo-executor
 
 * [ ] find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin

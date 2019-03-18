@@ -19,9 +19,7 @@ import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_TAG_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_UPDATE_MAJOR;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_UPDATE_MINOR;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_VERSION_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_PLUGIN;
-import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_STAGING_URL;
-import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_URL;
+import static berlin.yuna.mavendeploy.config.MavenCommands.NEXUS_DEPLOY_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_SNAPSHOT;
 import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_TAG_MSG;
 import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_VERSION;
@@ -83,6 +81,9 @@ public class CiTest {
                 + " --GPG_PASS=${gppPassword-1}"
                 + " --GPG_PASS_ALT=${gppPassword-2}"
                 + " --DEPLOY_ID=nexus"
+                + " --RELEASE=false"
+                + " --NEXUS_BASE_URL=https://my.nexus.com"
+                + " --NEXUS_DEPLOY_URL=https://my.nexus.com/service/local/staging/deploy"
                 + " --PROJECT_DIR=/Users/yunamorgenstern/Documents/projects/system-util"
                 + " --S_SERVER=server-1"
                 + " --S_USERNAME=server-1-user"
@@ -105,9 +106,8 @@ public class CiTest {
         assertThat(mavenCommand, containsString(CMD_MVN_SOURCE));
         assertThat(mavenCommand, containsString(CMD_MVN_TAG_XX));
         assertThat(mavenCommand, containsString(XX_CMD_MVN_TAG_MSG));
-        assertThat(mavenCommand, containsString(SONATYPE_URL));
-        assertThat(mavenCommand, containsString(SONATYPE_PLUGIN));
-        assertThat(mavenCommand, containsString(SONATYPE_STAGING_URL));
+        assertThat(mavenCommand, containsString(NEXUS_DEPLOY_XX + "release"));
+        assertThat(mavenCommand, containsString("https://my.nexus.com/service/local/staging/deploy"));
         assertThat(mavenCommand, containsString(CMD_MVN_VERSION_XX));
         assertThat(mavenCommand, containsString(XX_CMD_MVN_VERSION));
         assertThat(mavenCommand, containsString(XX_CMD_MVN_SNAPSHOT));
