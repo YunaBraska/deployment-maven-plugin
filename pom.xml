@@ -5,7 +5,7 @@
 
     <groupId>berlin.yuna</groupId>
     <artifactId>deployment-maven-plugin</artifactId>
-    <version>0.0.18</version>
+    <version>0.0.19</version>
     <packaging>maven-plugin</packaging>
 
     <name>${project.artifactId}</name>
@@ -207,7 +207,7 @@
             <plugin>
                 <groupId>berlin.yuna</groupId>
                 <artifactId>deployment-maven-plugin</artifactId>
-                <version>0.0.18</version>
+                <version>0.0.19</version>
             </plugin>
         </plugins>
     </build>
