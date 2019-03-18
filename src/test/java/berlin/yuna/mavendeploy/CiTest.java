@@ -81,7 +81,7 @@ public class CiTest {
                 + " --GPG_PASS=${gppPassword-1}"
                 + " --GPG_PASS_ALT=${gppPassword-2}"
                 + " --DEPLOY_ID=nexus"
-                + " --RELEASE=false"
+                + " --RELEASE=true"
                 + " --NEXUS_BASE_URL=https://my.nexus.com"
                 + " --NEXUS_DEPLOY_URL=https://my.nexus.com/service/local/staging/deploy"
                 + " --PROJECT_DIR=/Users/yunamorgenstern/Documents/projects/system-util"
