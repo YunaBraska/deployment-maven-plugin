@@ -189,9 +189,7 @@ public class Ci {
     }
 
     private String getJavaDocVersion() {
-        final String javaVersion = isEmpty(JAVA_VERSION) ? "8" : JAVA_VERSION.split("\\.")[1];
-        LOG.info(format("JavaDoc version [%s]", javaVersion));
-        return javaVersion;
+        return isEmpty(JAVA_VERSION) ? "8" : JAVA_VERSION.split("\\.")[1];
     }
 
     private String buildSettings(final CommandLineReader clr) {

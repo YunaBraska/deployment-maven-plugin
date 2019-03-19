@@ -164,4 +164,46 @@ public class CiTest {
         assertThat(mavenCommand, containsString("-Dmaven.test.skip=true org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:release -DaltDeploymentRepository=nexus::default::https://my.nexus.com/service/local/staging/deploy/maven2 -DnexusUrl=https://my.nexus.com -DserverId=nexus"));
         assertThat(mavenCommand, not(containsString("-DautoReleaseAfterClose=false")));
     }
+
+    @Test
+    public void setJavaDocDefaultVersion_shouldBeSuccessful() {
+        final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
+                + " --SOURCE"
+                + " --PROFILES=false";
+        final Ci ci = new Ci(new SystemStreamLog(), args);
+        final String mavenCommand = ci.prepareMaven();
+        assertThat(mavenCommand, is(equalTo("mvn verify -Dmaven.test.skip=true source:jar-no-fork -D--source=8")));
+    }
+
+
+    @Test
+    public void setJavaDocCustomVersion_shouldBeSuccessful() {
+        final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
+                + " --SOURCE"
+                + " --JAVA_VERSION=1.11"
+                + " --PROFILES=false";
+        final Ci ci = new Ci(new SystemStreamLog(), args);
+        final String mavenCommand = ci.prepareMaven();
+        assertThat(mavenCommand, is(equalTo("mvn verify -Dmaven.test.skip=true source:jar-no-fork -D--source=11 -Dmaven.compiler.source=1.11 -Dmaven.compiler.target=1.11")));
+    }
+
+    @Test
+    public void setCustomJavaVersion_shouldBeSuccessful() {
+        final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
+                + " --JAVA_VERSION=1.11"
+                + " --PROFILES=false";
+        final Ci ci = new Ci(new SystemStreamLog(), args);
+        final String mavenCommand = ci.prepareMaven();
+        assertThat(mavenCommand, is(equalTo("mvn verify -Dmaven.test.skip=true -Dmaven.compiler.source=1.11 -Dmaven.compiler.target=1.11")));
+    }
+
+    @Test
+    public void setCustomEncoding_shouldBeSuccessful() {
+        final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
+                + " --ENCODING=UTF-16"
+                + " --PROFILES=false";
+        final Ci ci = new Ci(new SystemStreamLog(), args);
+        final String mavenCommand = ci.prepareMaven();
+        assertThat(mavenCommand, is(equalTo("mvn verify -Dmaven.test.skip=true -Dproject.build.sourceEncoding=UTF-16 -Dproject.reporting.outputEncoding=UTF-16 -Dproject.encoding=UTF-16")));
+    }
 }
