@@ -160,15 +160,12 @@ public class Ci {
         mvnCommand.append(ifDo(MVN_UPDATE_MAJOR, CMD_MVN_UPDATE_MAJOR, "UPDATE_MAJOR"));
         mvnCommand.append(ifDo((!isEmpty(PROJECT_VERSION) || MVN_REMOVE_SNAPSHOT), CMD_MVN_VERSION_XX));
         mvnCommand.append(ifDo(PROJECT_VERSION,
-                               XX_CMD_MVN_VERSION + PROJECT_VERSION,
-                               format("PROJECT_VERSION [%s]", PROJECT_VERSION)));
+                XX_CMD_MVN_VERSION + PROJECT_VERSION, format("PROJECT_VERSION [%s]", PROJECT_VERSION)));
         mvnCommand.append(ifDo(MVN_REMOVE_SNAPSHOT, XX_CMD_MVN_SNAPSHOT, "REMOVE_SNAPSHOT"));
         mvnCommand.append(ifDo(!IS_POM && MVN_JAVA_DOC, CMD_MVN_JAVADOC, "JAVA_DOC"));
-        mvnCommand.append(ifDo(!IS_POM && MVN_SOURCE, CMD_MVN_SOURCE_XX
-                + (isEmpty(JAVA_VERSION) ? "8" : JAVA_VERSION.split("\\.")[1]), "SOURCE"));
+        mvnCommand.append(ifDo(!IS_POM && MVN_SOURCE, CMD_MVN_SOURCE_XX + getJavaDocVersion(), "SOURCE"));
         mvnCommand.append(ifDo(hasNewTag(),
-                               CMD_MVN_TAG_XX + PROJECT_VERSION + " " + XX_CMD_MVN_TAG_MSG + getBranchName(),
-                               "TAG"));
+                CMD_MVN_TAG_XX + PROJECT_VERSION + " " + XX_CMD_MVN_TAG_MSG + getBranchName(), "TAG"));
         mvnCommand.append(ifDo(GPG_PASS, CMD_MVN_GPG_SIGN_XX + GPG_PASS, "GPG_PASS"));
         mvnCommand.append(ifDo(GPG_PASS_ALT, CMD_MVN_GPG_SIGN_ALT_XX + GPG_PASS_ALT, "GPG_PASS_ALT"));
         mvnCommand.append(ifDo(MVN_DEPLOY_ID, prepareNexusDeployUrl(), "DEPLOY_ID"));
@@ -183,12 +180,16 @@ public class Ci {
         mvnCommand.append(ifDo(MVN_PROFILES, prepareMavenProfileParam(), "PROFILES"));
         mvnCommand.append(ifDo(MVN_REPORT, CMD_MVN_REPORT, "REPORT"));
         mvnCommand.append(ifDo((!isEmpty(PROJECT_VERSION) || MVN_REMOVE_SNAPSHOT || MVN_REPORT),
-                               "-DgenerateBackupPoms=false"));
+                "-DgenerateBackupPoms=false"));
 
         if (!isEmpty(GPG_PASS_ALT)) {
             new GpgUtil(LOG).downloadMavenGpgIfNotExists(PROJECT_DIR);
         }
         return mvnCommand.toString().trim();
+    }
+
+    private String getJavaDocVersion() {
+        return isEmpty(JAVA_VERSION) ? "8" : JAVA_VERSION.split("\\.")[1];
     }
 
     private String buildSettings(final CommandLineReader clr) {
