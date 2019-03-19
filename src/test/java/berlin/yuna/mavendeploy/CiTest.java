@@ -13,7 +13,7 @@ import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_GPG_SIGN_ALT_
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_GPG_SIGN_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_JAVADOC;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_REPORT;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SOURCE;
+import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SOURCE_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SURFIRE_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_TAG_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_UPDATE_MAJOR;
@@ -102,7 +102,7 @@ public class CiTest {
         assertThat(mavenCommand, containsString(CMD_MVN_UPDATE_MINOR));
         assertThat(mavenCommand, containsString(CMD_MVN_CLEAN_CACHE));
         assertThat(mavenCommand, containsString(CMD_MVN_JAVADOC));
-        assertThat(mavenCommand, containsString(CMD_MVN_SOURCE));
+        assertThat(mavenCommand, containsString(CMD_MVN_SOURCE_XX));
         assertThat(mavenCommand, containsString(CMD_MVN_TAG_XX));
         assertThat(mavenCommand, containsString(XX_CMD_MVN_TAG_MSG));
         assertThat(mavenCommand, containsString(NEXUS_DEPLOY_XX + "release"));
