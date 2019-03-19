@@ -279,7 +279,7 @@ public class Ci {
     }
 
     private String ifDo(final boolean trigger, final String arg, final String description) {
-        LOG.debug(format("[%s] [%s]", trigger, description));
+        LOG.info(format("[%s] [%s]", trigger, description));
         return trigger && !isEmpty(arg) ? arg + " " : "";
     }
 
