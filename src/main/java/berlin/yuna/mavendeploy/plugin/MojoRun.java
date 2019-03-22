@@ -85,6 +85,9 @@ public class MojoRun extends AbstractMojo {
         final GitService gitService = new GitService(log, basedir);
         final boolean gitStash = gitService.gitHasChanges();
 
+        log.debug("Howdy [" + TEST + "]");
+        log.info("Howdy [" + TEST + "]");
+        log.warn("Howdy [" + TEST + "]");
         log.error("Howdy [" + TEST + "]");
         if (TEST) {
             log.error("Howdy");
