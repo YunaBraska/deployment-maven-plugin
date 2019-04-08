@@ -46,8 +46,8 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 ### Building
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
-| CLEAN               | Boolean | false   | cleans target and resolves dependencies                                    |
-| CLEAN_CACHE         | Boolean | false   | Purges local maven repository cache                                        |
+| clean               | Boolean | false   | cleans target and resolves dependencies                                    |
+| clean.cache         | Boolean | false   | Purges local maven repository cache                                        |
 | JAVA_DOC            | Boolean | false   | Creates java doc (javadoc.jar) if its not a pom artifact                   |
 | SOURCE              | Boolean | false   | Creates java sources (sources.jar) if its not a pom artifact               |
 | PROFILES            | Boolean | true    | Uses all available profiles                                                |
@@ -63,16 +63,16 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 ### Create Settings.xml
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
-| S_SERVER            | String | ''       | server id (multiple possible)                                              |
-| S_USERNAME          | String | ''       | username (multiple possible)                                               |
-| S_PASSWORD          | String | ''       | password (multiple possible)                                               |
+| Server              | String | ''       | server id (multiple possible && caseInsensitive)                           |
+| Username            | String | ''       | username (multiple possible && caseInsensitive)                            |
+| Password            | String | ''       | password (multiple possible && caseInsensitive)                            |
 ### Misc
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
 | REPORT              | Boolean | false   | Generates report about version updates                                     |
 | OPTIONS             | String  | ''      | Adds additional maven options                                              |
 | ENCODING            | String  | ''      | Sets compiler encoding                                                     |
-| SKIP_TEST           | Boolean | true    | skips all tests                                                            |
+| test.skip           | Boolean | true    | same as "maven.test.skip"                                                  |
 | JAVA_VERSION        | String  | ''      | Sets compiler java version                                                 |
 
 ### Requirements

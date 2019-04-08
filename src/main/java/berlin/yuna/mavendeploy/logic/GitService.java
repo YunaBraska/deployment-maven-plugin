@@ -7,16 +7,21 @@ import java.io.File;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import static java.lang.String.format;
+
 //FIXME: add GitLibrary like JGit
 public class GitService {
 
+    private final boolean fake;
     private final File workDir;
     private final Terminal terminal;
     private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME = Pattern.compile(
             "(?<prefix>.*refs\\/.*?\\/)(?<branchName>.*?)(?<suffix>@.*?)");
 
-    public GitService(final Log log, final File workDir) {
+    public GitService(final Log log, final File workDir, final boolean fake) {
         this.workDir = workDir;
+        this.fake = fake;
+        logFakeMessage(log);
         terminal = new Terminal().timeoutMs(30000).breakOnError(true).dir(workDir).consumerError(log::error);
     }
 
@@ -45,11 +50,11 @@ public class GitService {
     }
 
     public String gitStash() {
-        return terminal.execute("git stash clear; git stash").consoleInfo().trim();
+        return fake ? "fake stash" : terminal.execute("git stash clear; git stash").consoleInfo().trim();
     }
 
     public String gitLoadStash() {
-        return terminal.execute("git checkout stash -- .").consoleInfo().trim();
+        return fake ? "fake load stash" : terminal.execute("git checkout stash -- .").consoleInfo().trim();
     }
 
     public String findOriginalBranchName(final int commitNumber) {
@@ -59,5 +64,11 @@ public class GitService {
             return matcher.group("branchName");
         }
         return null;
+    }
+
+    private void logFakeMessage(final Log log) {
+        if (fake) {
+            log.warn(format("Faked [%s]", getClass().getSimpleName()));
+        }
     }
 }

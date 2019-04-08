@@ -118,7 +118,7 @@ public class Ci {
         IS_POM = isPomArtifact(pom);
 
         semanticService = new SemanticService(isEmpty(SEMANTIC_FORMAT) ? "\\.:none" : SEMANTIC_FORMAT);
-        gitService = new GitService(LOG, PROJECT_DIR);
+        gitService = new GitService(LOG, PROJECT_DIR, false);
 
         PROJECT_VERSION = isEmpty(SEMANTIC_FORMAT) ?
                 PROJECT_VERSION : semanticService.getNextSemanticVersion(pom.getVersion(), gitService, PROJECT_VERSION);
