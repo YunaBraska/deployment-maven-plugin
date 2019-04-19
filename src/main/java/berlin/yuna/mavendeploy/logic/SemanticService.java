@@ -12,11 +12,11 @@ public class SemanticService {
         return branchName;
     }
 
-    SemanticService(final String semanticFormat) {
+    public SemanticService(final String semanticFormat) {
         SEMANTIC_FORMAT = semanticFormat.split("::");
     }
 
-    String getNextSemanticVersion(final String currentVersion, final GitService gitService, final String fallback) {
+    public String getNextSemanticVersion(final String currentVersion, final GitService gitService, final String fallback) {
         for (int commitNumber = 1; commitNumber < 32; commitNumber++) {
             final String branchName = gitService.findOriginalBranchName(commitNumber);
             final int semanticPosition = getSemanticPosition(branchName);

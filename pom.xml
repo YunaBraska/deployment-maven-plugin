@@ -5,13 +5,12 @@
 
     <groupId>berlin.yuna</groupId>
     <artifactId>deployment-maven-plugin</artifactId>
-    <version>0.0.19</version>
+    <version>0.0.1</version>
     <packaging>maven-plugin</packaging>
 
     <name>${project.artifactId}</name>
-    <description>This is an example/alternative to maven-oss-parent to separate the deployment from build process and
-        keep original the pom.xml small.
-        Auto handles surfire and failsafe, auto semantic version increase by branch pattern
+    <description>Get rit of huge deployment definitions in your pom files and keep them small.
+        Auto handling semantic versioning, maven plugins, and much more
     </description>
     <url>${git-project.url}</url>
 
@@ -35,6 +34,7 @@
         <project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
         <project.reporting.outputEncoding>${project.encoding}</project.reporting.outputEncoding>
         <git-project.url>https://github.com/YunaBraska/maven-deployment</git-project.url>
+        <maven.version>3.6.0</maven.version>
     </properties>
 
     <dependencies>
@@ -42,12 +42,12 @@
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-model</artifactId>
-            <version>3.6.0</version>
+            <version>${maven.version}</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven</groupId>
             <artifactId>maven-plugin-api</artifactId>
-            <version>3.6.0</version>
+            <version>${maven.version}</version>
         </dependency>
 
         <!-- dependencies to annotations -->
@@ -77,7 +77,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.13-beta-2</version>
+            <version>4.12</version>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -86,6 +86,40 @@
             <version>2.1</version>
             <optional>true</optional>
         </dependency>
+        <dependency>
+            <groupId>org.projectlombok</groupId>
+            <artifactId>lombok</artifactId>
+            <version>1.18.6</version>
+            <scope>provided</scope>
+        </dependency>
+
+
+        <!--<dependency>-->
+        <!--<groupId>org.twdata.maven</groupId>-->
+        <!--<artifactId>mojo-executor</artifactId>-->
+        <!--<version>2.2.0</version>-->
+        <!--<exclusions>-->
+        <!--<exclusion>-->
+        <!--<groupId>org.sonatype.sisu</groupId>-->
+        <!--<artifactId>sisu-inject-plexus</artifactId>-->
+        <!--</exclusion>-->
+        <!--</exclusions>-->
+        <!--</dependency>-->
+
+        <!--mojo execution -->
+        <dependency>
+            <groupId>org.apache.maven</groupId>
+            <artifactId>maven-core</artifactId>
+            <!-- FIXME: MAGIC VERSION from 2014 <= Else component "BuildPluginManager" makes trouble -->
+            <version>3.2.1</version>
+        </dependency>
+
+        <!--<dependency>-->
+        <!--<groupId>org.apache.maven.plugin-testing</groupId>-->
+        <!--<artifactId>maven-plugin-testing-harness</artifactId>-->
+        <!--<version>3.3.0</version>-->
+        <!--<scope>test</scope>-->
+        <!--</dependency>-->
     </dependencies>
 
     <build>
@@ -197,17 +231,13 @@
                         <configuration>
                             <failBuildInCaseOfDifferentContentConflict>true</failBuildInCaseOfDifferentContentConflict>
                             <failBuildInCaseOfEqualContentConflict>false</failBuildInCaseOfEqualContentConflict>
+                            <checkTestClasspath>false</checkTestClasspath>
                             <ignoredResources>
                                 <ignoredResource>.*</ignoredResource>
                             </ignoredResources>
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>berlin.yuna</groupId>
-                <artifactId>deployment-maven-plugin</artifactId>
-                <version>0.0.19</version>
             </plugin>
         </plugins>
     </build>

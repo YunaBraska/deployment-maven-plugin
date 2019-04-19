@@ -13,15 +13,13 @@ import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_GPG_SIGN_ALT_
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_GPG_SIGN_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_JAVADOC;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_REPORT;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SOURCE;
+import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SOURCE_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SURFIRE_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_TAG_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_UPDATE_MAJOR;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_UPDATE_MINOR;
 import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_VERSION_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_PLUGIN;
-import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_STAGING_URL;
-import static berlin.yuna.mavendeploy.config.MavenCommands.SONATYPE_URL;
+import static berlin.yuna.mavendeploy.config.MavenCommands.NEXUS_DEPLOY_XX;
 import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_SNAPSHOT;
 import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_TAG_MSG;
 import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_VERSION;
@@ -83,7 +81,9 @@ public class CiTest {
                 + " --GPG_PASS=${gppPassword-1}"
                 + " --GPG_PASS_ALT=${gppPassword-2}"
                 + " --DEPLOY_ID=nexus"
-                + " --PROJECT_DIR=/Users/yunamorgenstern/Documents/projects/system-util"
+                + " --RELEASE=true"
+                + " --NEXUS_BASE_URL=https://my.nexus.com"
+                + " --NEXUS_DEPLOY_URL=https://my.nexus.com/service/local/staging/deploy"
                 + " --S_SERVER=server-1"
                 + " --S_USERNAME=server-1-user"
                 + " --S_PASSWORD=server-1-pass"
@@ -102,12 +102,11 @@ public class CiTest {
         assertThat(mavenCommand, containsString(CMD_MVN_UPDATE_MINOR));
         assertThat(mavenCommand, containsString(CMD_MVN_CLEAN_CACHE));
         assertThat(mavenCommand, containsString(CMD_MVN_JAVADOC));
-        assertThat(mavenCommand, containsString(CMD_MVN_SOURCE));
+        assertThat(mavenCommand, containsString(CMD_MVN_SOURCE_XX));
         assertThat(mavenCommand, containsString(CMD_MVN_TAG_XX));
         assertThat(mavenCommand, containsString(XX_CMD_MVN_TAG_MSG));
-        assertThat(mavenCommand, containsString(SONATYPE_URL));
-        assertThat(mavenCommand, containsString(SONATYPE_PLUGIN));
-        assertThat(mavenCommand, containsString(SONATYPE_STAGING_URL));
+        assertThat(mavenCommand, containsString(NEXUS_DEPLOY_XX + "release"));
+        assertThat(mavenCommand, containsString("https://my.nexus.com/service/local/staging/deploy"));
         assertThat(mavenCommand, containsString(CMD_MVN_VERSION_XX));
         assertThat(mavenCommand, containsString(XX_CMD_MVN_VERSION));
         assertThat(mavenCommand, containsString(XX_CMD_MVN_SNAPSHOT));
@@ -125,5 +124,86 @@ public class CiTest {
         assertThat(mavenCommand, containsString(" -Dmaven.compiler.source=1.8"));
         assertThat(mavenCommand, containsString(" -Dmaven.compiler.target=1.8"));
         assertThat(mavenCommand, not(containsString("  ")));
+    }
+
+    @Test
+    public void prepareNexusDeploy_shouldBeSuccessful() {
+        final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
+                + " --PROFILES=false"
+                + " --S_SERVER=nexus"
+                + " --S_USERNAME=${username}"
+                + " --S_PASSWORD=${password}"
+                + " --DEPLOY_ID=nexus"
+                + " --RELEASE=false"
+                + " --NEXUS_BASE_URL=https://my.nexus.com"
+                + " --NEXUS_DEPLOY_URL=https://my.nexus.com/service/local/staging/deploy/maven2";
+
+
+        final Ci ci = new Ci(new SystemStreamLog(), args);
+        final String mavenCommand = ci.prepareMaven();
+        assertThat(mavenCommand, containsString("mvn deploy --settings="));
+        assertThat(mavenCommand, containsString("-Dmaven.test.skip=true org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:deploy -DaltDeploymentRepository=nexus::default::https://my.nexus.com/service/local/staging/deploy/maven2 -DnexusUrl=https://my.nexus.com -DserverId=nexus -DautoReleaseAfterClose=false"));
+    }
+
+    @Test
+    public void prepareNexusRelease_shouldBeSuccessful() {
+        final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
+                + " --PROFILES=false"
+                + " --S_SERVER=nexus"
+                + " --S_USERNAME=${username}"
+                + " --S_PASSWORD=${password}"
+                + " --DEPLOY_ID=nexus"
+                + " --RELEASE=true"
+                + " --NEXUS_BASE_URL=https://my.nexus.com"
+                + " --NEXUS_DEPLOY_URL=https://my.nexus.com/service/local/staging/deploy/maven2";
+
+
+        final Ci ci = new Ci(new SystemStreamLog(), args);
+        final String mavenCommand = ci.prepareMaven();
+        assertThat(mavenCommand, containsString("mvn deploy --settings="));
+        assertThat(mavenCommand, containsString("-Dmaven.test.skip=true org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:release -DaltDeploymentRepository=nexus::default::https://my.nexus.com/service/local/staging/deploy/maven2 -DnexusUrl=https://my.nexus.com -DserverId=nexus"));
+        assertThat(mavenCommand, not(containsString("-DautoReleaseAfterClose=false")));
+    }
+
+    @Test
+    public void setJavaDocDefaultVersion_shouldBeSuccessful() {
+        final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
+                + " --SOURCE"
+                + " --PROFILES=false";
+        final Ci ci = new Ci(new SystemStreamLog(), args);
+        final String mavenCommand = ci.prepareMaven();
+        assertThat(mavenCommand, is(equalTo("mvn verify -Dmaven.test.skip=true source:jar-no-fork -D--source=8")));
+    }
+
+
+    @Test
+    public void setJavaDocCustomVersion_shouldBeSuccessful() {
+        final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
+                + " --SOURCE"
+                + " --JAVA_VERSION=1.11"
+                + " --PROFILES=false";
+        final Ci ci = new Ci(new SystemStreamLog(), args);
+        final String mavenCommand = ci.prepareMaven();
+        assertThat(mavenCommand, is(equalTo("mvn verify -Dmaven.test.skip=true source:jar-no-fork -D--source=11 -Dmaven.compiler.source=1.11 -Dmaven.compiler.target=1.11")));
+    }
+
+    @Test
+    public void setCustomJavaVersion_shouldBeSuccessful() {
+        final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
+                + " --JAVA_VERSION=1.11"
+                + " --PROFILES=false";
+        final Ci ci = new Ci(new SystemStreamLog(), args);
+        final String mavenCommand = ci.prepareMaven();
+        assertThat(mavenCommand, is(equalTo("mvn verify -Dmaven.test.skip=true -Dmaven.compiler.source=1.11 -Dmaven.compiler.target=1.11")));
+    }
+
+    @Test
+    public void setCustomEncoding_shouldBeSuccessful() {
+        final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
+                + " --ENCODING=UTF-16"
+                + " --PROFILES=false";
+        final Ci ci = new Ci(new SystemStreamLog(), args);
+        final String mavenCommand = ci.prepareMaven();
+        assertThat(mavenCommand, is(equalTo("mvn verify -Dmaven.test.skip=true -Dproject.build.sourceEncoding=UTF-16 -Dproject.reporting.outputEncoding=UTF-16 -Dproject.encoding=UTF-16")));
     }
 }

@@ -6,10 +6,11 @@
 [![Maintainable][Maintainable-image]][Maintainable-Url] 
 [![Gitter][Gitter-image]][Gitter-Url] 
 
-### Description
-This is an example/alternative to [maven-oss-parent](https://github.com/YunaBraska/maven-oss-parent) to separate the deployment from build process and keep original the pom.xml small.
-Auto handles surfire and failsafe, auto semantic version increase by branch pattern  
+#CURRENTLY REFACTORING FROM BASH TO REAL MAVEN MOJO
 
+### Description
+Get rit of huge deployment definitions in your pom files and keep them small.
+Auto handling semantic versioning, maven plugins, and much more while you can still use the original userProperties of the plugins   
 
 ### plugin
 ````xml
@@ -22,7 +23,7 @@ Auto handles surfire and failsafe, auto semantic version increase by branch patt
 
 ### How to call
 ````bash
-mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
+mvn deployment:run "-Djava.doc=true -Djava.source -Dupdate.minor"
 #Will create java doc, java sources, and updates dependencies
 ````
 
@@ -35,21 +36,21 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 ### Versioning
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
-| PROJECT_VERSION     | String  | ''      | Sets project version in pom                                                |
-| SEMANTIC_FORMAT     | String  | ''      | Updates semantic version from regex pattern (overwrites PROJECT_VERSION)   |
-| REMOVE_SNAPSHOT     | Boolean | false   | Removes snapshot from version                                              |
+| project.version     | String  | ''      | Sets project version in pom                                                |
+| semantic.format     | String  | ''      | Updates semantic version from regex pattern (overwrites PROJECT_VERSION)   |
+| remove.snapshot     | Boolean | false   | Removes snapshot from version                                              |
 | TAG                 | Boolean | false   | Tags the project (by PROJECT_VERSION) if not already exists                |
 | TAG_BREAK           | Boolean | false   | Tags the project (by PROJECT_VERSION) and fails if already exists          |
-| UPDATE_MAJOR        | Boolean | false   | Updates parent, properties, dependencies                                   |
-| UPDATE_MINOR        | Boolean | false   | Updates parent, properties, dependencies                                   |
+| update.minor        | Boolean | false   | Updates parent, properties, dependencies                                   |
+| update.major        | Boolean | false   | Updates parent, properties, dependencies                                   |
 | COMMIT              | String  | ''      | Custom commit message on changes - "false" = deactivate commits            |
 ### Building
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
-| CLEAN               | Boolean | false   | cleans target and resolves dependencies                                    |
-| CLEAN_CACHE         | Boolean | false   | Purges local maven repository cache                                        |
-| JAVA_DOC            | Boolean | true    | Creates java doc (javadoc.jar) if its not a pom artifact                   |
-| SOURCE              | Boolean | true    | Creates java sources (sources.jar) if its not a pom artifact               |
+| clean               | Boolean | false   | cleans target and resolves dependencies                                    |
+| clean.cache         | Boolean | false   | Purges local maven repository cache                                        |
+| java.doc            | Boolean | false   | Creates java doc (javadoc.jar) if its not a pom artifact                   |
+| java.source         | Boolean | false   | Creates java sources (sources.jar) if its not a pom artifact               |
 | PROFILES            | Boolean | true    | Uses all available profiles                                                |
 | GPG_PASS            | String  | ''      | Signs artifacts (.asc) with GPG 2.1                                        |
 | GPG_PASS_ALT        | String  | ''      | Signs artifacts (.asc) with GPG 1                                          |
@@ -58,19 +59,23 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
 | DEPLOY_ID           | String  | ''      | (Nexus) Deploys artifacts (server id = Settings.xml)                       |
 | RELEASE             | Boolean | false   | (Nexus) Releases the deployment                                            |
-### Create Settings.xml
+| NEXUS_BASE_URL      | String  | ''      | (Nexus) The nexus base url (e.g https://my.nexus.com)                      |
+| NEXUS_DEPLOY_URL    | String  | ''      | (Nexus) Staging url (e.g https://my.nexus.com/service/local/staging/deploy)|
+### Add to Settings.xml session
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
-| S_SERVER            | String | ''       | server id (multiple possible)                                              |
-| S_USERNAME          | String | ''       | username (multiple possible)                                               |
-| S_PASSWORD          | String | ''       | password (multiple possible)                                               |
+| Server              | String | ''       | server id (multiple possible && caseInsensitive)                           |
+| Username            | String | ''       | username (multiple possible && caseInsensitive)                            |
+| Password            | String | ''       | password (multiple possible && caseInsensitive)                            |
+| PrivateKey          | String | ''       | e.g. ${user.home}/.ssh/id_dsa) (multiple possible && caseInsensitive)      |
+| Passphrase          | String | ''       | privateKey, passphrase (multiple possible && caseInsensitive)              |
+| FilePermissions     | String | ''       | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
+| DirectoryPermissions| String | ''       | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
 ### Misc
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
-| REPORT              | Boolean | false   | Generates report about version updates                                     |
-| OPTIONS             | String  | ''      | Adds additional maven options                                              |
-| ENCODING            | String  | ''      | Sets compiler encoding                                                     |
-| SKIP_TEST           | Boolean | true    | skips all tests                                                            |
+| REPORT              | Boolean | false   | Generates report about version updates                                     |                                            |                                                  |
+| test.skip           | Boolean | true    | same as "maven.test.skip"                                                  |
 | JAVA_VERSION        | String  | ''      | Sets compiler java version                                                 |
 
 ### Requirements
@@ -90,14 +95,12 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 ### TODO
 * [ ] refactoring, javadoc, cleanups
 * [ ] not tag when last commit was tag commit
-* [ ] external settings "--settings "
-* [ ] release process
 * [ ] set always autoReleaseAfterClose=false and add "mvn nexus-staging:release" to release process
-* [ ] release needs a new version to be set manually
 * [ ] set scm url if not exists or changed
 * [ ] reset readme urls, description and title
 * [ ] Deploy dynamic to nexus
 * [ ] Deploy dynamic to artifactory
+* [ ] try to use JGit for git service
 * [ ] try to use https://github.com/TimMoore/mojo-executor
 
 * [ ] find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin
