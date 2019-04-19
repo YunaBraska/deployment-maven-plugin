@@ -6,7 +6,7 @@
 [![Maintainable][Maintainable-image]][Maintainable-Url] 
 [![Gitter][Gitter-image]][Gitter-Url] 
 
-#CURRENTLY REFACTORING FROM BASH TO REAL MAVEN MOJO
+# CURRENTLY REFACTORING FROM BASH TO REAL MAVEN MOJO
 
 ### Description
 Get rit of huge deployment definitions in your pom files and keep them small.
@@ -23,7 +23,7 @@ Auto handling semantic versioning, maven plugins, and much more while you can st
 
 ### How to call
 ````bash
-mvn deployment:run "-Djava.doc=true -Djava.source -Dupdate.minor"
+mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 #Will create java doc, java sources, and updates dependencies
 ````
 
@@ -93,7 +93,6 @@ mvn deployment:run "-Djava.doc=true -Djava.source -Dupdate.minor"
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
 ### TODO
-* [ ] refactoring, javadoc, cleanups
 * [ ] not tag when last commit was tag commit
 * [ ] set always autoReleaseAfterClose=false and add "mvn nexus-staging:release" to release process
 * [ ] set scm url if not exists or changed
@@ -103,7 +102,6 @@ mvn deployment:run "-Djava.doc=true -Djava.source -Dupdate.minor"
 * [ ] try to use JGit for git service
 * [ ] try to use https://github.com/TimMoore/mojo-executor
 
-* [ ] find out how to use GPG 2.1 on command line with original apache maven-gpg-plugin
 * [ ] org.sonatype.plugins
 * [ ] own or buy logo https://www.designevo.com/apps/logo/?name=blue-hexagon-and-3d-container
 
