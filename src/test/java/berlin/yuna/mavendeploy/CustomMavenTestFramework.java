@@ -3,6 +3,7 @@ package berlin.yuna.mavendeploy;
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Dependency;
+import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.MojoBase;
 import berlin.yuna.mavendeploy.config.Versions;
@@ -18,6 +19,7 @@ import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.net.URISyntaxException;
+import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -57,9 +59,9 @@ public class CustomMavenTestFramework {
             g(Versions.class, "use-latest-versions"),
             g(Versions.class, "commit"),
             g(Versions.class, "set"),
-            g(Javadoc.class, "jar")
+            g(Javadoc.class, "jar"),
+            g(JavaSource.class, "jar-no-fork")
     );
-
 
     @BeforeClass
     public static void setUpClass() {
@@ -202,6 +204,19 @@ public class CustomMavenTestFramework {
             Files.copy(source, dest, REPLACE_EXISTING);
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage(), e);
+        }
+    }
+
+    void replaceInPom(final String regex, final String replacement) {
+        try {
+            final Path path = TEST_POM.getPomFile().toPath();
+            final Charset charset = StandardCharsets.UTF_8;
+
+            String content = new String(Files.readAllBytes(path), charset);
+            content = content.replaceAll(regex, replacement);
+            Files.write(path, content.getBytes(charset));
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 }

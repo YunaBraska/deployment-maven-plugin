@@ -2,12 +2,16 @@ package berlin.yuna.mavendeploy;
 
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Dependency;
+import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.Versions;
-import org.junit.Before;
 import org.junit.Test;
 
 import java.io.File;
+import java.nio.charset.Charset;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
+import java.nio.file.Path;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static java.lang.String.format;
@@ -205,6 +209,30 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
         expectMojoRun(g(Javadoc.class, "jar"));
         final File indexHtml = new File(TEST_POM.getPomFile().getParent(), "target/apidocs/index.html");
+        final File javaDoc = new File(TEST_POM.getPomFile().getParent(), "target/" + TEST_POM.getArtifactId() + "-" + TEST_POM.getVersion() + "-javadoc.jar");
         assertThat(format("Cant find [%s]", indexHtml), indexHtml.exists(), is(true));
+        assertThat(format("Cant find [%s]", javaDoc), javaDoc.exists(), is(true));
     }
+
+    @Test
+    public void createJavaSource_shouldBeSuccessful() {
+        terminal.execute(mvnCmd("-Djava.source"));
+
+        expectMojoRun(g(JavaSource.class, "jar-no-fork"));
+        final File javaSource = new File(TEST_POM.getPomFile().getParent(), "target/" + TEST_POM.getArtifactId() + "-" + TEST_POM.getVersion() + "-sources.jar");
+        assertThat(format("Cant find [%s]", javaSource), javaSource.exists(), is(true));
+    }
+
+    @Test
+    public void detectLibrary_shouldBeSuccessful() {
+        replaceInPom("<packaging>.*<\\/packaging>", "<packaging>pom</packaging>");
+        terminal.execute(mvnCmd(""));
+        assertThat(terminal.consoleInfo(), is(containsString("Project is library [true]")));
+
+        replaceInPom("<packaging>.*<\\/packaging>", "<packaging>jar</packaging>");
+        terminal.execute(mvnCmd(""));
+        assertThat(terminal.consoleInfo(), is(containsString("Project is library [false]")));
+    }
+
+
 }

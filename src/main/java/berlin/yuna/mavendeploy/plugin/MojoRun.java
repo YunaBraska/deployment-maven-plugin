@@ -3,6 +3,7 @@ package berlin.yuna.mavendeploy.plugin;
 import berlin.yuna.clu.logic.CommandLineReader;
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Dependency;
+import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.Versions;
 import berlin.yuna.mavendeploy.logic.GitService;
@@ -111,6 +112,7 @@ public class MojoRun extends AbstractMojo {
         try {
             LOG.info("Preparing information");
             try {
+                LOG.debug(format("Project is library [%s]", isLibrary()));
                 final String newProjectVersion = prepareProjectVersion();
                 setWhen("newVersion", newProjectVersion, newProjectVersion != null && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
                 setWhen("removeSnapshot", "true", isTrue("remove.snapshot"));
@@ -133,7 +135,11 @@ public class MojoRun extends AbstractMojo {
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).commit(), isTrue("update.major", "update.minor"));
 
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).set(), hasText("newVersion"), hasText("removeSnapshot"));
-                runWhen(() -> Javadoc.build(ENVIRONMENT, LOG).jar(), isTrue("java.doc"));
+
+                if (!isLibrary()) {
+                    runWhen(() -> Javadoc.build(ENVIRONMENT, LOG).jar(), isTrue("java.doc"));
+                    runWhen(() -> JavaSource.build(ENVIRONMENT, LOG).jarNoFork(), isTrue("java.source"));
+                }
 
 
             } catch (Exception e) {
@@ -223,6 +229,10 @@ public class MojoRun extends AbstractMojo {
         } else {
             LOG.warn(format("- Config key [%s] already set with [%s] - won't take action", key, cmdValue));
         }
+    }
+
+    private boolean isLibrary() {
+        return isEmpty(project.getPackaging()) || project.getPackaging().equals("pom");
     }
 
     private boolean isTrue(final String... keys) {
