@@ -6,6 +6,8 @@
 [![Maintainable][Maintainable-image]][Maintainable-Url] 
 [![Gitter][Gitter-image]][Gitter-Url] 
 
+#CURRENTLY REFACTORING FROM BASH TO REAL MAVEN MOJO
+
 ### Description
 Get rit of huge deployment definitions in your pom files and keep them small.
 Auto handling semantic versioning, maven plugins, and much more while you can still use the original userProperties of the plugins   
