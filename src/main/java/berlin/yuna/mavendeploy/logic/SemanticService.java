@@ -28,6 +28,7 @@ public class SemanticService {
         return fallback;
     }
 
+    //FIXME: separator bug, multiple separators will be replaced by the first one (e.g. 1.2-3 will be replaced by 1.2.3)
     String getNextSemanticVersion(final String versionOrg, final int semanticPosition) {
         final String separator = getSemanticSeparator(versionOrg);
         final StringBuilder nextVersion = new StringBuilder();

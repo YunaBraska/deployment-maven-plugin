@@ -2,7 +2,6 @@
 
 [![License][License-Image]][License-Url]
 [![Build][Build-Status-Image]][Build-Status-Url] 
-[![Coverage][Coverage-image]][Coverage-Url] 
 [![Maintainable][Maintainable-image]][Maintainable-Url] 
 [![Gitter][Gitter-image]][Gitter-Url] 
 
@@ -51,9 +50,7 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 | clean.cache         | Boolean | false   | Purges local maven repository cache                                        |
 | java.doc            | Boolean | false   | Creates java doc (javadoc.jar) if its not a pom artifact                   |
 | java.source         | Boolean | false   | Creates java sources (sources.jar) if its not a pom artifact               |
-| PROFILES            | Boolean | true    | Uses all available profiles                                                |
-| GPG_PASS            | String  | ''      | Signs artifacts (.asc) with GPG 2.1                                        |
-| GPG_PASS_ALT        | String  | ''      | Signs artifacts (.asc) with GPG 1                                          |
+| gpg.pass            | String  | ''      | Signs artifacts (.asc) with GPG 2.1                                        |
 ### Deployment
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
@@ -76,7 +73,6 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
 | REPORT              | Boolean | false   | Generates report about version updates                                     |                                            |                                                  |
 | test.skip           | Boolean | true    | same as "maven.test.skip"                                                  |
-| JAVA_VERSION        | String  | ''      | Sets compiler java version                                                 |
 
 ### Requirements
 * \[JAVA\] for maven 

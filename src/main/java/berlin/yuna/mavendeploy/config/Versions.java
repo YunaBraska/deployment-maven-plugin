@@ -27,7 +27,7 @@ public class Versions extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(environment,
+                prepareXpp3Dom(log, environment,
                         prop("allowSnapshots"),
                         prop("generateBackupPoms")
 //                        prop( "parentVersion"),
@@ -44,7 +44,7 @@ public class Versions extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(environment,
+                prepareXpp3Dom(log, environment,
                         prop("allowDowngrade"),
                         prop("allowIncrementalUpdates"),
                         prop("allowMajorUpdates"),
@@ -69,7 +69,7 @@ public class Versions extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(environment,
+                prepareXpp3Dom(log, environment,
                         prop("allowSnapshots"),
                         prop("generateBackupPoms")
 //                        prop( "maven.version.rules"),
@@ -85,7 +85,7 @@ public class Versions extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(environment,
+                prepareXpp3Dom(log, environment,
                         prop("allowIncrementalUpdates"),
                         prop("allowMajorUpdates"),
                         prop("allowMinorUpdates"),
@@ -107,7 +107,7 @@ public class Versions extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(environment,
+                prepareXpp3Dom(log, environment,
                         prop("allowIncrementalUpdates"),
                         prop("allowMajorUpdates"),
                         prop("allowMinorUpdates"),
@@ -130,7 +130,7 @@ public class Versions extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(environment,
+                prepareXpp3Dom(log, environment,
                         prop("allowIncrementalUpdates"),
                         prop("allowMajorUpdates"),
                         prop("allowMinorUpdates"),
@@ -153,7 +153,7 @@ public class Versions extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(environment,
+                prepareXpp3Dom(log, environment,
                         prop("allowSnapshots"),
                         prop("artifactId"),
                         prop("generateBackupPoms"),

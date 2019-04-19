@@ -3,6 +3,7 @@ package berlin.yuna.mavendeploy;
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Dependency;
+import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.MojoBase;
@@ -60,7 +61,8 @@ public class CustomMavenTestFramework {
             g(Versions.class, "commit"),
             g(Versions.class, "set"),
             g(Javadoc.class, "jar"),
-            g(JavaSource.class, "jar-no-fork")
+            g(JavaSource.class, "jar-no-fork"),
+            g(Gpg.class, "sign")
     );
 
     @BeforeClass
@@ -205,6 +207,10 @@ public class CustomMavenTestFramework {
         } catch (Exception e) {
             throw new RuntimeException(e.getMessage(), e);
         }
+    }
+
+    void setPackaging(final String packaging) {
+        replaceInPom("<packaging>.*<\\/packaging>", "<packaging>" + packaging + "</packaging>");
     }
 
     void replaceInPom(final String regex, final String replacement) {

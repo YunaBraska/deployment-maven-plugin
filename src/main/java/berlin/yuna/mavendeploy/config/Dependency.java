@@ -27,7 +27,7 @@ public class Dependency extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(environment,
+                prepareXpp3Dom(log, environment,
                         prop("appendOutput"),
                         prop("excludeClassifiers"),
                         prop("excludeReactor"),
@@ -59,7 +59,7 @@ public class Dependency extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(environment,
+                prepareXpp3Dom(log, environment,
                         prop("actTransitively"),
                         prop("reResolve"),
                         prop("resolutionFuzziness"),

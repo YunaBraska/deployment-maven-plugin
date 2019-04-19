@@ -30,7 +30,7 @@ public class Clean extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(environment,
+                prepareXpp3Dom(log, environment,
                         prop("failOnError"),
                         prop("followSymLinks"),
                         prop("excludeDefaultDirectories")

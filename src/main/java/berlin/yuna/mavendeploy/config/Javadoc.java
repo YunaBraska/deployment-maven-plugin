@@ -13,7 +13,7 @@ public class Javadoc extends MojoBase {
 
     public Javadoc(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
         super("org.apache.maven.plugins", "maven-javadoc-plugin", environment, log);
-        version = "2.10.4";
+        version = "3.0.1";
     }
 
     public static Javadoc build(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
@@ -26,8 +26,9 @@ public class Javadoc extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(environment,
-                        prop("additionalparam", "-Xdoclint:none"),
+                prepareXpp3Dom(log, environment,
+//                        prop("additionalparam", "-Xdoclint:none"),
+                        prop("doclint", "none"),
                         prop("maven.javadoc.classifier"),
                         prop("destDir"),
                         prop("additionalJOption"),
@@ -56,7 +57,6 @@ public class Javadoc extends MojoBase {
                         prop("excludedocfilessubdir"),
                         prop("extdirs"),
                         prop("maven.javadoc.failOnError"),
-                        prop("maven.javadoc.failOnWarnings"),
                         prop("project.build.finalName"),
                         prop("header"),
                         prop("footer"),

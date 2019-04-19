@@ -3,6 +3,7 @@ package berlin.yuna.mavendeploy.plugin;
 import berlin.yuna.clu.logic.CommandLineReader;
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Dependency;
+import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.Versions;
@@ -21,12 +22,16 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.settings.Activation;
+import org.apache.maven.settings.Profile;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 
 import java.io.File;
+import java.nio.file.Paths;
 import java.util.List;
 import java.util.Objects;
+import java.util.Properties;
 
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executionEnvironment;
 import static berlin.yuna.mavendeploy.plugin.MojoHelper.isEmpty;
@@ -113,6 +118,7 @@ public class MojoRun extends AbstractMojo {
 
         setParameter("maven.test.skip", getParam("test.skip", true).toString());
         addServerToSettings(new CommandLineReader(SETTINGS.toArray(new String[0])));
+        addGpgToSettings();
 
         try {
             LOG.info("Preparing information");
@@ -121,15 +127,13 @@ public class MojoRun extends AbstractMojo {
                 final String newProjectVersion = prepareProjectVersion();
                 setWhen("newVersion", newProjectVersion, newProjectVersion != null && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
                 setWhen("removeSnapshot", "true", isTrue("remove.snapshot"));
-
                 setWhen("generateBackupPoms", "false", true);
-                runWhen(() -> Clean.build(ENVIRONMENT, LOG).clean(), isTrue("clean", "clean.cache"));
-                runWhen(() -> Dependency.build(ENVIRONMENT, LOG).resolvePlugins(), isTrue("clean", "clean.cache"));
-                runWhen(() -> Dependency.build(ENVIRONMENT, LOG).purgeLocalRepository(), isTrue("clean.cache"));
-
                 setWhen("allowSnapshots", "true", isTrue("update.minor", "update.major"));
                 setWhen("allowMajorUpdates", getParam("update.major", false).toString(), isTrue("update.minor", "update.major"));
 
+                runWhen(() -> Clean.build(ENVIRONMENT, LOG).clean(), isTrue("clean", "clean.cache"));
+                runWhen(() -> Dependency.build(ENVIRONMENT, LOG).resolvePlugins(), isTrue("clean", "clean.cache"));
+                runWhen(() -> Dependency.build(ENVIRONMENT, LOG).purgeLocalRepository(), isTrue("clean.cache"));
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).updateParent(), isTrue("update.major", "update.minor"));
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).updateProperties(), isTrue("update.major", "update.minor"));
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).updateProperties(), isTrue("update.major", "update.minor"));
@@ -138,20 +142,28 @@ public class MojoRun extends AbstractMojo {
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).useLatestVersions(), isTrue("update.major", "update.minor"));
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).useNextSnapshots(), isTrue("update.major", "update.minor"));
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).commit(), isTrue("update.major", "update.minor"));
-
-                runWhen(() -> Versions.build(ENVIRONMENT, LOG).set(), hasText("newVersion"), hasText("removeSnapshot"));
+                runWhen(() -> Versions.build(ENVIRONMENT, LOG).set(), hasText("newVersion"), isTrue("removeSnapshot"));
 
                 if (!isLibrary()) {
                     runWhen(() -> Javadoc.build(ENVIRONMENT, LOG).jar(), isTrue("java.doc"));
                     runWhen(() -> JavaSource.build(ENVIRONMENT, LOG).jarNoFork(), isTrue("java.source"));
                 }
 
+                runWhen(() -> Gpg.build(ENVIRONMENT, LOG).sign(), hasText("gpg.passphrase"));
 
+                printJavaDoc();
             } catch (Exception e) {
-                LOG.error(e);
+                throw new RuntimeException(e);
             }
         } finally {
             after();
+        }
+    }
+
+    private void printJavaDoc() {
+        final File javaDocFile = new File(basedir, "target/apidocs/index.html");
+        if (javaDocFile.exists()) {
+            LOG.info(format("JavaDoc [%s]", javaDocFile.toURI().toString()));
         }
     }
 
@@ -161,6 +173,22 @@ public class MojoRun extends AbstractMojo {
         projectVersion = isEmpty(semanticFormat) ?
                 projectVersion : SEMANTIC_SERVICE.getNextSemanticVersion(project.getVersion(), GIT_SERVICE, projectVersion);
         return projectVersion;
+    }
+
+    private void addGpgToSettings() {
+        final String gpgPassphrase = getParam("gpg.pass", getParam("gpg.passphrase", null));
+        if (!isEmpty(gpgPassphrase)) {
+            LOG.info("Creating GPG settings");
+            final Profile profile = new Profile();
+            final Activation activation = new Activation();
+            final Properties properties = new Properties();
+            activation.setActiveByDefault(true);
+            properties.setProperty("gpg.executable", "gpg");
+            properties.setProperty("gpg.passphrase", gpgPassphrase);
+            profile.setActivation(activation);
+            profile.setProperties(properties);
+            session.getSettings().getProfiles().add(profile);
+        }
     }
 
     private void addServerToSettings(final CommandLineReader clr) {

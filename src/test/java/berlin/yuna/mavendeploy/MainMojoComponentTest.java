@@ -8,10 +8,6 @@ import berlin.yuna.mavendeploy.config.Versions;
 import org.junit.Test;
 
 import java.io.File;
-import java.nio.charset.Charset;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static java.lang.String.format;
@@ -21,6 +17,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
 
+//FIXME: how to make a GPG test? ¯\_(ツ)_/¯
 public class MainMojoComponentTest extends CustomMavenTestFramework {
 
     @Test
@@ -227,14 +224,13 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
     @Test
     public void detectLibrary_shouldBeSuccessful() {
-        replaceInPom("<packaging>.*<\\/packaging>", "<packaging>pom</packaging>");
+        setPackaging("pom");
         terminal.execute(mvnCmd(""));
         assertThat(terminal.consoleInfo(), is(containsString("Project is library [true]")));
 
-        replaceInPom("<packaging>.*<\\/packaging>", "<packaging>jar</packaging>");
+        setPackaging("jar");
         terminal.execute(mvnCmd(""));
         assertThat(terminal.consoleInfo(), is(containsString("Project is library [false]")));
     }
-
 
 }
