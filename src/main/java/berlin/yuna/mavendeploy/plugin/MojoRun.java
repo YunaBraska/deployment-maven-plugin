@@ -3,8 +3,10 @@ package berlin.yuna.mavendeploy.plugin;
 import berlin.yuna.clu.logic.CommandLineReader;
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Dependency;
-import berlin.yuna.mavendeploy.config.MojoHelper;
+import berlin.yuna.mavendeploy.config.Javadoc;
+import berlin.yuna.mavendeploy.config.Versions;
 import berlin.yuna.mavendeploy.logic.GitService;
+import berlin.yuna.mavendeploy.logic.SemanticService;
 import berlin.yuna.mavendeploy.model.ThrowingFunction;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
@@ -17,11 +19,11 @@ import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Server;
 
 import java.io.File;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Objects;
 
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executionEnvironment;
+import static berlin.yuna.mavendeploy.plugin.MojoHelper.isEmpty;
 import static java.lang.String.format;
 //
 //import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
@@ -94,77 +96,159 @@ public class MojoRun extends AbstractMojo {
     @Parameter(property = "java.version", defaultValue = "", readonly = false)
     private String JAVA_VERSION;
 
-    private Log log;
-    private GitService gitService;
-    private boolean gitChanges;
-    private MojoExecutor.ExecutionEnvironment environment;
+    private Log LOG;
+    private GitService GIT_SERVICE;
+    private SemanticService SEMANTIC_SERVICE;
+    private boolean HAS_GIT_CHANGES;
+    private MojoExecutor.ExecutionEnvironment ENVIRONMENT;
 
     public void execute() {
         before();
 
-        session.getUserProperties().setProperty("maven.test.skip", getBoolean("test.skip", true).toString());
-        initSettings(new CommandLineReader(SETTINGS.toArray(new String[0])));
+        setParameter("maven.test.skip", getParam("test.skip", true).toString());
+        addServerToSettings(new CommandLineReader(SETTINGS.toArray(new String[0])));
 
         try {
-            log.info("Preparing information");
+            LOG.info("Preparing information");
             try {
-                runOnBoolean(() -> Clean.build(environment, log).clean(), "clean", "clean.cache");
-                runOnBoolean(() -> Dependency.build(environment, log).resolvePlugins(), "clean", "clean.cache");
-                runOnBoolean(() -> Dependency.build(environment, log).purgeLocalRepository(), "clean.cache");
+                final String newProjectVersion = prepareProjectVersion();
+                setWhen("newVersion", newProjectVersion, newProjectVersion != null && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
+                setWhen("removeSnapshot", "true", isTrue("remove.snapshot"));
+
+                setWhen("generateBackupPoms", "false", true);
+                runWhen(() -> Clean.build(ENVIRONMENT, LOG).clean(), isTrue("clean", "clean.cache"));
+                runWhen(() -> Dependency.build(ENVIRONMENT, LOG).resolvePlugins(), isTrue("clean", "clean.cache"));
+                runWhen(() -> Dependency.build(ENVIRONMENT, LOG).purgeLocalRepository(), isTrue("clean.cache"));
+
+                setWhen("allowSnapshots", "true", isTrue("update.minor", "update.major"));
+                setWhen("allowMajorUpdates", getParam("update.major", false).toString(), isTrue("update.minor", "update.major"));
+
+                runWhen(() -> Versions.build(ENVIRONMENT, LOG).updateParent(), isTrue("update.major", "update.minor"));
+                runWhen(() -> Versions.build(ENVIRONMENT, LOG).updateProperties(), isTrue("update.major", "update.minor"));
+                runWhen(() -> Versions.build(ENVIRONMENT, LOG).updateProperties(), isTrue("update.major", "update.minor"));
+                runWhen(() -> Versions.build(ENVIRONMENT, LOG).updateChildModules(), isTrue("update.major", "update.minor"));
+                runWhen(() -> Versions.build(ENVIRONMENT, LOG).useLatestReleases(), isTrue("update.major", "update.minor"));
+                runWhen(() -> Versions.build(ENVIRONMENT, LOG).useLatestVersions(), isTrue("update.major", "update.minor"));
+                runWhen(() -> Versions.build(ENVIRONMENT, LOG).useNextSnapshots(), isTrue("update.major", "update.minor"));
+                runWhen(() -> Versions.build(ENVIRONMENT, LOG).commit(), isTrue("update.major", "update.minor"));
+
+                runWhen(() -> Versions.build(ENVIRONMENT, LOG).set(), hasText("newVersion"), hasText("removeSnapshot"));
+                runWhen(() -> Javadoc.build(ENVIRONMENT, LOG).jar(), isTrue("java.doc"));
+
+
             } catch (Exception e) {
-                log.error(e);
+                LOG.error(e);
             }
         } finally {
             after();
         }
     }
 
-    private void initSettings(final CommandLineReader clr) {
+    private String prepareProjectVersion() {
+        String projectVersion = getParam("project.version", null);
+        final String semanticFormat = getParam("semantic.format", null);
+        projectVersion = isEmpty(semanticFormat) ?
+                projectVersion : SEMANTIC_SERVICE.getNextSemanticVersion(project.getVersion(), GIT_SERVICE, projectVersion);
+        return projectVersion;
+    }
+
+    private void addServerToSettings(final CommandLineReader clr) {
         final List<String> serverList = clr.getValues("SERVER");
         for (int i = 0; i < serverList.size(); i++) {
-            log.info(format("+ [Settings] adding [%s] [%s]", Server.class.getSimpleName(), serverList.get(i)));
             final Server server = new Server();
             server.setId(serverList.get(i));
-            server.setUsername(clr.getValue(i, "USERNAME"));
-            server.setUsername(clr.getValue(i, "PASSWORD"));
+            server.setUsername(clr.getValue(i, "Username"));
+            server.setPassword(clr.getValue(i, "Password"));
+            server.setPrivateKey(clr.getValue(i, "PrivateKey"));
+            server.setPassphrase(clr.getValue(i, "Passphrase"));
+            server.setFilePermissions(clr.getValue(i, "FilePermissions"));
+            server.setDirectoryPermissions(clr.getValue(i, "DirectoryPermissions"));
+            LOG.info(format(
+                    "+ Settings added [%s] id [%s] user [%s] pass [%s]",
+                    Server.class.getSimpleName(),
+                    server.getId(), server.getUsername(),
+                    server.getPassword() == null ? null : server.getPassword().replaceAll(".?", "*")
+            ));
             session.getSettings().addServer(server);
         }
     }
 
     private void after() {
-        if (gitChanges) {
-            log.warn("Load uncommitted git changes");
-            gitService.gitLoadStash();
+        if (HAS_GIT_CHANGES) {
+            LOG.warn("Load uncommitted git changes");
+            GIT_SERVICE.gitLoadStash();
         }
     }
 
     private void before() {
-        log = getLog();
+        LOG = getLog();
         Objects.requireNonNull(pluginManager);
 
-        MojoExecutor.setLogger(log);
-        environment = executionEnvironment(project, session, pluginManager);
+        MojoExecutor.setLogger(LOG);
+        ENVIRONMENT = executionEnvironment(project, session, pluginManager);
 
-        gitService = new GitService(log, basedir, getBoolean("fake", false));
-        gitChanges = gitService.gitHasChanges();
+        GIT_SERVICE = new GitService(LOG, basedir, getParam("fake", false));
+        SEMANTIC_SERVICE = new SemanticService(getParam("semantic.format", "\\.:none"));
+        HAS_GIT_CHANGES = GIT_SERVICE.gitHasChanges();
 
-        if (gitChanges) {
-            log.warn("Stashing uncommitted git changes");
-            gitService.gitStash();
+        if (HAS_GIT_CHANGES) {
+            LOG.warn("Stashing uncommitted git changes");
+            GIT_SERVICE.gitStash();
         }
     }
 
-    private void runOnBoolean(final ThrowingFunction consumer, final String... keys) throws Exception {
-        for (String key : keys) {
-            if (getBoolean(key, false)) {
+    private void runWhen(final ThrowingFunction consumer, final boolean... when) throws Exception {
+        for (boolean trigger : when) {
+            if (trigger) {
                 consumer.run();
                 break;
             }
         }
     }
 
-    private Boolean getBoolean(final String key, final boolean fallback) {
+    private void setWhen(final String key, final String value, final boolean... when) {
+        for (boolean trigger : when) {
+            if (trigger) {
+                setParameter(key, value);
+                break;
+            }
+        }
+    }
+
+    private void setParameter(final String key, final String value) {
+        final String cmdValue = session.getUserProperties().getProperty(key);
+        if (isEmpty(cmdValue)) {
+            session.getUserProperties().setProperty(key, value);
+            LOG.info(format("+ Config added key [%s] value [%s]", key, value));
+        } else {
+            LOG.warn(format("- Config key [%s] already set with [%s] - won't take action", key, cmdValue));
+        }
+    }
+
+    private boolean isTrue(final String... keys) {
+        for (String key : keys) {
+            if (MojoHelper.getBoolean(session, key, false)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private boolean hasText(final String... keys) {
+        for (String key : keys) {
+            if (!isEmpty(MojoHelper.getString(session, key, null))) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    private Boolean getParam(final String key, final boolean fallback) {
         return MojoHelper.getBoolean(session, key, fallback);
+    }
+
+    private String getParam(final String key, final String fallback) {
+        return MojoHelper.getString(session, key, fallback);
     }
 
 }

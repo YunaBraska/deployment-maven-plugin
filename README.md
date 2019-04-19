@@ -7,9 +7,8 @@
 [![Gitter][Gitter-image]][Gitter-Url] 
 
 ### Description
-This is an example/alternative to [maven-oss-parent](https://github.com/YunaBraska/maven-oss-parent) to separate the deployment from build process and keep original the pom.xml small.
-Auto handles surfire and failsafe, auto semantic version increase by branch pattern  
-
+Get rit of huge deployment definitions in your pom files and keep them small.
+Auto handling semantic versioning, maven plugins, and much more while you can still use the original userProperties of the plugins   
 
 ### plugin
 ````xml
@@ -22,7 +21,7 @@ Auto handles surfire and failsafe, auto semantic version increase by branch patt
 
 ### How to call
 ````bash
-mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
+mvn deployment:run "-Djava.doc=true -Djava.source -Dupdate.minor"
 #Will create java doc, java sources, and updates dependencies
 ````
 
@@ -35,21 +34,21 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 ### Versioning
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
-| PROJECT_VERSION     | String  | ''      | Sets project version in pom                                                |
-| SEMANTIC_FORMAT     | String  | ''      | Updates semantic version from regex pattern (overwrites PROJECT_VERSION)   |
-| REMOVE_SNAPSHOT     | Boolean | false   | Removes snapshot from version                                              |
+| project.version     | String  | ''      | Sets project version in pom                                                |
+| semantic.format     | String  | ''      | Updates semantic version from regex pattern (overwrites PROJECT_VERSION)   |
+| remove.snapshot     | Boolean | false   | Removes snapshot from version                                              |
 | TAG                 | Boolean | false   | Tags the project (by PROJECT_VERSION) if not already exists                |
 | TAG_BREAK           | Boolean | false   | Tags the project (by PROJECT_VERSION) and fails if already exists          |
-| UPDATE_MAJOR        | Boolean | false   | Updates parent, properties, dependencies                                   |
-| UPDATE_MINOR        | Boolean | false   | Updates parent, properties, dependencies                                   |
+| update.minor        | Boolean | false   | Updates parent, properties, dependencies                                   |
+| update.major        | Boolean | false   | Updates parent, properties, dependencies                                   |
 | COMMIT              | String  | ''      | Custom commit message on changes - "false" = deactivate commits            |
 ### Building
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
 | clean               | Boolean | false   | cleans target and resolves dependencies                                    |
 | clean.cache         | Boolean | false   | Purges local maven repository cache                                        |
-| JAVA_DOC            | Boolean | false   | Creates java doc (javadoc.jar) if its not a pom artifact                   |
-| SOURCE              | Boolean | false   | Creates java sources (sources.jar) if its not a pom artifact               |
+| java.doc            | Boolean | false   | Creates java doc (javadoc.jar) if its not a pom artifact                   |
+| java.source         | Boolean | false   | Creates java sources (sources.jar) if its not a pom artifact               |
 | PROFILES            | Boolean | true    | Uses all available profiles                                                |
 | GPG_PASS            | String  | ''      | Signs artifacts (.asc) with GPG 2.1                                        |
 | GPG_PASS_ALT        | String  | ''      | Signs artifacts (.asc) with GPG 1                                          |
@@ -60,18 +59,20 @@ mvn deployment:run -Dargs="--JAVA_DOC=true --SOURCE --UPDATE=true"
 | RELEASE             | Boolean | false   | (Nexus) Releases the deployment                                            |
 | NEXUS_BASE_URL      | String  | ''      | (Nexus) The nexus base url (e.g https://my.nexus.com)                      |
 | NEXUS_DEPLOY_URL    | String  | ''      | (Nexus) Staging url (e.g https://my.nexus.com/service/local/staging/deploy)|
-### Create Settings.xml
+### Add to Settings.xml session
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
 | Server              | String | ''       | server id (multiple possible && caseInsensitive)                           |
 | Username            | String | ''       | username (multiple possible && caseInsensitive)                            |
 | Password            | String | ''       | password (multiple possible && caseInsensitive)                            |
+| PrivateKey          | String | ''       | e.g. ${user.home}/.ssh/id_dsa) (multiple possible && caseInsensitive)      |
+| Passphrase          | String | ''       | privateKey, passphrase (multiple possible && caseInsensitive)              |
+| FilePermissions     | String | ''       | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
+| DirectoryPermissions| String | ''       | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
 ### Misc
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
-| REPORT              | Boolean | false   | Generates report about version updates                                     |
-| OPTIONS             | String  | ''      | Adds additional maven options                                              |
-| ENCODING            | String  | ''      | Sets compiler encoding                                                     |
+| REPORT              | Boolean | false   | Generates report about version updates                                     |                                            |                                                  |
 | test.skip           | Boolean | true    | same as "maven.test.skip"                                                  |
 | JAVA_VERSION        | String  | ''      | Sets compiler java version                                                 |
 

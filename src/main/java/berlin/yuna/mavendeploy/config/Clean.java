@@ -4,12 +4,12 @@ import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.plugin.logging.Log;
 
-import static berlin.yuna.mavendeploy.config.MojoHelper.prepareElement;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.configuration;
+import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
+import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
 
-//TODO: auto detect version
+//TODO: auto detect version like generate pom file with plugins, update in test and parse on runtime
 //TODO: import mojo-executor without any dependencies...
 //TODO: make interface or abstract super class
 
@@ -25,17 +25,18 @@ public class Clean extends MojoBase {
     }
 
     public Clean clean() throws MojoExecutionException {
-        logGoal("clean", true);
+        final String goal = "clean";
+        logGoal(goal, true);
         executeMojo(
                 getPlugin(),
-                goal("clean"),
-                configuration(
-                        prepareElement(environment, "failOnError", "true"),
-                        prepareElement(environment, "followSymLinks", "false"),
-                        prepareElement(environment, "excludeDefaultDirectories", "false")
+                goal(goal),
+                prepareXpp3Dom(environment,
+                        prop("failOnError"),
+                        prop("followSymLinks"),
+                        prop("excludeDefaultDirectories")
                 ), environment
         );
-        logGoal("clean", false);
+        logGoal(goal, false);
         return this;
     }
 }

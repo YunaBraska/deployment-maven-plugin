@@ -1,58 +1,29 @@
 package berlin.yuna.mavendeploy;
 
-import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Dependency;
-import berlin.yuna.mavendeploy.config.MojoBase;
-import org.apache.maven.model.Model;
-import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import berlin.yuna.mavendeploy.config.Javadoc;
+import berlin.yuna.mavendeploy.config.Versions;
 import org.junit.Before;
-import org.junit.BeforeClass;
 import org.junit.Test;
 
 import java.io.File;
-import java.io.FileReader;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.List;
 
+import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.containsString;
+import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
 
-public class MainMojoComponentTest {
-
-    private static final File WORK_DIR = new File(System.getProperty("user.dir"));
-    private Terminal terminal;
-    private final List<ActiveGoal> definedMojoList = asList(
-            g(Clean.class, "clean"),
-            g(Dependency.class, "resolve-plugins"),
-            g(Dependency.class, "purge-local-repository")
-    );
-
-
-    @BeforeClass
-    public static void setUpClass() {
-        System.out.println(format("Start preparing [%s]", MainMojoComponentTest.class.getSimpleName()));
-        getTerminal().execute("mvn -Dmaven.test.skip=true install");
-        System.out.println(format("End preparing [%s]", MainMojoComponentTest.class.getSimpleName()));
-    }
-
-    @Before
-    public void setUp() {
-        terminal = getTerminal();
-    }
+public class MainMojoComponentTest extends CustomMavenTestFramework {
 
     @Test
     public void mojoClear_WithTrigger_shouldExecute() {
         terminal.execute(mvnCmd("-Dclean"));
         expectMojoRun(g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"));
     }
-
 
     @Test
     public void mojoClear_WithOutTrigger_shouldExecute() {
@@ -61,66 +32,179 @@ public class MainMojoComponentTest {
     }
 
     @Test
-    public void mojoClearCache_WithTrigger_shouldExecuteClearAndClearCache() {
+    public void mojoClearCache_WithOutTrigger_shouldExecuteClearAndClearCache() {
         terminal.execute(mvnCmd("-Dclean.cache"));
         expectMojoRun(g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"), g(Dependency.class, "purge-local-repository"));
     }
 
     @Test
-    public void mojoClear_WithOutTrigger_shouldExecuteClearAndClearCache() {
+    public void mojoClear_WithTrigger_shouldExecuteClearAndClearCache() {
         terminal.execute(mvnCmd("-Dclean.cache=false"));
         expectMojoRun();
     }
 
     @Test
-    public void settingsBuilder_withServer_shouldAddServerToSession() {
-        terminal.execute(mvnCmd("-Dsettings.xml=--Server=\"myNewServer\""));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] adding [Server] [myNewServer]"));
+    public void updateMinor_shouldExecuteVersionsGoal() {
+        terminal.execute(mvnCmd("-Dupdate.minor"));
+
+        expectProperties(
+                prop("allowSnapshots", "true"),
+                prop("allowMajorUpdates", "false")
+        );
+
+        expectMojoRun(
+                g(Versions.class, "update-parent"),
+                g(Versions.class, "update-properties"),
+                g(Versions.class, "update-child-modules"),
+                g(Versions.class, "use-latest-releases"),
+                g(Versions.class, "use-next-snapshots"),
+                g(Versions.class, "use-latest-versions"),
+                g(Versions.class, "commit")
+        );
     }
 
+    @Test
+    public void updateMajor_shouldExecuteVersionsGoal() {
+        terminal.execute(mvnCmd("-Dupdate.major"));
 
-    private String mvnCmd(final String parameter) {
-        final Model pom = getPomFile();
-        final String mvnCmd = "mvn"
-                + " --offline --file=" + getClass().getClassLoader().getResource("testApplication/pom.xml").getFile()
-                + " " + pom.getGroupId()
-                + ":" + pom.getArtifactId()
-                + ":" + pom.getVersion()
-                + ":run -Dfake -X " + parameter;
-        System.out.println(format("Running maven command [%s]", mvnCmd));
-        return mvnCmd;
+        expectProperties(
+                prop("allowSnapshots", "true"),
+                prop("allowMajorUpdates", "true")
+        );
+
+        expectMojoRun(
+                g(Versions.class, "update-parent"),
+                g(Versions.class, "update-properties"),
+                g(Versions.class, "update-child-modules"),
+                g(Versions.class, "use-latest-releases"),
+                g(Versions.class, "use-next-snapshots"),
+                g(Versions.class, "use-latest-versions"),
+                g(Versions.class, "commit")
+        );
     }
 
-    private Model getPomFile() {
-        try {
-            return new MavenXpp3Reader().read(new FileReader(new File(WORK_DIR, "pom.xml")));
-        } catch (IOException | XmlPullParserException e) {
-            throw new RuntimeException("could not read pom.xml \n ", e);
-        }
+    @Test
+    public void settingsSession_withServer_shouldAddServerToSession() {
+        terminal.execute(mvnCmd("-Dsettings.xml='--Server=\"Server1\" --Username=User1 --Password=Pass1 --Server=\"Server2\" --Username=User2'"));
+        assertThat(terminal.consoleInfo(), containsString("+ Settings added [Server] id [Server1] user [User1] pass [******]"));
+        assertThat(terminal.consoleInfo(), containsString("+ Settings added [Server] id [Server2] user [User2] pass [null]"));
     }
 
-    private static Terminal getTerminal() {
-        return new Terminal().dir(WORK_DIR).consumerError(System.err::println);
+    @Test
+    public void setParameter_manually_shouldNotBeOverwritten() {
+        terminal.execute(mvnCmd("-Dproject.version=definedVersion -DnewVersion=manualSetVersion"));
+
+        expectPropertiesOverwrite(prop("newVersion", "manualSetVersion"));
+        assertThat(getPomFile(TEST_POM.getPomFile()).getVersion(), is(equalTo("manualSetVersion")));
     }
 
-    private void expectMojoRun(final ActiveGoal... expectedMojos) {
-        final String console = terminal.consoleInfo();
-        assertThat(console, containsString("Building example-maven-project"));
-        final List<ActiveGoal> expectedMojoList = expectedMojos == null ? new ArrayList<>() : asList(expectedMojos);
-        for (ActiveGoal definedMojo : definedMojoList) {
-            if (expectedMojoList.contains(definedMojo)) {
-                System.out.println("Expected: " + definedMojo.toString());
-                assertThat(format("Mojo did not start [%s]", definedMojo), console, containsString("-<=[ Start " + definedMojo.toString()));
-                assertThat(format("Mojo did not run [%s]", definedMojo), console, containsString("-<=[ End " + definedMojo.toString()));
-            } else {
-                System.out.println("Not Expected: " + definedMojo.toString());
-                assertThat(format("Mojo unexpectedly start [%s]", definedMojo), console, is(not(containsString("-<=[ Start " + definedMojo.toString()))));
-                assertThat(format("Mojo unexpectedly run [%s]", definedMojo), console, is(not(containsString("-<=[ End " + definedMojo.toString()))));
-            }
-        }
+    @Test
+    public void setParameter_auto_shouldBeOverwritten() {
+        terminal.execute(mvnCmd("-Dproject.version=definedVersion"));
+
+        expectProperties(prop("newVersion", "definedVersion"));
+        assertThat(getPomFile(TEST_POM.getPomFile()).getVersion(), is(equalTo("definedVersion")));
     }
 
-    private ActiveGoal g(final Class<? extends MojoBase> activeMojo, final String activeGoal) {
-        return new ActiveGoal(activeMojo, activeGoal);
+    @Test
+    public void setProjectVersion_manually_shouldSetNewVersion() {
+        final String prevPomVersion = getPomFile(TEST_POM.getPomFile()).getVersion();
+        terminal.execute(mvnCmd("-Dproject.version=definedVersion"));
+
+        expectProperties(prop("newVersion", "definedVersion"));
+        final String newPomVersion = getPomFile(TEST_POM.getPomFile()).getVersion();
+
+        expectMojoRun(g(Versions.class, "set"));
+        assertThat(newPomVersion, is(not(equalTo(prevPomVersion))));
+        assertThat(newPomVersion, is(equalTo("definedVersion")));
+    }
+
+    @Test
+    public void setProjectVersion_withNoSemanticMatch_shouldFallBackToDefinedVersion() {
+        terminal.execute(mvnCmd("-Dproject.version=1.2.3"));
+        assertThat(parse(TEST_POM).getVersion(), is(equalTo("1.2.3")));
+
+        mergeBranch("feature/shouldNotBeRecognized");
+
+        terminal.clearConsole().execute(mvnCmd("-Dproject.version=1.0.0-fallBackVersion -Dsemantic.format='[.]::none::none::none'"));
+        assertThat(parse(TEST_POM).getVersion(), is(equalTo("1.0.0-fallBackVersion")));
+        expectProperties(prop("newVersion", "1.0.0-fallBackVersion"));
+    }
+
+    @Test
+    public void setProjectVersion_withNoSemanticMatch_shouldFallBackToOriginalVersion() {
+        terminal.execute(mvnCmd("-Dproject.version=1.2.3"));
+        assertThat(parse(TEST_POM).getVersion(), is(equalTo("1.2.3")));
+
+        mergeBranch("feature/shouldNotBeRecognized");
+        terminal.clearConsole().execute(mvnCmd("-Dsemantic.format='[.]::none::none::none'"));
+
+        expectMojoRun(g(Versions.class, "set"));
+        assertThat(parse(TEST_POM).getVersion(), is(equalTo("1.2.3")));
+    }
+
+    @Test
+    public void setProjectVersion_withSemantic_shouldAutoSetNewSemanticMajorVersion() {
+        terminal.execute(mvnCmd("-Dproject.version=1.2.3"));
+        assertThat(parse(TEST_POM).getVersion(), is(equalTo("1.2.3")));
+
+        mergeBranch("feature/MarketingJustWantsThis");
+        mergeBranch("bugfix/bugsEverywhere");
+        mergeBranch("major/newAge");
+        terminal.clearConsole().execute(mvnCmd("-Dsemantic.format='[.]::major.*::feature.*::bugfix.*'"));
+
+        expectMojoRun(g(Versions.class, "set"));
+        assertThat(parse(TEST_POM).getVersion(), is(equalTo("2.0.0")));
+        expectProperties(prop("newVersion", "2.0.0"));
+    }
+
+    @Test
+    public void setProjectVersion_withSemantic_shouldAutoSetNewSemanticFeatureVersion() {
+        terminal.execute(mvnCmd("-Dproject.version=1.2.3"));
+        assertThat(parse(TEST_POM).getVersion(), is(equalTo("1.2.3")));
+
+        mergeBranch("major/newAge");
+        mergeBranch("bugfix/bugsEverywhere");
+        mergeBranch("feature/MarketingJustWantsThis");
+        terminal.clearConsole().execute(mvnCmd("-Dproject.version=definedVersion -Dsemantic.format='[.]::major.*::feature.*::bugfix.*'"));
+
+        expectMojoRun(g(Versions.class, "set"));
+        assertThat(parse(TEST_POM).getVersion(), is(equalTo("1.3.0")));
+        expectProperties(prop("newVersion", "1.3.0"));
+    }
+
+    @Test
+    public void setProjectVersion_withSemantic_shouldAutoSetNewSemanticBugFixVersion() {
+        terminal.execute(mvnCmd("-Dproject.version=1.2.3"));
+        assertThat(parse(TEST_POM).getVersion(), is(equalTo("1.2.3")));
+
+        mergeBranch("major/newAge");
+        mergeBranch("feature/MarketingJustWantsThis");
+        mergeBranch("bugfix/bugsEverywhere");
+        terminal.clearConsole().execute(mvnCmd("-Dproject.version=definedVersion -Dsemantic.format='[.]::major.*::feature.*::bugfix.*'"));
+
+        expectMojoRun(g(Versions.class, "set"));
+        assertThat(parse(TEST_POM).getVersion(), is(equalTo("1.2.4")));
+        expectProperties(prop("newVersion", "1.2.4"));
+    }
+
+    @Test
+    public void removeSnapshot_shouldBeSuccessful() {
+        terminal.execute(mvnCmd("-Dproject.version=1.2.3-SNAPSHOT"));
+        assertThat(parse(TEST_POM).getVersion(), is(equalTo("1.2.3-SNAPSHOT")));
+
+        terminal.clearConsole().execute(mvnCmd("-Dremove.snapshot"));
+
+        expectMojoRun(g(Versions.class, "set"));
+        assertThat(parse(TEST_POM).getVersion(), is(equalTo("1.2.3")));
+    }
+
+    @Test
+    public void createJavaDoc_shouldBeSuccessful() {
+        terminal.execute(mvnCmd("-Djava.doc"));
+
+        expectMojoRun(g(Javadoc.class, "jar"));
+        final File indexHtml = new File(TEST_POM.getPomFile().getParent(), "target/apidocs/index.html");
+        assertThat(format("Cant find [%s]", indexHtml), indexHtml.exists(), is(true));
     }
 }
