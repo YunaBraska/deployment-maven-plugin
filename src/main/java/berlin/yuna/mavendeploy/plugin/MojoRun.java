@@ -272,7 +272,7 @@ public class MojoRun extends AbstractMojo {
     private void overwriteWhen(final String key, final String value, final boolean... when) {
         for (boolean trigger : when) {
             if (trigger) {
-                LOG.debug(format("+ Config added key [tag] value [%s]", newProjectVersion));
+                LOG.debug(format("+ Config added key [tag] value [%s]", value));
                 session.getUserProperties().setProperty(key, value);
                 break;
             }
