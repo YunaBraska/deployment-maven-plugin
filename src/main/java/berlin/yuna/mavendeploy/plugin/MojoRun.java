@@ -82,9 +82,8 @@ public class MojoRun extends AbstractMojo {
             try {
                 LOG.debug(format("Project is library [%s]", isLibrary()));
                 final String newProjectVersion = prepareProjectVersion();
+                //FIXME: //TODO support own tag version
                 final boolean hasNewTag = hasNewTag(isTrue("tag"), isTrue("tag.break"), newProjectVersion);
-
-                //TODO support own tag version
 
                 //SET PROPERTIES
                 setWhen("newVersion", newProjectVersion, newProjectVersion != null && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
@@ -95,13 +94,7 @@ public class MojoRun extends AbstractMojo {
                 setWhen("scm.provider", "scm:git", !hasText("scm.provider"));
                 setWhen("connectionUrl", getConnectionUrl(), !hasText("connectionUrl"));
                 setWhen("project.scm.connection", getConnectionUrl(), !hasText("project.scm.connection"));
-
-                //FIXME: refactor
-                if (hasNewTag) {
-                    //overwrite to default behavior/value
-                    LOG.debug(format("+ Config added key [tag] value [%s]", newProjectVersion));
-                    session.getUserProperties().setProperty("tag", newProjectVersion);
-                }
+                overwriteWhen("tag", newProjectVersion, hasNewTag && (isEmpty(getParam("tag", null)) || "true".equals(getParam("tag", null))));
                 setWhen("message", prepareCommitMessage(newProjectVersion, hasNewTag, isTrue("update.minor", "update.major")), (hasNewTag && !hasText("message")));
 
                 //RUN MOJOS
@@ -125,6 +118,8 @@ public class MojoRun extends AbstractMojo {
                 runWhen(() -> Scm.build(ENVIRONMENT, LOG).tag(), hasNewTag);
 
 
+                //TODO: JACOCOC
+                //TODO: DUPLICATE FINDER (not test resources)
                 //TODO: GIT CREDENTIALS
                 //TODO: FAILSAFE
                 //TODO: SURFIRE
@@ -145,7 +140,7 @@ public class MojoRun extends AbstractMojo {
         final String originUrl = GIT_SERVICE.getOriginUrl();
         final String scmProvider = getParam("scm.provider", "scm:git");
         final String connectionUrl = isEmpty(originUrl) ? basedir.toURI().toString() : originUrl;
-        return connectionUrl.startsWith(scmProvider)? connectionUrl : scmProvider + ":" + connectionUrl;
+        return connectionUrl.startsWith(scmProvider) ? connectionUrl : scmProvider + ":" + connectionUrl;
     }
 
     public String prepareCommitMessage(final String projectVersion, final boolean hasNewTag, final boolean update) {
@@ -269,6 +264,16 @@ public class MojoRun extends AbstractMojo {
         for (boolean trigger : when) {
             if (trigger) {
                 setParameter(key, value);
+                break;
+            }
+        }
+    }
+
+    private void overwriteWhen(final String key, final String value, final boolean... when) {
+        for (boolean trigger : when) {
+            if (trigger) {
+                LOG.debug(format("+ Config added key [tag] value [%s]", newProjectVersion));
+                session.getUserProperties().setProperty(key, value);
                 break;
             }
         }
