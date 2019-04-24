@@ -7,6 +7,7 @@ import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.MojoBase;
+import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Versions;
 import berlin.yuna.mavendeploy.model.Prop;
 import org.apache.maven.model.Model;
@@ -44,7 +45,7 @@ import static org.hamcrest.core.IsNot.not;
 public class CustomMavenTestFramework {
 
     private static final boolean DEBUG = true;
-    static Model TEST_POM;
+    protected static Model TEST_POM;
     private static Model PROJECT_POM;
 
     Terminal terminal;
@@ -62,7 +63,8 @@ public class CustomMavenTestFramework {
             g(Versions.class, "set"),
             g(Javadoc.class, "jar"),
             g(JavaSource.class, "jar-no-fork"),
-            g(Gpg.class, "sign")
+            g(Gpg.class, "sign"),
+            g(Scm.class, "tag")
     );
 
     @BeforeClass
@@ -146,9 +148,7 @@ public class CustomMavenTestFramework {
                 assertThat(format("Mojo did not start [%s]", definedMojo), console, containsString("-<=[ Start " + definedMojo.toString()));
                 assertThat(format("Mojo did not run [%s]", definedMojo), console, containsString("-<=[ End " + definedMojo.toString()));
             } else {
-//                System.out.println("[INFO] Plugin not expected: " + definedMojo.toString());
-                assertThat(format("Mojo unexpectedly start [%s]", definedMojo), console, is(not(containsString("-<=[ Start " + definedMojo.toString()))));
-                assertThat(format("Mojo unexpectedly run [%s]", definedMojo), console, is(not(containsString("-<=[ End " + definedMojo.toString()))));
+                assertThat(format("Mojo unexpectedly started [%s]", definedMojo), console, is(not(containsString("-<=[ Start " + definedMojo.toString()))));
             }
         }
     }

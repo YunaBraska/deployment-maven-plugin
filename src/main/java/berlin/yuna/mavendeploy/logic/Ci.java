@@ -133,16 +133,6 @@ public class Ci {
         return branchName == null ? gitService.findOriginalBranchName(1) : branchName;
     }
 
-    public String prepareCommitMessage() {
-        if (!isEmpty(MVN_COMMIT_MSG)) {
-            return MVN_COMMIT_MSG;
-        }
-        return format("[%s]", getProjectVersion())
-                + format("[%s]", getBranchName())
-                + ifDo(MVN_TAG || MVN_TAG_BREAK, "[TAG]")
-                + ifDo(MVN_UPDATE_MAJOR || MVN_UPDATE_MINOR, "[UPDATE]");
-    }
-
     public boolean allowCommitMessage() {
         return !"false".equalsIgnoreCase(MVN_COMMIT_MSG);
     }

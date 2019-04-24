@@ -4,6 +4,7 @@ import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
+import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Versions;
 import org.junit.Test;
 
@@ -231,6 +232,21 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         setPackaging("jar");
         terminal.execute(mvnCmd(""));
         assertThat(terminal.consoleInfo(), is(containsString("Project is library [false]")));
+    }
+
+    @Test
+    public void tagging_shouldBeSuccessful() {
+        terminal.execute(mvnCmd("-Dproject.version=20.04.19 -Dtag"));
+
+        expectMojoRun(
+                g(Versions.class, "set"),
+                g(Scm.class, "tag"));
+
+        assertThat(terminal.consoleInfo(), containsString("Tagging requested [20.04.19]"));
+        assertThat(parse(TEST_POM).getVersion(), is(equalTo("20.04.19")));
+        //TODO: verify tag
+        //TODO: tag already exists
+        //TODO: tag not newer than project version
     }
 
 }

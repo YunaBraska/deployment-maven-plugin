@@ -20,6 +20,12 @@ Auto handling semantic versioning, maven plugins, and much more while you can st
 </plugin>
 ````
 
+### Features
+* [x] Auto handle scm url
+* [x] Auto update semantic version
+* [x] Run plugins only when needed
+* [x] Optional Tag with and without break pipeline
+
 ### How to call
 ````bash
 mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
@@ -36,13 +42,15 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
 | project.version     | String  | ''      | Sets project version in pom                                                |
-| semantic.format     | String  | ''      | Updates semantic version from regex pattern (overwrites PROJECT_VERSION)   |
+| semantic.format     | String  | ''      | Updates semantic version from regex pattern (overwrites project.version)   |
 | remove.snapshot     | Boolean | false   | Removes snapshot from version                                              |
-| TAG                 | Boolean | false   | Tags the project (by PROJECT_VERSION) if not already exists                |
-| TAG_BREAK           | Boolean | false   | Tags the project (by PROJECT_VERSION) and fails if already exists          |
+| tag                 | Boolean | false   | Tags the project (with project.version or semantic) if not already exists  |
+| tag.break           | Boolean | false   | Tags the project (with project.version or semantic) fails if already exists|
+| message             | String  | ${auto} | Commit msg for tag default = \[project.version] \[branchname], \[tag] ...  |
 | update.minor        | Boolean | false   | Updates parent, properties, dependencies                                   |
 | update.major        | Boolean | false   | Updates parent, properties, dependencies                                   |
 | COMMIT              | String  | ''      | Custom commit message on changes - "false" = deactivate commits            |
+| scm.provider        | String  | scm:git | needed for tagging and maven scm plugin                                    |
 ### Building
 | Parameter           | Type    | Default |  Description                                                               |
 |:--------------------|:--------|:--------|:---------------------------------------------------------------------------|

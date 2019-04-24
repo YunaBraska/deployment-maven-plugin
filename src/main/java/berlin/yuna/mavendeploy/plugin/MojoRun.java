@@ -6,6 +6,7 @@ import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
+import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Versions;
 import berlin.yuna.mavendeploy.logic.GitService;
 import berlin.yuna.mavendeploy.logic.SemanticService;
@@ -28,14 +29,13 @@ import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 
 import java.io.File;
-import java.nio.file.Paths;
 import java.util.List;
-import java.util.Objects;
 import java.util.Properties;
 
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executionEnvironment;
 import static berlin.yuna.mavendeploy.plugin.MojoHelper.isEmpty;
 import static java.lang.String.format;
+import static java.util.Objects.requireNonNull;
 
 //https://stackoverflow.com/questions/53954902/custom-maven-plugin-development-getartifacts-is-empty-though-dependencies-are
 @Mojo(name = "run",
@@ -61,51 +61,8 @@ public class MojoRun extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.directory}", readonly = true)
     private File target;
 
-    //Versioning
-    @Parameter(property = "project.version", defaultValue = "", readonly = false)
-    private String PROJECT_VERSION;
-    @Parameter(property = "semantic.format", defaultValue = "", readonly = false)
-    private String SEMANTIC_FORMAT;
-    @Parameter(property = "tag", defaultValue = "", readonly = false)
-    private String TAG;
-    @Parameter(property = "tag.break", defaultValue = "", readonly = false)
-    private String TAG_BREAK;
-    @Parameter(property = "update.major", defaultValue = "", readonly = false)
-    private String UPDATE_MAJOR;
-    @Parameter(property = "update.minor", defaultValue = "", readonly = false)
-    private String UPDATE_MINOR;
-    @Parameter(property = "commit", defaultValue = "", readonly = false)
-    private String COMMIT;
-
-    //building
-    @Parameter(property = "java.doc", defaultValue = "", readonly = false)
-    private String JAVA_DOC;
-    @Parameter(property = "java.src", defaultValue = "", readonly = false)
-    private String SOURCE;
-    @Parameter(property = "profiles", defaultValue = "", readonly = false)
-    private String PROFILES;
-    @Parameter(property = "gpg.pass", defaultValue = "", readonly = false)
-    private String GPG_PASS;
-    @Parameter(property = "gpg.pass.alt", defaultValue = "", readonly = false)
-    private String GPG_PASS_ALT;
-
-    //deployment
-    @Parameter(property = "deploy.id", defaultValue = "", readonly = false)
-    private String DEPLOY_ID;
-    @Parameter(property = "release", defaultValue = "", readonly = false)
-    private String RELEASE;
-
-    //Settings.xml FIXME: one line arg?
     @Parameter(property = "settings.xml", defaultValue = "", readonly = false)
     private List<String> SETTINGS;
-
-    //misc
-    @Parameter(property = "report", defaultValue = "", readonly = false)
-    private String REPORT;
-    @Parameter(property = "encoding", defaultValue = "", readonly = false)
-    private String ENCODING;
-    @Parameter(property = "java.version", defaultValue = "", readonly = false)
-    private String JAVA_VERSION;
 
     private Log LOG;
     private GitService GIT_SERVICE;
@@ -125,12 +82,29 @@ public class MojoRun extends AbstractMojo {
             try {
                 LOG.debug(format("Project is library [%s]", isLibrary()));
                 final String newProjectVersion = prepareProjectVersion();
+                final boolean hasNewTag = hasNewTag(isTrue("tag"), isTrue("tag.break"), newProjectVersion);
+
+                //TODO support own tag version
+
+                //SET PROPERTIES
                 setWhen("newVersion", newProjectVersion, newProjectVersion != null && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
                 setWhen("removeSnapshot", "true", isTrue("remove.snapshot"));
                 setWhen("generateBackupPoms", "false", true);
                 setWhen("allowSnapshots", "true", isTrue("update.minor", "update.major"));
                 setWhen("allowMajorUpdates", getParam("update.major", false).toString(), isTrue("update.minor", "update.major"));
+                setWhen("scm.provider", "scm:git", !hasText("scm.provider"));
+                setWhen("connectionUrl", getConnectionUrl(), !hasText("connectionUrl"));
+                setWhen("project.scm.connection", getConnectionUrl(), !hasText("project.scm.connection"));
 
+                //FIXME: refactor
+                if (hasNewTag) {
+                    //overwrite to default behavior/value
+                    LOG.debug(format("+ Config added key [tag] value [%s]", newProjectVersion));
+                    session.getUserProperties().setProperty("tag", newProjectVersion);
+                }
+                setWhen("message", prepareCommitMessage(newProjectVersion, hasNewTag, isTrue("update.minor", "update.major")), (hasNewTag && !hasText("message")));
+
+                //RUN MOJOS
                 runWhen(() -> Clean.build(ENVIRONMENT, LOG).clean(), isTrue("clean", "clean.cache"));
                 runWhen(() -> Dependency.build(ENVIRONMENT, LOG).resolvePlugins(), isTrue("clean", "clean.cache"));
                 runWhen(() -> Dependency.build(ENVIRONMENT, LOG).purgeLocalRepository(), isTrue("clean.cache"));
@@ -143,13 +117,20 @@ public class MojoRun extends AbstractMojo {
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).useNextSnapshots(), isTrue("update.major", "update.minor"));
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).commit(), isTrue("update.major", "update.minor"));
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).set(), hasText("newVersion"), isTrue("removeSnapshot"));
-
-                if (!isLibrary()) {
-                    runWhen(() -> Javadoc.build(ENVIRONMENT, LOG).jar(), isTrue("java.doc"));
-                    runWhen(() -> JavaSource.build(ENVIRONMENT, LOG).jarNoFork(), isTrue("java.source"));
-                }
-
+                runWhen(() -> Javadoc.build(ENVIRONMENT, LOG).jar(), (!isLibrary() && isTrue("java.doc")));
+                runWhen(() -> JavaSource.build(ENVIRONMENT, LOG).jarNoFork(), (!isLibrary() && isTrue("java.source")));
                 runWhen(() -> Gpg.build(ENVIRONMENT, LOG).sign(), hasText("gpg.passphrase"));
+
+                //Should stay at the end after everything is
+                runWhen(() -> Scm.build(ENVIRONMENT, LOG).tag(), hasNewTag);
+
+
+                //TODO: GIT CREDENTIALS
+                //TODO: FAILSAFE
+                //TODO: SURFIRE
+                //TODO: REPORT
+
+                //TODO: git push everything at the end when success?
 
                 printJavaDoc();
             } catch (Exception e) {
@@ -160,10 +141,49 @@ public class MojoRun extends AbstractMojo {
         }
     }
 
+    private String getConnectionUrl() {
+        final String originUrl = GIT_SERVICE.getOriginUrl();
+        final String scmProvider = getParam("scm.provider", "scm:git");
+        final String connectionUrl = isEmpty(originUrl) ? basedir.toURI().toString() : originUrl;
+        return connectionUrl.startsWith(scmProvider)? connectionUrl : scmProvider + ":" + connectionUrl;
+    }
+
+    public String prepareCommitMessage(final String projectVersion, final boolean hasNewTag, final boolean update) {
+        return format("[%s]", projectVersion)
+                + format(" [%s]", getBranchName())
+                + (hasNewTag ? " [TAG]" : "")
+                + (update ? " [UPDATE]" : "")
+                ;
+    }
+
+    private String getBranchName() {
+        final String branchName = SEMANTIC_SERVICE.getBranchName();
+        return branchName == null ? GIT_SERVICE.findOriginalBranchName(1) : "N/A";
+    }
+
+    private boolean hasNewTag(final boolean tag, final boolean tagBreak, final String newProjectVersion) {
+        if ((tag || tagBreak) && !isEmpty(newProjectVersion)) {
+            final String lastGitTag = GIT_SERVICE.getLastGitTag();
+            LOG.debug(format("Tagging requested [%s], last tag was [%s]", newProjectVersion, lastGitTag));
+            printTagMessage(tagBreak, newProjectVersion, lastGitTag);
+            return !newProjectVersion.equalsIgnoreCase(lastGitTag);
+        }
+        LOG.debug("No new tag found");
+        return false;
+    }
+
+    private void printTagMessage(final boolean tagBreak, final String newProjectVersion, final String lastGitTag) {
+        if (tagBreak && newProjectVersion.equalsIgnoreCase(lastGitTag)) {
+            throw new RuntimeException(format("Git tag [%s] already exists", newProjectVersion));
+        } else {
+            LOG.info(format("New git tag [%s]", newProjectVersion));
+        }
+    }
+
     private void printJavaDoc() {
         final File javaDocFile = new File(basedir, "target/apidocs/index.html");
         if (javaDocFile.exists()) {
-            LOG.info(format("JavaDoc [%s]", javaDocFile.toURI().toString()));
+            LOG.info(format("JavaDoc [file://%s]", javaDocFile.toURI().getRawPath()));
         }
     }
 
@@ -221,7 +241,7 @@ public class MojoRun extends AbstractMojo {
 
     private void before() {
         LOG = getLog();
-        Objects.requireNonNull(pluginManager);
+        requireNonNull(pluginManager);
 
         MojoExecutor.setLogger(LOG);
         ENVIRONMENT = executionEnvironment(project, session, pluginManager);
@@ -255,10 +275,11 @@ public class MojoRun extends AbstractMojo {
     }
 
     private void setParameter(final String key, final String value) {
+        requireNonNull(key, "setParameter key is null");
         final String cmdValue = session.getUserProperties().getProperty(key);
         if (isEmpty(cmdValue)) {
-            session.getUserProperties().setProperty(key, value);
             LOG.info(format("+ Config added key [%s] value [%s]", key, value));
+            session.getUserProperties().setProperty(key, value);
         } else {
             LOG.warn(format("- Config key [%s] already set with [%s] - won't take action", key, cmdValue));
         }
