@@ -7,6 +7,7 @@ import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.Scm;
+import berlin.yuna.mavendeploy.config.Surfire;
 import berlin.yuna.mavendeploy.config.Versions;
 import berlin.yuna.mavendeploy.logic.GitService;
 import berlin.yuna.mavendeploy.logic.SemanticService;
@@ -29,12 +30,16 @@ import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 
 import java.io.File;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executionEnvironment;
 import static berlin.yuna.mavendeploy.plugin.MojoHelper.isEmpty;
 import static java.lang.String.format;
+import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Objects.requireNonNull;
 
 //https://stackoverflow.com/questions/53954902/custom-maven-plugin-development-getartifacts-is-empty-though-dependencies-are
@@ -70,6 +75,9 @@ public class MojoRun extends AbstractMojo {
     private boolean HAS_GIT_CHANGES;
     private MojoExecutor.ExecutionEnvironment ENVIRONMENT;
 
+    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private LocalDateTime lastLog = LocalDateTime.now();
+
     public void execute() {
         before();
 
@@ -78,15 +86,15 @@ public class MojoRun extends AbstractMojo {
         addGpgToSettings();
 
         try {
-            LOG.info("Preparing information");
+            info("Preparing information");
             try {
-                LOG.debug(format("Project is library [%s]", isLibrary()));
+                debug("Project is library [%s]", isLibrary());
                 final String newProjectVersion = prepareProjectVersion();
                 //FIXME: //TODO support own tag version
                 final boolean hasNewTag = hasNewTag(isTrue("tag"), isTrue("tag.break"), newProjectVersion);
 
                 //SET PROPERTIES
-                setWhen("newVersion", newProjectVersion, newProjectVersion != null && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
+                setWhen("newVersion", newProjectVersion, !isEmpty(newProjectVersion) && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
                 setWhen("removeSnapshot", "true", isTrue("remove.snapshot"));
                 setWhen("generateBackupPoms", "false", true);
                 setWhen("allowSnapshots", "true", isTrue("update.minor", "update.major"));
@@ -112,13 +120,16 @@ public class MojoRun extends AbstractMojo {
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).set(), hasText("newVersion"), isTrue("removeSnapshot"));
                 runWhen(() -> Javadoc.build(ENVIRONMENT, LOG).jar(), (!isLibrary() && isTrue("java.doc")));
                 runWhen(() -> JavaSource.build(ENVIRONMENT, LOG).jarNoFork(), (!isLibrary() && isTrue("java.source")));
-                runWhen(() -> Gpg.build(ENVIRONMENT, LOG).sign(), hasText("gpg.passphrase"));
+                runWhen(() -> Surfire.build(ENVIRONMENT, LOG).test(), isTrue("test.run", "test.integration", "test.int"));
+
 
                 //Should stay at the end after everything is
+                runWhen(() -> Gpg.build(ENVIRONMENT, LOG).sign(), hasText("gpg.passphrase"));
                 runWhen(() -> Scm.build(ENVIRONMENT, LOG).tag(), hasNewTag);
 
 
-                //TODO: JACOCOC
+                //TODO: git-commit-id-plugin
+                //TODO: JACOCO
                 //TODO: DUPLICATE FINDER (not test resources)
                 //TODO: GIT CREDENTIALS
                 //TODO: FAILSAFE
@@ -159,26 +170,27 @@ public class MojoRun extends AbstractMojo {
     private boolean hasNewTag(final boolean tag, final boolean tagBreak, final String newProjectVersion) {
         if ((tag || tagBreak) && !isEmpty(newProjectVersion)) {
             final String lastGitTag = GIT_SERVICE.getLastGitTag();
-            LOG.debug(format("Tagging requested [%s], last tag was [%s]", newProjectVersion, lastGitTag));
+            debug("Tagging requested [%s], last tag was [%s]", newProjectVersion, lastGitTag);
             printTagMessage(tagBreak, newProjectVersion, lastGitTag);
             return !newProjectVersion.equalsIgnoreCase(lastGitTag);
         }
-        LOG.debug("No new tag found");
         return false;
     }
 
     private void printTagMessage(final boolean tagBreak, final String newProjectVersion, final String lastGitTag) {
         if (tagBreak && newProjectVersion.equalsIgnoreCase(lastGitTag)) {
             throw new RuntimeException(format("Git tag [%s] already exists", newProjectVersion));
+        } else if (newProjectVersion.equalsIgnoreCase(lastGitTag)) {
+            info("Git tag [%s] already exists", newProjectVersion);
         } else {
-            LOG.info(format("New git tag [%s]", newProjectVersion));
+            info("New git tag [%s]", newProjectVersion);
         }
     }
 
     private void printJavaDoc() {
         final File javaDocFile = new File(basedir, "target/apidocs/index.html");
         if (javaDocFile.exists()) {
-            LOG.info(format("JavaDoc [file://%s]", javaDocFile.toURI().getRawPath()));
+            info("JavaDoc [file://%s]", javaDocFile.toURI().getRawPath());
         }
     }
 
@@ -187,13 +199,14 @@ public class MojoRun extends AbstractMojo {
         final String semanticFormat = getParam("semantic.format", null);
         projectVersion = isEmpty(semanticFormat) ?
                 projectVersion : SEMANTIC_SERVICE.getNextSemanticVersion(project.getVersion(), GIT_SERVICE, projectVersion);
+        debug("Project version [%s]", projectVersion);
         return projectVersion;
     }
 
     private void addGpgToSettings() {
         final String gpgPassphrase = getParam("gpg.pass", getParam("gpg.passphrase", null));
         if (!isEmpty(gpgPassphrase)) {
-            LOG.info("Creating GPG settings");
+            info("Creating GPG settings");
             final Profile profile = new Profile();
             final Activation activation = new Activation();
             final Properties properties = new Properties();
@@ -217,12 +230,12 @@ public class MojoRun extends AbstractMojo {
             server.setPassphrase(clr.getValue(i, "Passphrase"));
             server.setFilePermissions(clr.getValue(i, "FilePermissions"));
             server.setDirectoryPermissions(clr.getValue(i, "DirectoryPermissions"));
-            LOG.info(format(
+            info(
                     "+ Settings added [%s] id [%s] user [%s] pass [%s]",
                     Server.class.getSimpleName(),
                     server.getId(), server.getUsername(),
                     server.getPassword() == null ? null : server.getPassword().replaceAll(".?", "*")
-            ));
+            );
             session.getSettings().addServer(server);
         }
     }
@@ -272,7 +285,7 @@ public class MojoRun extends AbstractMojo {
     private void overwriteWhen(final String key, final String value, final boolean... when) {
         for (boolean trigger : when) {
             if (trigger) {
-                LOG.debug(format("+ Config added key [tag] value [%s]", value));
+                debug("+ Config added key [tag] value [%s]", value);
                 session.getUserProperties().setProperty(key, value);
                 break;
             }
@@ -283,7 +296,7 @@ public class MojoRun extends AbstractMojo {
         requireNonNull(key, "setParameter key is null");
         final String cmdValue = session.getUserProperties().getProperty(key);
         if (isEmpty(cmdValue)) {
-            LOG.info(format("+ Config added key [%s] value [%s]", key, value));
+            info("+ Config added key [%s] value [%s]", key, value);
             session.getUserProperties().setProperty(key, value);
         } else {
             LOG.warn(format("- Config key [%s] already set with [%s] - won't take action", key, cmdValue));
@@ -318,6 +331,26 @@ public class MojoRun extends AbstractMojo {
 
     private String getParam(final String key, final String fallback) {
         return MojoHelper.getString(session, key, fallback);
+    }
+
+    private void debug(final Object... format) {
+        LOG.debug("  " + formatMsg(format));
+    }
+
+    private void info(final Object... format) {
+        LOG.info("   " + formatMsg(format));
+    }
+
+    private void error(final Object... format) {
+        LOG.error("  " + formatMsg(format));
+    }
+
+    private String formatMsg(final Object[] format) {
+        final LocalDateTime now = LocalDateTime.now();
+        final long diff = lastLog.until(now, SECONDS);
+        final String msg = format.length > 1 ? format((String) format[0], (Object[]) Arrays.copyOfRange(format, 1, format.length)) : (String) format[0];
+        lastLog = now;
+        return format("[%s] diff[%s] [%s]", now.format(formatter), diff, msg);
     }
 
 }

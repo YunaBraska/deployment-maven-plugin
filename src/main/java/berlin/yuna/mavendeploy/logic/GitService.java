@@ -33,10 +33,10 @@ public class GitService {
     public String getLastGitTag() {
         final String tag;
         try {
-            getTerminal().execute("git fetch --tags --force");
+            getString("git fetch --tags --force");
         } catch (Exception ignored) {
         } finally {
-            tag = getTerminal().execute("git describe --tag --always --abbrev=0").consoleInfo().trim();
+            tag = getString("git describe --tag --always --abbrev=0");
         }
         return tag;
     }
@@ -83,6 +83,6 @@ public class GitService {
     private String getString(final String command) {
 //        workaround as terminal cannot handle empty strings yet
         final String result = getTerminal().execute("tmp=$(" + command + "); if [ -z \"${tmp}\" ]; then echo null; else echo ${tmp}; fi").consoleInfo();
-        return result.equalsIgnoreCase("null") ? null : result;
+        return result.equalsIgnoreCase("null") ? null : result.trim();
     }
 }

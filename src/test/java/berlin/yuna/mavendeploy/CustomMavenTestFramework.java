@@ -8,6 +8,7 @@ import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.MojoBase;
 import berlin.yuna.mavendeploy.config.Scm;
+import berlin.yuna.mavendeploy.config.Surfire;
 import berlin.yuna.mavendeploy.config.Versions;
 import berlin.yuna.mavendeploy.model.Prop;
 import org.apache.maven.model.Model;
@@ -45,10 +46,12 @@ import static org.hamcrest.core.IsNot.not;
 public class CustomMavenTestFramework {
 
     private static final boolean DEBUG = true;
-    protected static Model TEST_POM;
+    static Model TEST_POM;
     private static Model PROJECT_POM;
 
     Terminal terminal;
+    Terminal terminalNoLog;
+
     private final List<ActiveGoal> definedMojoList = asList(
             g(Clean.class, "clean"),
             g(Dependency.class, "resolve-plugins"),
@@ -64,7 +67,8 @@ public class CustomMavenTestFramework {
             g(Javadoc.class, "jar"),
             g(JavaSource.class, "jar-no-fork"),
             g(Gpg.class, "sign"),
-            g(Scm.class, "tag")
+            g(Scm.class, "tag"),
+            g(Surfire.class, "test")
     );
 
     @BeforeClass
@@ -80,6 +84,7 @@ public class CustomMavenTestFramework {
         PROJECT_POM = getPomFile(new File(System.getProperty("user.dir"), "pom.xml"));
         TEST_POM = getPomFile(new File(tmpDir.toFile(), "pom.xml"));
         terminal = getTerminal().dir(tmpDir);
+        terminalNoLog = getTerminalNoLog().dir(tmpDir);
         assertThat(format("Terminal does not point to test project [%s]", terminal.dir()),
                 terminal.dir().getAbsolutePath().startsWith(System.getProperty("user.dir")), is(false));
         System.out.println(format("Work dir [%s]", tmpDir));
@@ -133,8 +138,11 @@ public class CustomMavenTestFramework {
     }
 
     private static Terminal getTerminal() {
-        final Terminal terminal = new Terminal().dir(System.getProperty("user.dir")).consumerError(System.err::println);
-        return DEBUG ? terminal.consumerInfo(System.out::println) : terminal;
+        return DEBUG ? getTerminalNoLog().consumerInfo(System.out::println) : getTerminalNoLog();
+    }
+
+    private static Terminal getTerminalNoLog() {
+        return new Terminal().dir(System.getProperty("user.dir")).consumerError(System.err::println);
     }
 
     void expectMojoRun(final ActiveGoal... expectedMojos) {

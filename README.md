@@ -49,6 +49,11 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 | message             | String  | ${auto} | Commit msg for tag default = \[project.version] \[branchname], \[tag] ...  |
 | update.minor        | Boolean | false   | Updates parent, properties, dependencies                                   |
 | update.major        | Boolean | false   | Updates parent, properties, dependencies                                   |
+| test.run            | Boolean | false   | runs test.unit and test.integration                                        |
+| test.unit           | Boolean | false   | runs failsafe for unitTest                                                 |
+| test.int            | Boolean | false   | alias for test.integration                                                 |
+| test.integration    | Boolean | false   | runs surfire integration, component, contract, smoke                       |
+| JACOCO              | Boolean | false   | runs failsafe integration test and surfire unitTest                        |
 | COMMIT              | String  | ''      | Custom commit message on changes - "false" = deactivate commits            |
 | scm.provider        | String  | scm:git | needed for tagging and maven scm plugin                                    |
 ### Building
