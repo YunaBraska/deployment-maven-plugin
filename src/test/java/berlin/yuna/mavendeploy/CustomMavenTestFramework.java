@@ -2,13 +2,15 @@ package berlin.yuna.mavendeploy;
 
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.config.Clean;
+import berlin.yuna.mavendeploy.config.Compiler;
 import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.MojoBase;
+import berlin.yuna.mavendeploy.config.Resources;
 import berlin.yuna.mavendeploy.config.Scm;
-import berlin.yuna.mavendeploy.config.Surfire;
+import berlin.yuna.mavendeploy.config.Surefire;
 import berlin.yuna.mavendeploy.config.Versions;
 import berlin.yuna.mavendeploy.model.Prop;
 import org.apache.maven.model.Model;
@@ -68,7 +70,11 @@ public class CustomMavenTestFramework {
             g(JavaSource.class, "jar-no-fork"),
             g(Gpg.class, "sign"),
             g(Scm.class, "tag"),
-            g(Surfire.class, "test")
+            g(Surefire.class, "test"),
+            g(Resources.class, "resources"),
+            g(Resources.class, "testResources"),
+            g(Compiler.class, "compile"),
+            g(Compiler.class, "testCompile")
     );
 
     @BeforeClass
@@ -147,7 +153,7 @@ public class CustomMavenTestFramework {
 
     void expectMojoRun(final ActiveGoal... expectedMojos) {
         final String console = terminal.consoleInfo();
-        assertThat(console, containsString("Building example-maven-project"));
+        assertThat(console, containsString("Building example-maven-test-project"));
         assertThat(console, not(containsString("Unable to invoke plugin")));
         final List<ActiveGoal> expectedMojoList = expectedMojos == null ? new ArrayList<>() : asList(expectedMojos);
         for (ActiveGoal definedMojo : definedMojoList) {

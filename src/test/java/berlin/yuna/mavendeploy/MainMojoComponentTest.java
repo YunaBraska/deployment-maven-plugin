@@ -1,14 +1,13 @@
 package berlin.yuna.mavendeploy;
 
 import berlin.yuna.mavendeploy.config.Clean;
+import berlin.yuna.mavendeploy.config.Compiler;
 import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
+import berlin.yuna.mavendeploy.config.Resources;
 import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Versions;
-import berlin.yuna.mavendeploy.logic.GitService;
-import org.apache.maven.monitor.logging.DefaultLog;
-import org.apache.maven.plugin.logging.Log;
 import org.junit.Test;
 
 import java.io.File;
@@ -261,18 +260,18 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     }
 
     @Test
-    public void tagging_twice_shouldBeSuccessful() {
-        terminalNoLog.execute(mvnCmd("-Dproject.version=20.04.19 -Dtag"));
+    public void tagging_twice_shouldBeSuccessfulAndNotTagTwice() {
+        terminalNoLog.execute(mvnCmd("-Dtag=10.06.19"));
+        terminalNoLog.execute(mvnCmd("-Dproject.version=1.2.3"));
+        assertThat(parse(TEST_POM).getVersion(), is(equalTo("1.2.3")));
 
-        terminal.execute(mvnCmd("-Dproject.version=20.04.19 -Dtag"));
+        terminal.execute(mvnCmd("-Dproject.version=10.06.19 -Dtag"));
 
-        expectMojoRun(
-                g(Versions.class, "set"),
-                g(Scm.class, "tag"));
-        assertThat(terminal.consoleInfo(), containsString("Tagging requested [20.04.19]"));
-        assertThat(terminal.consoleInfo(), containsString("Git tag [20.04.19] already exists"));
-        assertThat(parse(TEST_POM).getVersion(), is(equalTo("20.04.19")));
-        assertThat(terminalNoLog.execute("git describe --tag --always --abbrev=0").consoleInfo(), is(equalTo("20.04.19")));
+        expectMojoRun(g(Versions.class, "set"));
+        assertThat(terminal.consoleInfo(), containsString("Tagging requested [10.06.19]"));
+        assertThat(terminal.consoleInfo(), containsString("Git tag [10.06.19] already exists"));
+        assertThat(parse(TEST_POM).getVersion(), is(equalTo("10.06.19")));
+        assertThat(terminalNoLog.clearConsole().execute("git describe --tag --always --abbrev=0").consoleInfo(), is(equalTo("10.06.19")));
     }
 
     @Test
@@ -287,4 +286,16 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         assertThat(terminalNoLog.clearConsole().execute("git describe --tag --always --abbrev=0").consoleInfo(), is(equalTo("20.04.19")));
     }
 
+    @Test
+    public void surfire_WithTestRun_shouldExecuteSuccessful() {
+        terminal.execute(mvnCmd("-Dtest.run"));
+        assertThat(terminal.consoleInfo(), not(containsString("Tests are skipped")));
+        assertThat(terminal.consoleInfo(), not(containsString("No tests to run")));
+
+        expectMojoRun(
+                g(Resources.class, "resources"),
+                g(Resources.class, "testResources"),
+                g(Compiler.class, "compile"),
+                g(Compiler.class, "testCompile"));
+    }
 }

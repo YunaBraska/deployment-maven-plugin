@@ -1,6 +1,7 @@
 package berlin.yuna.mavendeploy.logic;
 
 import berlin.yuna.clu.logic.Terminal;
+import berlin.yuna.mavendeploy.model.Logger;
 import org.apache.maven.plugin.logging.Log;
 
 import java.io.File;
@@ -12,13 +13,13 @@ import static java.lang.String.format;
 //FIXME: add GitLibrary like JGit
 public class GitService {
 
-    private final Log log;
+    private final Logger log;
     private final boolean fake;
     private final File workDir;
     private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME = Pattern.compile(
             "(?<prefix>.*refs\\/.*?\\/)(?<branchName>.*?)(?<suffix>@.*?)");
 
-    public GitService(final Log log, final File workDir, final boolean fake) {
+    public GitService(final Logger log, final File workDir, final boolean fake) {
         this.workDir = workDir;
         this.log = log;
         this.fake = fake;
@@ -70,7 +71,7 @@ public class GitService {
         return getString("git rev-parse --abbrev-ref HEAD");
     }
 
-    private void logFakeMessage(final Log log) {
+    private void logFakeMessage(final Logger log) {
         if (fake) {
             log.warn(format("Faked [%s]", getClass().getSimpleName()));
         }

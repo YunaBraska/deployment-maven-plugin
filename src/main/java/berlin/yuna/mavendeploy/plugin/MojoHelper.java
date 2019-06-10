@@ -1,8 +1,8 @@
 package berlin.yuna.mavendeploy.plugin;
 
+import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.Prop;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.plugin.logging.Log;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
 import java.util.ArrayList;
@@ -17,7 +17,7 @@ import static java.lang.String.format;
 
 public class MojoHelper {
 
-    public static Xpp3Dom prepareXpp3Dom(final Log log, final MojoExecutor.ExecutionEnvironment environment, final Prop... prop) {
+    public static Xpp3Dom prepareXpp3Dom(final Logger log, final MojoExecutor.ExecutionEnvironment environment, final Prop... prop) {
         final MojoExecutor.Element[] elements = Arrays.stream(prop)
                 .map(prop1 -> prepareElement(environment, prop1))
                 .filter(element -> !isEmpty(element.toDom().getValue()) || element.toDom().getChildCount() > 0)

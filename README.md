@@ -39,53 +39,56 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 ````"[.-]::release::feature::bugfix\|hotfix::custom_1.*[0-9]::custom_2.*[A-Z]"````
 
 ### Versioning
-| Parameter           | Type    | Default |  Description                                                               |
-|:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
-| project.version     | String  | ''      | Sets project version in pom                                                |
-| semantic.format     | String  | ''      | Updates semantic version from regex pattern (overwrites project.version)   |
-| remove.snapshot     | Boolean | false   | Removes snapshot from version                                              |
-| tag                 | Boolean | false   | Tags the project (with project.version or semantic) if not already exists  |
-| tag.break           | Boolean | false   | Tags the project (with project.version or semantic) fails if already exists|
-| message             | String  | ${auto} | Commit msg for tag default = \[project.version] \[branchname], \[tag] ...  |
-| update.minor        | Boolean | false   | Updates parent, properties, dependencies                                   |
-| update.major        | Boolean | false   | Updates parent, properties, dependencies                                   |
-| test.run            | Boolean | false   | runs test.unit and test.integration                                        |
-| test.unit           | Boolean | false   | runs failsafe for unitTest                                                 |
-| test.int            | Boolean | false   | alias for test.integration                                                 |
-| test.integration    | Boolean | false   | runs surfire integration, component, contract, smoke                       |
-| JACOCO              | Boolean | false   | runs failsafe integration test and surfire unitTest                        |
-| COMMIT              | String  | ''      | Custom commit message on changes - "false" = deactivate commits            |
-| scm.provider        | String  | scm:git | needed for tagging and maven scm plugin                                    |
+| Parameter           | Type    | Default            |  Description                                                               |
+|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
+| project.version     | String  | ''                 | Sets project version in pom                                                |
+| semantic.format     | String  | ''                 | Updates semantic version from regex pattern (overwrites project.version)   |
+| remove.snapshot     | Boolean | false              | Removes snapshot from version                                              |
+| tag                 | Boolean | false              | Tags the project (with project.version or semantic) if not already exists  |
+| tag                 | String  | ${project.version} | Tags the project (with project.version or semantic) if not already exists  |
+| tag.break           | Boolean | false              | Tags the project (with project.version or semantic) fails if already exists|
+| message             | String  | ${auto}            | Commit msg for tag default = \[project.version] \[branchname], \[tag] ...  |
+| update.minor        | Boolean | false              | Updates parent, properties, dependencies                                   |
+| update.major        | Boolean | false              | Updates parent, properties, dependencies                                   |
+| test.run (failing)  | Boolean | false              | runs test.unit and test.integration                                        |
+| test.unit (failing) | Boolean | false              | runs failsafe for unitTest                                                 |
+| test.int (failing)  | Boolean | false              | alias for test.integration                                                 |
+| test.integration (f | Boolean | false              | runs surefire integration, component, contract, smoke                      |
+| JACOCO              | Boolean | false              | runs failsafe integration test and surefire unitTest                       |
+| COMMIT              | String  | ''                 | Custom commit message on changes - "false" = deactivate commits            |
+| scm.provider        | String  | scm:git            | needed for tagging and maven scm plugin                                    |
 ### Building
-| Parameter           | Type    | Default |  Description                                                               |
-|:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
-| clean               | Boolean | false   | cleans target and resolves dependencies                                    |
-| clean.cache         | Boolean | false   | Purges local maven repository cache                                        |
-| java.doc            | Boolean | false   | Creates java doc (javadoc.jar) if its not a pom artifact                   |
-| java.source         | Boolean | false   | Creates java sources (sources.jar) if its not a pom artifact               |
-| gpg.pass            | String  | ''      | Signs artifacts (.asc) with GPG 2.1                                        |
+| Parameter           | Type    | Default            |  Description                                                               |
+|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
+| clean               | Boolean | false              | cleans target and resolves dependencies                                    |
+| clean.cache         | Boolean | false              | Purges local maven repository cache                                        |
+| java.doc            | Boolean | false              | Creates java doc (javadoc.jar) if its not a pom artifact                   |
+| java.source         | Boolean | false              | Creates java sources (sources.jar) if its not a pom artifact               |
+| gpg.pass            | String  | ''                 | Signs artifacts (.asc) with GPG 2.1                                        |
 ### Deployment
-| Parameter           | Type    | Default |  Description                                                               |
-|:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
-| DEPLOY_ID           | String  | ''      | (Nexus) Deploys artifacts (server id = Settings.xml)                       |
-| RELEASE             | Boolean | false   | (Nexus) Releases the deployment                                            |
-| NEXUS_BASE_URL      | String  | ''      | (Nexus) The nexus base url (e.g https://my.nexus.com)                      |
-| NEXUS_DEPLOY_URL    | String  | ''      | (Nexus) Staging url (e.g https://my.nexus.com/service/local/staging/deploy)|
+| Parameter           | Type    | Default            |  Description                                                               |
+|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
+| DEPLOY_ID           | String  | ''                 | (Nexus) Deploys artifacts (server id = Settings.xml)                       |
+| RELEASE             | Boolean | false              | (Nexus) Releases the deployment                                            |
+| NEXUS_BASE_URL      | String  | ''                 | (Nexus) The nexus base url (e.g https://my.nexus.com)                      |
+| NEXUS_DEPLOY_URL    | String  | ''                 | (Nexus) Staging url (e.g https://my.nexus.com/service/local/staging/deploy)|
 ### Add to Settings.xml session
-| Parameter           | Type    | Default |  Description                                                               |
-|:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
-| Server              | String | ''       | server id (multiple possible && caseInsensitive)                           |
-| Username            | String | ''       | username (multiple possible && caseInsensitive)                            |
-| Password            | String | ''       | password (multiple possible && caseInsensitive)                            |
-| PrivateKey          | String | ''       | e.g. ${user.home}/.ssh/id_dsa) (multiple possible && caseInsensitive)      |
-| Passphrase          | String | ''       | privateKey, passphrase (multiple possible && caseInsensitive)              |
-| FilePermissions     | String | ''       | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
-| DirectoryPermissions| String | ''       | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
+| Parameter           | Type    | Default            |  Description                                                               |
+|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
+| Server              | String | ''                  | server id (multiple possible && caseInsensitive)                           |
+| Username            | String | ''                  | username (multiple possible && caseInsensitive)                            |
+| Password            | String | ''                  | password (multiple possible && caseInsensitive)                            |
+| PrivateKey          | String | ''                  | e.g. ${user.home}/.ssh/id_dsa) (multiple possible && caseInsensitive)      |
+| Passphrase          | String | ''                  | privateKey, passphrase (multiple possible && caseInsensitive)              |
+| FilePermissions     | String | ''                  | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
+| DirectoryPermissions| String | ''                  | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
 ### Misc
-| Parameter           | Type    | Default |  Description                                                               |
-|:--------------------|:--------|:--------|:---------------------------------------------------------------------------|
-| REPORT              | Boolean | false   | Generates report about version updates                                     |                                            |                                                  |
-| test.skip           | Boolean | true    | same as "maven.test.skip"                                                  |
+| Parameter           | Type    | Default            |  Description                                                               |
+|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
+| REPORT              | Boolean | false              | Generates report about version updates                                     |                                            |                                                  |
+| test.skip           | Boolean | false              | same as "maven.test.skip"                                                  |
+| project.encoding    | Boolean | false              | sets default encoding to every encoding parameter definition               |
+| java.version        | Boolean | false              | sets default java version to every java version parameter definition       |
 
 ### Requirements
 * \[JAVA\] for maven 

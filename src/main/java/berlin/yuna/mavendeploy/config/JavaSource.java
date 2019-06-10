@@ -1,8 +1,8 @@
 package berlin.yuna.mavendeploy.config;
 
+import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
@@ -11,12 +11,12 @@ import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
 public class JavaSource extends MojoBase {
 
-    public JavaSource(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
+    public JavaSource(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         super("org.apache.maven.plugins", "maven-source-plugin", environment, log);
         version = "3.0.1";
     }
 
-    public static JavaSource build(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
+    public static JavaSource build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         return new JavaSource(environment, log);
     }
 

@@ -1,8 +1,8 @@
 package berlin.yuna.mavendeploy.config;
 
+import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.model.Plugin;
-import org.apache.maven.plugin.logging.Log;
 
 import java.util.Objects;
 
@@ -16,9 +16,9 @@ public abstract class MojoBase {
     protected String version;
 
     protected final MojoExecutor.ExecutionEnvironment environment;
-    protected final Log log;
+    protected final Logger log;
 
-    protected MojoBase(final String groupId, final String artifactId, final MojoExecutor.ExecutionEnvironment environment, final Log log) {
+    protected MojoBase(final String groupId, final String artifactId, final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.environment = environment;
@@ -45,7 +45,7 @@ public abstract class MojoBase {
         return environment;
     }
 
-    public Log log() {
+    public Logger log() {
         return log;
     }
 

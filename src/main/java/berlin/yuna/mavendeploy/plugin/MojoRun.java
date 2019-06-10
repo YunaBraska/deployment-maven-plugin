@@ -1,23 +1,25 @@
 package berlin.yuna.mavendeploy.plugin;
 
 import berlin.yuna.clu.logic.CommandLineReader;
+import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
+import berlin.yuna.mavendeploy.config.Resources;
 import berlin.yuna.mavendeploy.config.Scm;
-import berlin.yuna.mavendeploy.config.Surfire;
+import berlin.yuna.mavendeploy.config.Surefire;
 import berlin.yuna.mavendeploy.config.Versions;
 import berlin.yuna.mavendeploy.logic.GitService;
 import berlin.yuna.mavendeploy.logic.SemanticService;
+import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.ThrowingFunction;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecution;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
@@ -32,14 +34,12 @@ import org.apache.maven.settings.Settings;
 import java.io.File;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Properties;
 
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executionEnvironment;
 import static berlin.yuna.mavendeploy.plugin.MojoHelper.isEmpty;
 import static java.lang.String.format;
-import static java.time.temporal.ChronoUnit.SECONDS;
 import static java.util.Objects.requireNonNull;
 
 //https://stackoverflow.com/questions/53954902/custom-maven-plugin-development-getartifacts-is-empty-though-dependencies-are
@@ -69,40 +69,47 @@ public class MojoRun extends AbstractMojo {
     @Parameter(property = "settings.xml", defaultValue = "", readonly = false)
     private List<String> SETTINGS;
 
-    private Log LOG;
+    private Logger LOG;
     private GitService GIT_SERVICE;
     private SemanticService SEMANTIC_SERVICE;
     private boolean HAS_GIT_CHANGES;
     private MojoExecutor.ExecutionEnvironment ENVIRONMENT;
 
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
-    private LocalDateTime lastLog = LocalDateTime.now();
-
     public void execute() {
         before();
 
-        setParameter("maven.test.skip", getParam("test.skip", true).toString());
+        setParameter("maven.test.skip", getParam("test.skip", false).toString());
         addServerToSettings(new CommandLineReader(SETTINGS.toArray(new String[0])));
         addGpgToSettings();
 
         try {
-            info("Preparing information");
+            LOG.info("Preparing information");
             try {
-                debug("Project is library [%s]", isLibrary());
+                LOG.debug("Project is library [%s]", isLibrary());
                 final String newProjectVersion = prepareProjectVersion();
-                //FIXME: //TODO support own tag version
-                final boolean hasNewTag = hasNewTag(isTrue("tag"), isTrue("tag.break"), newProjectVersion);
+                final String newTag = prepareNewTagVersion(newProjectVersion);
+                final boolean hasNewTag = hasNewTag(newTag, GIT_SERVICE.getLastGitTag());
 
                 //SET PROPERTIES
                 setWhen("newVersion", newProjectVersion, !isEmpty(newProjectVersion) && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
                 setWhen("removeSnapshot", "true", isTrue("remove.snapshot"));
                 setWhen("generateBackupPoms", "false", true);
+                setWhen("test.integration", getParam("test.int", null), hasText("test.int"));
+                setWhen("source", getParam("java.version", null), hasText("java.version"));
+                setWhen("target", getParam("java.version", null), hasText("java.version"));
+                setWhen("compilerVersion", getParam("java.version", null), hasText("java.version"));
+                setWhen("java.version", "1.8", !isEmpty(project.getProperties().getProperty("java.version")));
+                setWhen("javadocVersion", project.getProperties().getProperty("java.version"), !isEmpty(project.getProperties().getProperty("java.version")));
+                setWhen("project.encoding", project.getProperties().getProperty("project.encoding"), !isEmpty(project.getProperties().getProperty("project.encoding")));
+                setWhen("encoding", getParam("project.encoding", null), hasText("project.encoding"));
+                setWhen("project.build.sourceEncoding", getParam("project.encoding", null), hasText("project.encoding"));
+                setWhen("project.reporting.outputEncoding", getParam("project.encoding", null), hasText("project.encoding"));
                 setWhen("allowSnapshots", "true", isTrue("update.minor", "update.major"));
                 setWhen("allowMajorUpdates", getParam("update.major", false).toString(), isTrue("update.minor", "update.major"));
                 setWhen("scm.provider", "scm:git", !hasText("scm.provider"));
                 setWhen("connectionUrl", getConnectionUrl(), !hasText("connectionUrl"));
                 setWhen("project.scm.connection", getConnectionUrl(), !hasText("project.scm.connection"));
-                overwriteWhen("tag", newProjectVersion, hasNewTag && (isEmpty(getParam("tag", null)) || "true".equals(getParam("tag", null))));
+                overwriteWhen("tag", newTag, !isEmpty(newTag));
                 setWhen("message", prepareCommitMessage(newProjectVersion, hasNewTag, isTrue("update.minor", "update.major")), (hasNewTag && !hasText("message")));
 
                 //RUN MOJOS
@@ -120,7 +127,15 @@ public class MojoRun extends AbstractMojo {
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).set(), hasText("newVersion"), isTrue("removeSnapshot"));
                 runWhen(() -> Javadoc.build(ENVIRONMENT, LOG).jar(), (!isLibrary() && isTrue("java.doc")));
                 runWhen(() -> JavaSource.build(ENVIRONMENT, LOG).jarNoFork(), (!isLibrary() && isTrue("java.source")));
-                runWhen(() -> Surfire.build(ENVIRONMENT, LOG).test(), isTrue("test.run", "test.integration", "test.int"));
+
+                //MOJO TEST
+                runWhen(() -> Resources.build(ENVIRONMENT, LOG).resource(), isTrue("test.run", "test.unit", "test.integration"));
+//                runWhen(() -> Compiler.build(ENVIRONMENT, LOG).compiler(), isTrue("test.run", "test.unit", "test.integration"));
+                new Terminal().dir(basedir).consumerInfo(s -> LOG.info(s)).consumerError(s -> LOG.error(s)).execute("mvn compiler:compile -Denoding=UTF-8 -Dsource=1.8 -Dtarget=1.8 -DcompilerVersion=1.8");
+                runWhen(() -> Resources.build(ENVIRONMENT, LOG).testResource(), isTrue("test.run", "test.unit", "test.integration"));
+//                runWhen(() -> Compiler.build(ENVIRONMENT, LOG).testCompiler(), isTrue("test.run", "test.unit", "test.integration"));
+                new Terminal().dir(basedir).consumerInfo(s -> LOG.info(s)).consumerError(s -> LOG.error(s)).execute("mvn compiler:testCompile -Denoding=UTF-8 -Dsource=1.8 -Dtarget=1.8 -DcompilerVersion=1.8");
+                runWhen(() -> Surefire.build(ENVIRONMENT, LOG).test(), isTrue("test.run", "test.unit"));
 
 
                 //Should stay at the end after everything is
@@ -147,6 +162,24 @@ public class MojoRun extends AbstractMojo {
         }
     }
 
+    private String getTagVersion(final String property, final String newProjectVersion) {
+        if (isTrue(property)) {
+            return newProjectVersion;
+        } else {
+            final String param = getParam(property, null);
+            if (!isEmpty(property) && !"false".equals(param)) {
+                return param;
+            }
+        }
+        return null;
+    }
+
+    private String prepareNewTagVersion(final String newProjectVersion) {
+        final String tag = getTagVersion("tag", newProjectVersion);
+        final String tagBreak = getTagVersion("tag.break", newProjectVersion);
+        return isEmpty(tag) ? tagBreak : tag;
+    }
+
     private String getConnectionUrl() {
         final String originUrl = GIT_SERVICE.getOriginUrl();
         final String scmProvider = getParam("scm.provider", "scm:git");
@@ -167,12 +200,11 @@ public class MojoRun extends AbstractMojo {
         return branchName == null ? GIT_SERVICE.findOriginalBranchName(1) : "N/A";
     }
 
-    private boolean hasNewTag(final boolean tag, final boolean tagBreak, final String newProjectVersion) {
-        if ((tag || tagBreak) && !isEmpty(newProjectVersion)) {
-            final String lastGitTag = GIT_SERVICE.getLastGitTag();
-            debug("Tagging requested [%s], last tag was [%s]", newProjectVersion, lastGitTag);
-            printTagMessage(tagBreak, newProjectVersion, lastGitTag);
-            return !newProjectVersion.equalsIgnoreCase(lastGitTag);
+    private boolean hasNewTag(final String newTag, final String lastGitTag) {
+        if (!isEmpty(newTag)) {
+            LOG.debug("Tagging requested [%s], last tag was [%s]", newTag, lastGitTag);
+            printTagMessage(isTrue("tag.break"), newTag, lastGitTag);
+            return !isEmpty(newTag) && !newTag.equalsIgnoreCase(lastGitTag);
         }
         return false;
     }
@@ -181,16 +213,16 @@ public class MojoRun extends AbstractMojo {
         if (tagBreak && newProjectVersion.equalsIgnoreCase(lastGitTag)) {
             throw new RuntimeException(format("Git tag [%s] already exists", newProjectVersion));
         } else if (newProjectVersion.equalsIgnoreCase(lastGitTag)) {
-            info("Git tag [%s] already exists", newProjectVersion);
+            LOG.info("Git tag [%s] already exists", newProjectVersion);
         } else {
-            info("New git tag [%s]", newProjectVersion);
+            LOG.info("New git tag [%s]", newProjectVersion);
         }
     }
 
     private void printJavaDoc() {
         final File javaDocFile = new File(basedir, "target/apidocs/index.html");
         if (javaDocFile.exists()) {
-            info("JavaDoc [file://%s]", javaDocFile.toURI().getRawPath());
+            LOG.info("JavaDoc [file://%s]", javaDocFile.toURI().getRawPath());
         }
     }
 
@@ -199,14 +231,14 @@ public class MojoRun extends AbstractMojo {
         final String semanticFormat = getParam("semantic.format", null);
         projectVersion = isEmpty(semanticFormat) ?
                 projectVersion : SEMANTIC_SERVICE.getNextSemanticVersion(project.getVersion(), GIT_SERVICE, projectVersion);
-        debug("Project version [%s]", projectVersion);
+        LOG.debug("Prepared project version [%s]", projectVersion);
         return projectVersion;
     }
 
     private void addGpgToSettings() {
         final String gpgPassphrase = getParam("gpg.pass", getParam("gpg.passphrase", null));
         if (!isEmpty(gpgPassphrase)) {
-            info("Creating GPG settings");
+            LOG.info("Creating GPG settings");
             final Profile profile = new Profile();
             final Activation activation = new Activation();
             final Properties properties = new Properties();
@@ -230,7 +262,7 @@ public class MojoRun extends AbstractMojo {
             server.setPassphrase(clr.getValue(i, "Passphrase"));
             server.setFilePermissions(clr.getValue(i, "FilePermissions"));
             server.setDirectoryPermissions(clr.getValue(i, "DirectoryPermissions"));
-            info(
+            LOG.info(
                     "+ Settings added [%s] id [%s] user [%s] pass [%s]",
                     Server.class.getSimpleName(),
                     server.getId(), server.getUsername(),
@@ -248,7 +280,7 @@ public class MojoRun extends AbstractMojo {
     }
 
     private void before() {
-        LOG = getLog();
+        LOG = new Logger(getLog());
         requireNonNull(pluginManager);
 
         MojoExecutor.setLogger(LOG);
@@ -285,7 +317,7 @@ public class MojoRun extends AbstractMojo {
     private void overwriteWhen(final String key, final String value, final boolean... when) {
         for (boolean trigger : when) {
             if (trigger) {
-                debug("+ Config added key [tag] value [%s]", value);
+                LOG.debug("+ Config added key [tag] value [%s]", value);
                 session.getUserProperties().setProperty(key, value);
                 break;
             }
@@ -296,7 +328,7 @@ public class MojoRun extends AbstractMojo {
         requireNonNull(key, "setParameter key is null");
         final String cmdValue = session.getUserProperties().getProperty(key);
         if (isEmpty(cmdValue)) {
-            info("+ Config added key [%s] value [%s]", key, value);
+            LOG.info("+ Config added key [%s] value [%s]", key, value);
             session.getUserProperties().setProperty(key, value);
         } else {
             LOG.warn(format("- Config key [%s] already set with [%s] - won't take action", key, cmdValue));
@@ -331,26 +363,6 @@ public class MojoRun extends AbstractMojo {
 
     private String getParam(final String key, final String fallback) {
         return MojoHelper.getString(session, key, fallback);
-    }
-
-    private void debug(final Object... format) {
-        LOG.debug("  " + formatMsg(format));
-    }
-
-    private void info(final Object... format) {
-        LOG.info("   " + formatMsg(format));
-    }
-
-    private void error(final Object... format) {
-        LOG.error("  " + formatMsg(format));
-    }
-
-    private String formatMsg(final Object[] format) {
-        final LocalDateTime now = LocalDateTime.now();
-        final long diff = lastLog.until(now, SECONDS);
-        final String msg = format.length > 1 ? format((String) format[0], (Object[]) Arrays.copyOfRange(format, 1, format.length)) : (String) format[0];
-        lastLog = now;
-        return format("[%s] diff[%s] [%s]", now.format(formatter), diff, msg);
     }
 
 }

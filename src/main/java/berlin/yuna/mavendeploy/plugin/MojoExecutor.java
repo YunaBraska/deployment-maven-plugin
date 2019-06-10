@@ -1,5 +1,6 @@
 package berlin.yuna.mavendeploy.plugin;
 
+import berlin.yuna.mavendeploy.model.Logger;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Dependency;
 import org.apache.maven.model.Plugin;
@@ -52,7 +53,7 @@ import static java.lang.String.format;
  */
 public class MojoExecutor {
 
-    private static Log logger;
+    private static Logger logger;
 
     /**
      * Entry point for executing a mojo
@@ -71,7 +72,7 @@ public class MojoExecutor {
         try {
             String executionId = null;
             if (goal != null && goal.length() > 0 && goal.indexOf('#') > -1) {
-                int pos = goal.indexOf('#');
+                final int pos = goal.indexOf('#');
                 executionId = goal.substring(pos + 1);
                 goal = goal.substring(0, pos);
             }
@@ -480,7 +481,7 @@ public class MojoExecutor {
         }
     }
 
-    public static void setLogger(final Log logger) {
+    public static void setLogger(final Logger logger) {
         MojoExecutor.logger = logger;
         MavenCompatibilityHelper.setLogger(logger);
     }

@@ -1,26 +1,26 @@
 package berlin.yuna.mavendeploy.config;
 
+import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
 import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
-public class Surfire extends MojoBase {
+public class Surefire extends MojoBase {
 
-    public Surfire(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
+    public Surefire(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         super("org.apache.maven.plugins", "maven-surefire-plugin", environment, log);
         version = "2.22.1";
     }
 
-    public static Surfire build(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
-        return new Surfire(environment, log);
+    public static Surefire build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
+        return new Surefire(environment, log);
     }
 
-    public Surfire test() throws MojoExecutionException {
+    public Surefire test() throws MojoExecutionException {
         final String goal = "test";
         logGoal(goal, true);
         executeMojo(
@@ -37,7 +37,16 @@ public class Surfire extends MojoBase {
                         prop("enableAssertions"),
                         prop("surefire.encoding"),
                         prop("excludedGroups"),
-                        //TODO: prop("surefire.excludesXML"),
+                        prop("includes",
+                                prop("include", "**/*Test.java")),
+                        prop("excludes",
+                                prop("exclude", "**/*IntegrationTest.java"),
+                                prop("exclude", "**/*IntTest.java"),
+                                prop("exclude", "**/*ComponentTest.java"),
+                                prop("exclude", "**/*CompTest.java"),
+                                prop("exclude", "**/*ContractTest.java"),
+                                prop("exclude", "**/*PactTest.java"),
+                                prop("exclude", "**/*SmokeTest.java")),
                         prop("surefire.excludesFile"),
                         prop("surefire.failIfNoSpecifiedTests"),
                         prop("failIfNoTests", "true"),
@@ -46,7 +55,6 @@ public class Surfire extends MojoBase {
                         prop("surefire.exitTimeout"),
                         prop("surefire.timeout"),
                         prop("groups"),
-                        //TODO: prop("surefire.includesXML"),
                         prop("surefire.includesFile"),
                         prop("junitArtifactName"),
                         prop("junitPlatformArtifactName"),
@@ -66,7 +74,7 @@ public class Surfire extends MojoBase {
                         prop("reuseForks"),
                         prop("surefire.runOrder"),
                         prop("surefire.shutdown"),
-                        prop("maven.test.skip"),
+//                        prop("maven.test.skip"),
                         prop("surefire.skipAfterFailureCount"),
                         prop("maven.test.skip.exec"),
                         prop("skipTests"),
@@ -82,7 +90,7 @@ public class Surfire extends MojoBase {
                         prop("surefire.useFile"),
                         prop("surefire.useManifestOnlyJar"),
                         prop("surefire.useModulePath"),
-                        prop("surefire.useSystemClassLoader", "false"),
+                        prop("useSystemClassLoader", "false"),
                         prop("useUnlimitedThreads"),
                         prop("basedir")
                 ), environment

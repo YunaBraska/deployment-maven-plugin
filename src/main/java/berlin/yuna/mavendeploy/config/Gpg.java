@@ -1,23 +1,22 @@
 package berlin.yuna.mavendeploy.config;
 
+import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
 import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
-import static java.lang.String.format;
 
 public class Gpg extends MojoBase {
 
-    public Gpg(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
+    public Gpg(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         super("org.apache.maven.plugins", "maven-gpg-plugin", environment, log);
         version = "1.6";
     }
 
-    public static Gpg build(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
+    public static Gpg build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         return new Gpg(environment, log);
     }
 

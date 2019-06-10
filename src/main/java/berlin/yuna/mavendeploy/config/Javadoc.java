@@ -1,22 +1,23 @@
 package berlin.yuna.mavendeploy.config;
 
+import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
+import static berlin.yuna.mavendeploy.plugin.MojoHelper.getString;
 import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
 public class Javadoc extends MojoBase {
 
-    public Javadoc(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
+    public Javadoc(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         super("org.apache.maven.plugins", "maven-javadoc-plugin", environment, log);
         version = "3.0.1";
     }
 
-    public static Javadoc build(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
+    public static Javadoc build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         return new Javadoc(environment, log);
     }
 

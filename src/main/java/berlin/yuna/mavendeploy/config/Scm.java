@@ -1,8 +1,8 @@
 package berlin.yuna.mavendeploy.config;
 
+import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
@@ -16,12 +16,12 @@ public class Scm extends MojoBase {
     protected String pushChanges = null;
     protected String remoteTagging = null;
 
-    public Scm(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
+    public Scm(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         super("org.apache.maven.plugins", "maven-scm-plugin", environment, log);
         version = "1.11.2";
     }
 
-    public static Scm build(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
+    public static Scm build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         final Scm scm = new Scm(environment, log);
         final Boolean fake = getBoolean(environment.getMavenSession(), "fake", false);
         if (fake) {

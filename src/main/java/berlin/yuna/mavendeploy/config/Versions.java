@@ -1,23 +1,23 @@
 package berlin.yuna.mavendeploy.config;
 
+import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.configuration;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
+import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
 public class Versions extends MojoBase {
 
-    public Versions(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
+    public Versions(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         super("org.codehaus.mojo", "versions-maven-plugin", environment, log);
         version = "2.7";
     }
 
-    public static Versions build(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
+    public static Versions build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         return new Versions(environment, log);
     }
 

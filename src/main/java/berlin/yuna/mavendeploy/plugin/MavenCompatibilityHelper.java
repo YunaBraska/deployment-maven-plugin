@@ -16,6 +16,7 @@ package berlin.yuna.mavendeploy.plugin;
  * limitations under the License.
  */
 
+import berlin.yuna.mavendeploy.model.Logger;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.plugin.BuildPluginManager;
@@ -39,7 +40,7 @@ import static java.lang.String.format;
  */
 public class MavenCompatibilityHelper {
 
-    private static Log logger;
+    private static Logger logger;
 
 
     private static Method getRepositorySession;
@@ -104,7 +105,7 @@ public class MavenCompatibilityHelper {
         }
     }
 
-    public static void setLogger(final Log logger) {
+    public static void setLogger(final Logger logger) {
         MavenCompatibilityHelper.logger = logger;
     }
 }
