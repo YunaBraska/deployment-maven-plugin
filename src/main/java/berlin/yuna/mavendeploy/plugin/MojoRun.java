@@ -12,12 +12,17 @@ import berlin.yuna.mavendeploy.model.ThrowingFunction;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
+import org.apache.maven.plugin.MojoExecution;
+import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.plugins.annotations.Component;
+import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
+import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Server;
+import org.apache.maven.settings.Settings;
 
 import java.io.File;
 import java.util.List;
@@ -26,30 +31,30 @@ import java.util.Objects;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executionEnvironment;
 import static berlin.yuna.mavendeploy.plugin.MojoHelper.isEmpty;
 import static java.lang.String.format;
-//
-//import static org.twdata.maven.mojoexecutor.MojoExecutor.artifactId;
-//import static org.twdata.maven.mojoexecutor.MojoExecutor.configuration;
-//import static org.twdata.maven.mojoexecutor.MojoExecutor.element;
-//import static org.twdata.maven.mojoexecutor.MojoExecutor.executeMojo;
-//import static org.twdata.maven.mojoexecutor.MojoExecutor.executionEnvironment;
-//import static org.twdata.maven.mojoexecutor.MojoExecutor.goal;
-//import static org.twdata.maven.mojoexecutor.MojoExecutor.groupId;
-//import static org.twdata.maven.mojoexecutor.MojoExecutor.name;
-//import static org.twdata.maven.mojoexecutor.MojoExecutor.plugin;
-//import static org.twdata.maven.mojoexecutor.MojoExecutor.version;
 
-
-@Mojo(name = "run")
+//https://stackoverflow.com/questions/53954902/custom-maven-plugin-development-getartifacts-is-empty-though-dependencies-are
+@Mojo(name = "run",
+        threadSafe = true,
+        defaultPhase = LifecyclePhase.COMPILE,
+        requiresDependencyResolution = ResolutionScope.COMPILE)
 public class MojoRun extends AbstractMojo {
 
     @Parameter(defaultValue = "${project.basedir}", readonly = true)
     private File basedir;
     @Component
     private BuildPluginManager pluginManager;
-    @Parameter(defaultValue = "${session}", readonly = true)
+    @Parameter(defaultValue = "${session}", readonly = false)
     private MavenSession session;
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;
+    @Parameter(defaultValue = "${mojoExecution}", readonly = true)
+    private MojoExecution mojo;
+    @Parameter(defaultValue = "${plugin}", readonly = true) // Maven 3 only
+    private PluginDescriptor plugin;
+    @Parameter(defaultValue = "${settings}", readonly = true)
+    private Settings settings;
+    @Parameter(defaultValue = "${project.build.directory}", readonly = true)
+    private File target;
 
     //Versioning
     @Parameter(property = "project.version", defaultValue = "", readonly = false)

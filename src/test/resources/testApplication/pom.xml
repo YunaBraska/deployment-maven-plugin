@@ -6,11 +6,10 @@
     <groupId>some.group.id</groupId>
     <artifactId>example-maven-project</artifactId>
     <version>1.2.3.4-5</version>
-    <packaging>maven-plugin</packaging>
+    <packaging>jar</packaging>
 
     <name>${project.artifactId}</name>
     <description>Used for mojo tests</description>
-    <url>${git-project.url}</url>
 
     <developers>
         <developer>
@@ -27,18 +26,24 @@
     </licenses>
 
     <properties>
-        <java.version>1.8</java.version>
+        <java.version>12</java.version>
         <project.encoding>UTF-8</project.encoding>
         <project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
         <project.reporting.outputEncoding>${project.encoding}</project.reporting.outputEncoding>
-        <git-project.url>https://github.com/YunaBraska/maven-deployment</git-project.url>
+        <spring-boot.version>2.1.7.RELEASE</spring-boot.version>
     </properties>
 
     <dependencies>
         <dependency>
             <groupId>org.springframework.boot</groupId>
-            <artifactId>spring-boot-starter</artifactId>
-            <version>2.0.0.RELEASE</version>
+            <artifactId>spring-boot-starter-web</artifactId>
+            <version>${spring-boot.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework.boot</groupId>
+            <artifactId>spring-boot-starter-test</artifactId>
+            <version>${spring-boot.version}</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -53,12 +58,25 @@
                     <target>${java.version}</target>
                 </configuration>
             </plugin>
+<!--            TODO: remove after testing-->
+<!--            <plugin>-->
+<!--                <groupId>org.apache.maven.plugins</groupId>-->
+<!--                <artifactId>maven-javadoc-plugin</artifactId>-->
+<!--                <version>3.1.1</version>-->
+<!--                <executions>-->
+<!--                    <execution>-->
+<!--                        <id>attach-javadocs</id>-->
+<!--                        <goals>-->
+<!--                            <goal>jar</goal>-->
+<!--                        </goals>-->
+<!--                        <configuration>-->
+<!--                            <nodeprecatedlist>true</nodeprecatedlist>-->
+<!--                            <quiet>true</quiet>-->
+<!--                            &lt;!&ndash; disable strict checking &ndash;&gt;-->
+<!--                        </configuration>-->
+<!--                    </execution>-->
+<!--                </executions>-->
+<!--            </plugin>-->
         </plugins>
     </build>
-
-    <scm>
-        <connection>scm:git:${git-project.url}</connection>
-        <developerConnection>scm:git:${git-project.url}</developerConnection>
-        <url>${git-project.url}.git</url>
-    </scm>
 </project>

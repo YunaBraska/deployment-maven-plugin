@@ -212,6 +212,8 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         final File javaDoc = new File(TEST_POM.getPomFile().getParent(), "target/" + TEST_POM.getArtifactId() + "-" + TEST_POM.getVersion() + "-javadoc.jar");
         assertThat(format("Cant find [%s]", indexHtml), indexHtml.exists(), is(true));
         assertThat(format("Cant find [%s]", javaDoc), javaDoc.exists(), is(true));
+
+        expectMojoRun(g(Javadoc.class, "jar"));
     }
 
     @Test
