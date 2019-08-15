@@ -1,7 +1,6 @@
 package berlin.yuna.mavendeploy.plugin;
 
 import berlin.yuna.clu.logic.CommandLineReader;
-import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.Gpg;
@@ -32,8 +31,6 @@ import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 
 import java.io.File;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Properties;
 
@@ -45,8 +42,8 @@ import static java.util.Objects.requireNonNull;
 //https://stackoverflow.com/questions/53954902/custom-maven-plugin-development-getartifacts-is-empty-though-dependencies-are
 @Mojo(name = "run",
         threadSafe = true,
-        defaultPhase = LifecyclePhase.COMPILE,
-        requiresDependencyResolution = ResolutionScope.COMPILE)
+        defaultPhase = LifecyclePhase.PACKAGE,
+        requiresDependencyResolution = ResolutionScope.TEST)
 public class MojoRun extends AbstractMojo {
 
     @Parameter(defaultValue = "${project.basedir}", readonly = true)
@@ -95,10 +92,11 @@ public class MojoRun extends AbstractMojo {
                 setWhen("removeSnapshot", "true", isTrue("remove.snapshot"));
                 setWhen("generateBackupPoms", "false", true);
                 setWhen("test.integration", getParam("test.int", null), hasText("test.int"));
-                setWhen("source", getParam("java.version", null), hasText("java.version"));
+                setWhen("java.version", "1.8", !hasText("java.version"));
+//                FIXME: duplicated usage Compiler/Javadoc
+//                 setWhen("source", getParam("java.version", null), hasText("java.version"));
                 setWhen("target", getParam("java.version", null), hasText("java.version"));
                 setWhen("compilerVersion", getParam("java.version", null), hasText("java.version"));
-                setWhen("java.version", "1.8", !isEmpty(project.getProperties().getProperty("java.version")));
                 setWhen("javadocVersion", project.getProperties().getProperty("java.version"), !isEmpty(project.getProperties().getProperty("java.version")));
                 setWhen("project.encoding", project.getProperties().getProperty("project.encoding"), !isEmpty(project.getProperties().getProperty("project.encoding")));
                 setWhen("encoding", getParam("project.encoding", null), hasText("project.encoding"));
@@ -129,12 +127,12 @@ public class MojoRun extends AbstractMojo {
                 runWhen(() -> JavaSource.build(ENVIRONMENT, LOG).jarNoFork(), (!isLibrary() && isTrue("java.source")));
 
                 //MOJO TEST
-                runWhen(() -> Resources.build(ENVIRONMENT, LOG).resource(), isTrue("test.run", "test.unit", "test.integration"));
-//                runWhen(() -> Compiler.build(ENVIRONMENT, LOG).compiler(), isTrue("test.run", "test.unit", "test.integration"));
-                new Terminal().dir(basedir).consumerInfo(s -> LOG.info(s)).consumerError(s -> LOG.error(s)).execute("mvn compiler:compile -Denoding=UTF-8 -Dsource=1.8 -Dtarget=1.8 -DcompilerVersion=1.8");
-                runWhen(() -> Resources.build(ENVIRONMENT, LOG).testResource(), isTrue("test.run", "test.unit", "test.integration"));
-//                runWhen(() -> Compiler.build(ENVIRONMENT, LOG).testCompiler(), isTrue("test.run", "test.unit", "test.integration"));
-                new Terminal().dir(basedir).consumerInfo(s -> LOG.info(s)).consumerError(s -> LOG.error(s)).execute("mvn compiler:testCompile -Denoding=UTF-8 -Dsource=1.8 -Dtarget=1.8 -DcompilerVersion=1.8");
+//                runWhen(() -> Resources.build(ENVIRONMENT, LOG).resource(), isTrue("test.run", "test.unit", "test.integration"));
+//                runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(ENVIRONMENT, LOG).compiler(), isTrue("test.run", "test.unit", "test.integration"));
+//                new Terminal().dir(basedir).consumerInfo(s -> LOG.info(s)).consumerError(s -> LOG.error(s)).execute("mvn compiler:compile -Denoding=UTF-8 -Dsource=1.8 -Dtarget=1.8 -DcompilerVersion=1.8");
+//                runWhen(() -> Resources.build(ENVIRONMENT, LOG).testResource(), isTrue("test.run", "test.unit", "test.integration"));
+//                runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(ENVIRONMENT, LOG).testCompiler(), isTrue("test.run", "test.unit", "test.integration"));
+//                new Terminal().dir(basedir).consumerInfo(s -> LOG.info(s)).consumerError(s -> LOG.error(s)).execute("mvn compiler:testCompile -Denoding=UTF-8 -Dsource=1.8 -Dtarget=1.8 -DcompilerVersion=1.8");
                 runWhen(() -> Surefire.build(ENVIRONMENT, LOG).test(), isTrue("test.run", "test.unit"));
 
 
@@ -150,6 +148,8 @@ public class MojoRun extends AbstractMojo {
                 //TODO: FAILSAFE
                 //TODO: SURFIRE
                 //TODO: REPORT
+                //TODO: run script after each task
+                //TODO: provide environment target/environment.json file before running anything
 
                 //TODO: git push everything at the end when success?
 
