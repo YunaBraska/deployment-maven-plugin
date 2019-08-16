@@ -6,7 +6,6 @@ import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
-import berlin.yuna.mavendeploy.config.Resources;
 import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Surefire;
 import berlin.yuna.mavendeploy.config.Versions;
@@ -98,7 +97,7 @@ public class MojoRun extends AbstractMojo {
                 setParameter("source", "8");
                 setWhen("target", getParam("java.version", null), hasText("java.version"));
                 setWhen("compilerVersion", getParam("java.version", null), hasText("java.version"));
-//                setWhen("javadocVersion", project.getProperties().getProperty("java.version"), !isEmpty(project.getProperties().getProperty("java.version")));
+                setWhen("javadocVersion", project.getProperties().getProperty("java.version"), !isEmpty(project.getProperties().getProperty("java.version")));
                 setWhen("project.encoding", project.getProperties().getProperty("project.encoding"), !isEmpty(project.getProperties().getProperty("project.encoding")));
                 setWhen("encoding", getParam("project.encoding", null), hasText("project.encoding"));
                 setWhen("project.build.sourceEncoding", getParam("project.encoding", null), hasText("project.encoding"));
