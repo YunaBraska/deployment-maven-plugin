@@ -28,7 +28,7 @@ public class Surefire extends MojoBase {
                 goal(goal),
                 prepareXpp3Dom(log, environment,
                         prop("maven.test.additionalClasspath"),
-                        prop("argLine", "-Xmx1024m -XX:MaxPermSize=256m"),
+//                        prop("argLine", "-Xmx1024m -XX:MaxPermSize=256m"),
                         prop("childDelegation"),
                         prop("maven.test.dependency.excludes"),
                         prop("maven.surefire.debug"),

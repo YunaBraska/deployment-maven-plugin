@@ -17,13 +17,13 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @RunWith(SpringRunner.class)
 @SpringBootTest
 @AutoConfigureMockMvc
-public class WebControllerComponentTest {
+public class WebControllerComponentIntegrationTest {
 
     @Autowired
     private MockMvc mvc;
 
     @Test
-    public void runComponentTest() throws Exception {
+    public void runIntegrationTest_02() throws Exception {
         mvc.perform(MockMvcRequestBuilders.get("/").accept(MediaType.APPLICATION_JSON))
                 .andExpect(status().isOk())
                 .andExpect(content().string(equalTo("Greetings from Spring Boot!")));

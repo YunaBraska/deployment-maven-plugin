@@ -7,6 +7,7 @@ import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.Resources;
 import berlin.yuna.mavendeploy.config.Scm;
+import berlin.yuna.mavendeploy.config.Surefire;
 import berlin.yuna.mavendeploy.config.Versions;
 import org.junit.Test;
 
@@ -289,13 +290,11 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     @Test
     public void surfire_WithTestRun_shouldExecuteSuccessful() {
         terminal.execute(mvnCmd("-Dtest.run"));
+
+        expectMojoRun(g(Surefire.class, "test"));
         assertThat(terminal.consoleInfo(), not(containsString("Tests are skipped")));
         assertThat(terminal.consoleInfo(), not(containsString("No tests to run")));
-
-        expectMojoRun(
-                g(Resources.class, "resources"),
-                g(Resources.class, "testResources"),
-                g(Compiler.class, "compile"),
-                g(Compiler.class, "testCompile"));
+        assertThat(terminal.consoleInfo(), containsString("Running berlin.yuna.project.logic.TimeServiceTest"));
+        assertThat(terminal.consoleInfo(), containsString("Running berlin.yuna.project.controller.WebControllerUnitTest"));
     }
 }

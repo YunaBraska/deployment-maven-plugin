@@ -20,43 +20,62 @@ Auto handling semantic versioning, maven plugins, and much more while you can st
 </plugin>
 ````
 
-### Features
-* [x] Auto handle scm url
-* [x] Auto update semantic version
-* [x] Run plugins only when needed
-* [x] Optional Tag with and without break pipeline
-
-### How to call
+### Usage
 ````bash
 mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
-#Will create java doc, java sources, and updates dependencies
 ````
+* Will create java doc, java sources, and updates dependencies
 
-### SEMANTIC_FORMAT
-* Syntax \[1.2.3\]
-````"<separator>::<major>::<minor>::<patch>"````
-* Example \[1-2.3.4-5\]
-````"[.-]::release::feature::bugfix\|hotfix::custom_1.*[0-9]::custom_2.*[A-Z]"````
-
-### Versioning
+# Semantic- && versioning
+### Parameters
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | project.version     | String  | ''                 | Sets project version in pom                                                |
-| semantic.format     | String  | ''                 | Updates semantic version from regex pattern (overwrites project.version)   |
 | remove.snapshot     | Boolean | false              | Removes snapshot from version                                              |
+| semantic.format     | String  | ''                 | Updates semantic version from regex pattern (overwrites project.version)   |
+
+### Semantic version
+* Sets the version coming from branch name (uses git refLog for that)
+* The matching branch names has to be defined by using regex
+* Syntax:
+* ````"<separator>::<major>::<minor>::<patch>"```` 
+* Example:
+* ````semantic.format="[.-]::release.*::feature.*::bugfix\|hotfix::custom_1.*[A-Z]"````
+
+# Tagging & Committing
+### Parameters
+| Parameter           | Type    | Default            |  Description                                                               |
+|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | tag                 | Boolean | false              | Tags the project (with project.version or semantic) if not already exists  |
 | tag                 | String  | ${project.version} | Tags the project (with project.version or semantic) if not already exists  |
 | tag.break           | Boolean | false              | Tags the project (with project.version or semantic) fails if already exists|
 | message             | String  | ${auto}            | Commit msg for tag default = \[project.version] \[branchname], \[tag] ...  |
+| scm.provider        | String  | scm:git            | needed for tagging & committing                                            |
+| COMMIT              | String  | ''                 | Custom commit message on changes - "false" = deactivate commits            |
+* Example tag with project.version (or semantic version if active)
+* ````tag```` 
+* ````tag=true```` 
+* ````tag="my.own.version"```` 
+* ````message="new release"```` 
+* 'tag.break' parameter will stop tagging if the tag already exists 
+
+# Update dependencies
+| Parameter           | Type    | Default            |  Description                                                               |
+|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | update.minor        | Boolean | false              | Updates parent, properties, dependencies                                   |
 | update.major        | Boolean | false              | Updates parent, properties, dependencies                                   |
-| test.run (failing)  | Boolean | false              | runs test.unit and test.integration                                        |
-| test.unit (failing) | Boolean | false              | runs failsafe for unitTest                                                 |
-| test.int (failing)  | Boolean | false              | alias for test.integration                                                 |
-| test.integration (f | Boolean | false              | runs surefire integration, component, contract, smoke                      |
+
+# Testing
+| Parameter           | Type    | Default            |  Description                                                               |
+|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
+| test.run            | Boolean | false              | runs test.unit and test.integration                                        |
+| test.unit           | Boolean | false              | runs failsafe for unitTest                                                 |
+| test.int            | Boolean | false              | alias for test.integration                                                 |
+| test.integration    | Boolean | false              | runs surefire integration, component, contract, smoke                      |
 | JACOCO              | Boolean | false              | runs failsafe integration test and surefire unitTest                       |
-| COMMIT              | String  | ''                 | Custom commit message on changes - "false" = deactivate commits            |
-| scm.provider        | String  | scm:git            | needed for tagging and maven scm plugin                                    |
+
+# UNDER CONSTRUCTION
+
 ### Building
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
@@ -105,15 +124,13 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
 ### TODO
+* [ ] tag message can contain environment properties
 * [ ] not tag when last commit was tag commit
 * [ ] set always autoReleaseAfterClose=false and add "mvn nexus-staging:release" to release process
-* [ ] set scm url if not exists or changed
 * [ ] reset readme urls, description and title
 * [ ] Deploy dynamic to nexus
 * [ ] Deploy dynamic to artifactory
 * [ ] try to use JGit for git service
-* [ ] try to use https://github.com/TimMoore/mojo-executor
-
 * [ ] org.sonatype.plugins
 * [ ] own or buy logo https://www.designevo.com/apps/logo/?name=blue-hexagon-and-3d-container
 
