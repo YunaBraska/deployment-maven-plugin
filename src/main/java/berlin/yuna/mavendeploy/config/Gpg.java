@@ -12,8 +12,7 @@ import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 public class Gpg extends MojoBase {
 
     public Gpg(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-gpg-plugin", environment, log);
-        version = "1.6";
+        super("org.apache.maven.plugins", "maven-gpg-plugin", "1.6", environment, log);
     }
 
     public static Gpg build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {

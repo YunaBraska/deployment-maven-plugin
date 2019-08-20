@@ -13,8 +13,7 @@ import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 public class Dependency extends MojoBase {
 
     public Dependency(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-dependency-plugin", environment, log);
-        version = "3.1.1";
+        super("org.apache.maven.plugins", "maven-dependency-plugin", "3.1.1", environment, log);
     }
 
     public static Dependency build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {

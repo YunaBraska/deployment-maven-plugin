@@ -7,14 +7,12 @@ import org.apache.maven.plugin.MojoExecutionException;
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.getString;
 import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
 public class Javadoc extends MojoBase {
 
     public Javadoc(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-javadoc-plugin", environment, log);
-        version = "3.0.1";
+        super("org.apache.maven.plugins", "maven-javadoc-plugin", "3.0.1", environment, log);
     }
 
     public static Javadoc build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {

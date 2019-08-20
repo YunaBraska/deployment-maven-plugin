@@ -13,14 +13,15 @@ public abstract class MojoBase {
 
     protected final String groupId;
     protected final String artifactId;
-    protected String version;
+    protected final String version;
 
     protected final MojoExecutor.ExecutionEnvironment environment;
     protected final Logger log;
 
-    protected MojoBase(final String groupId, final String artifactId, final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
+    protected MojoBase(final String groupId, final String artifactId, final String version, final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         this.groupId = groupId;
         this.artifactId = artifactId;
+        this.version = version;
         this.environment = environment;
         this.log = log;
     }
@@ -35,10 +36,6 @@ public abstract class MojoBase {
 
     public String version() {
         return version;
-    }
-
-    public void version(final String version) {
-        this.version = version;
     }
 
     public MojoExecutor.ExecutionEnvironment environment() {

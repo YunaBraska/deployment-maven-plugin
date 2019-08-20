@@ -17,8 +17,7 @@ public class Scm extends MojoBase {
     protected String remoteTagging = null;
 
     public Scm(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-scm-plugin", environment, log);
-        version = "1.11.2";
+        super("org.apache.maven.plugins", "maven-scm-plugin", "1.11.2", environment, log);
     }
 
     public static Scm build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {

@@ -13,8 +13,7 @@ import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 public class Versions extends MojoBase {
 
     public Versions(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.codehaus.mojo", "versions-maven-plugin", environment, log);
-        version = "2.7";
+        super("org.codehaus.mojo", "versions-maven-plugin", "2.7", environment, log);
     }
 
     public static Versions build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {

@@ -16,8 +16,7 @@ import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 public class Clean extends MojoBase {
 
     public Clean(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-clean-plugin", environment, log);
-        version = "3.1.0";
+        super("org.apache.maven.plugins", "maven-clean-plugin", "3.1.0", environment, log);
     }
 
     public static Clean build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {

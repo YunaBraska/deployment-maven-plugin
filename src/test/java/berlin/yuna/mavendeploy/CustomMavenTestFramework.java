@@ -12,17 +12,21 @@ import berlin.yuna.mavendeploy.config.Resources;
 import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Surefire;
 import berlin.yuna.mavendeploy.config.Versions;
+import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.Prop;
+import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.reflections.Reflections;
 
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -33,6 +37,7 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
 import static java.lang.String.format;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -238,5 +243,20 @@ public class CustomMavenTestFramework {
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    static List<MojoBase> getAllMojos() {
+        final List<MojoBase> mojoList = new ArrayList<>();
+        try {
+            Reflections reflections = new Reflections(MojoBase.class.getPackage().getName());
+            Set<Class<? extends MojoBase>> classes = reflections.getSubTypesOf(MojoBase.class);
+
+            for (Class<? extends MojoBase> mojo : classes) {
+                mojoList.add(mojo.getDeclaredConstructor(MojoExecutor.ExecutionEnvironment.class, Logger.class).newInstance(null, null));
+            }
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        return mojoList;
     }
 }
