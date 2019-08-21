@@ -6,6 +6,7 @@ import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
+import berlin.yuna.mavendeploy.config.Resources;
 import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Surefire;
 import berlin.yuna.mavendeploy.config.Versions;
@@ -128,11 +129,9 @@ public class MojoRun extends AbstractMojo {
 
                 //MOJO TEST
 //                runWhen(() -> Resources.build(ENVIRONMENT, LOG).resource(), isTrue("test.run", "test.unit", "test.integration"));
-//                runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(ENVIRONMENT, LOG).compiler(), isTrue("test.run", "test.unit", "test.integration"));
-//                new Terminal().dir(basedir).consumerInfo(s -> LOG.info(s)).consumerError(s -> LOG.error(s)).execute("mvn compiler:compile -Denoding=UTF-8 -Dsource=1.8 -Dtarget=1.8 -DcompilerVersion=1.8");
+                runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(ENVIRONMENT, LOG).compiler(), isTrue("test.run", "test.unit", "test.integration"));
 //                runWhen(() -> Resources.build(ENVIRONMENT, LOG).testResource(), isTrue("test.run", "test.unit", "test.integration"));
-//                runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(ENVIRONMENT, LOG).testCompiler(), isTrue("test.run", "test.unit", "test.integration"));
-//                new Terminal().dir(basedir).consumerInfo(s -> LOG.info(s)).consumerError(s -> LOG.error(s)).execute("mvn compiler:testCompile -Denoding=UTF-8 -Dsource=1.8 -Dtarget=1.8 -DcompilerVersion=1.8");
+                runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(ENVIRONMENT, LOG).testCompiler(), isTrue("test.run", "test.unit", "test.integration"));
                 runWhen(() -> Surefire.build(ENVIRONMENT, LOG).test(), isTrue("test.run", "test.unit"));
 
 

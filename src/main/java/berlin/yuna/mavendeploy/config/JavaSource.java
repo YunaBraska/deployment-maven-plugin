@@ -12,7 +12,7 @@ import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 public class JavaSource extends MojoBase {
 
     public JavaSource(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-source-plugin", "3.0.1", environment, log);
+        super("org.apache.maven.plugins", "maven-source-plugin", "3.1.0", environment, log);
     }
 
     public static JavaSource build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {

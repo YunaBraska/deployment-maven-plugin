@@ -12,7 +12,7 @@ import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 public class Javadoc extends MojoBase {
 
     public Javadoc(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-javadoc-plugin", "3.0.1", environment, log);
+        super("org.apache.maven.plugins", "maven-javadoc-plugin", "3.1.1", environment, log);
     }
 
     public static Javadoc build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {

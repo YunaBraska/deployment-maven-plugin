@@ -291,7 +291,11 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     public void surfire_WithTestRun_shouldExecuteSuccessful() {
         terminal.execute(mvnCmd("-Dtest.run"));
 
-        expectMojoRun(g(Surefire.class, "test"));
+        expectMojoRun(
+                g(Compiler.class, "compile"),
+                g(Compiler.class, "testCompile"),
+                g(Surefire.class, "test")
+        );
         assertThat(terminal.consoleInfo(), not(containsString("Tests are skipped")));
         assertThat(terminal.consoleInfo(), not(containsString("No tests to run")));
         assertThat(terminal.consoleInfo(), containsString("Running berlin.yuna.project.logic.TimeServiceTest"));

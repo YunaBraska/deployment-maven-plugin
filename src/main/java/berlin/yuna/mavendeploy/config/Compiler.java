@@ -12,7 +12,7 @@ import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 public class Compiler extends MojoBase {
 
     public Compiler(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-compiler-plugin", "3.8.0", environment, log);
+        super("org.apache.maven.plugins", "maven-compiler-plugin", "3.8.1", environment, log);
     }
 
     public static Compiler build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {

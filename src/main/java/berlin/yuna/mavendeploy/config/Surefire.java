@@ -12,7 +12,7 @@ import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 public class Surefire extends MojoBase {
 
     public Surefire(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-surefire-plugin", "2.22.1", environment, log);
+        super("org.apache.maven.plugins", "maven-surefire-plugin", "3.0.0-M3", environment, log);
     }
 
     public static Surefire build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {

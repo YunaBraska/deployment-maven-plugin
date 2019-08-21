@@ -12,7 +12,7 @@ import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 public class Resources extends MojoBase {
 
     public Resources(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-resources-plugin", "2.6", environment, log);
+        super("org.apache.maven.plugins", "maven-resources-plugin", "3.1.0", environment, log);
     }
 
     public static Resources build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
