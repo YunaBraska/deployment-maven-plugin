@@ -29,8 +29,11 @@ import org.apache.maven.settings.Activation;
 import org.apache.maven.settings.Profile;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.File;
+import java.io.IOException;
 import java.util.List;
 import java.util.Properties;
 
@@ -196,7 +199,7 @@ public class MojoRun extends AbstractMojo {
 
     private String getBranchName() {
         final String branchName = SEMANTIC_SERVICE.getBranchName();
-        return branchName == null ? GIT_SERVICE.findOriginalBranchName(1) : "N/A";
+        return branchName == null ? GIT_SERVICE.findOriginalBranchName() : branchName;
     }
 
     private boolean hasNewTag(final String newTag, final String lastGitTag) {
@@ -287,6 +290,7 @@ public class MojoRun extends AbstractMojo {
 
         GIT_SERVICE = new GitService(LOG, basedir, getParam("fake", false));
         SEMANTIC_SERVICE = new SemanticService(getParam("semantic.format", "\\.:none"));
+
         HAS_GIT_CHANGES = GIT_SERVICE.gitHasChanges();
 
         if (HAS_GIT_CHANGES) {

@@ -105,6 +105,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- GIT SUPPORT -->
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit</artifactId>
+            <version>4.6.0.201612231935-r</version>
+        </dependency>
+
         <!-- SETTINGS XML -->
         <dependency>
             <groupId>org.jdom</groupId>

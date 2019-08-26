@@ -17,13 +17,11 @@ public class SemanticService {
     }
 
     public String getNextSemanticVersion(final String currentVersion, final GitService gitService, final String fallback) {
-        for (int commitNumber = 1; commitNumber < 32; commitNumber++) {
-            final String branchName = gitService.findOriginalBranchName(commitNumber);
-            final int semanticPosition = getSemanticPosition(branchName);
-            if (branchName != null && !branchName.trim().isEmpty() && semanticPosition != -1) {
-                this.branchName = branchName;
-                return getNextSemanticVersion(currentVersion, semanticPosition);
-            }
+        final String branchName = gitService.findOriginalBranchName();
+        final int semanticPosition = getSemanticPosition(branchName);
+        if (branchName != null && !branchName.trim().isEmpty() && semanticPosition != -1) {
+            this.branchName = branchName;
+            return getNextSemanticVersion(currentVersion, semanticPosition);
         }
         return fallback;
     }

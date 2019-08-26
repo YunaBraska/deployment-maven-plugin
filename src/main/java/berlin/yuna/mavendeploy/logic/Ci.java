@@ -131,7 +131,7 @@ public class Ci {
 
     public String getBranchName() {
         final String branchName = semanticService.getBranchName();
-        return branchName == null ? gitService.findOriginalBranchName(1) : branchName;
+        return branchName == null ? gitService.findOriginalBranchName() : branchName;
     }
 
     public boolean allowCommitMessage() {

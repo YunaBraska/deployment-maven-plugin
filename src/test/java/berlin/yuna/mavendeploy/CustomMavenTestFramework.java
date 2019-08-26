@@ -18,6 +18,8 @@ import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
@@ -90,7 +92,7 @@ public class CustomMavenTestFramework {
     }
 
     @Before
-    public void setUp() throws IOException, URISyntaxException {
+    public void setUp() throws IOException, URISyntaxException, GitAPIException {
         final Path tmpDir = prepareTestProject("testApplication");
         PROJECT_POM = getPomFile(new File(System.getProperty("user.dir"), "pom.xml"));
         TEST_POM = getPomFile(new File(tmpDir.toFile(), "pom.xml"));
@@ -195,13 +197,15 @@ public class CustomMavenTestFramework {
         return new ActiveGoal(activeMojo, activeGoal);
     }
 
-    private Path prepareTestProject(final String testSource) throws IOException, URISyntaxException {
+    private Path prepareTestProject(final String testSource) throws IOException, URISyntaxException, GitAPIException {
         final Path src = Paths.get(requireNonNull(getClass().getClassLoader().getResource(testSource)).toURI());
         assertThat(format("directory does not exists [%s]", src.toUri().toString()), Files.exists(src), is(true));
         assertThat(format("[%s] is not a directory", src.toUri().toString()), Files.isDirectory(src), is(true));
         final Path tempDirectory = Files.createTempDirectory(getClass().getSimpleName() + "_" + src.getFileName().toString() + "_");
         copyFolder(src, tempDirectory);
-        getTerminal().dir(tempDirectory).execute("git init; git add .; git commit -a -m 'init'");
+        Git git = Git.init().setDirectory(tempDirectory.toFile()).call();
+        git.add().addFilepattern(".").call();
+        git.commit().setMessage("init").call();
         return tempDirectory;
     }
 
