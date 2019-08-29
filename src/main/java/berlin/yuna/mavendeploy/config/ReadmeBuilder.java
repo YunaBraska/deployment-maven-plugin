@@ -42,16 +42,14 @@ public class ReadmeBuilder extends MojoBase {
 
     private void render(final Path builderPath) {
         try {
-            String content = new String(Files.readAllBytes(builderPath));
+            String content = escapeVariables(new String(Files.readAllBytes(builderPath)), false);
             final HashMap<String, String> variables = new HashMap<>();
             environment.getMavenSession().getUserProperties().forEach((k, v) -> variables.put(String.valueOf(k), String.valueOf(v)));
             variables.putAll(readVariables(content));
 
-            content = escapeVariables(content, false);
             content = resolveContent(content, compileVariables(variables));
             content = content.replaceAll(BUILDER_VAR_PATTERN.pattern(), "");
-            content = escapePlaceholder(content, true);
-            content = escapeVariables(content, true);
+            content = escapeVariables(escapePlaceholder(content, true), true);
             writeFile(builderPath, content.trim(), variables.get("target"));
         } catch (IOException e) {
             log.error(e);

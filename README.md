@@ -14,7 +14,11 @@
 # CURRENTLY REFACTORING FROM BASH TO REAL MAVEN MOJO
 
 ### Motivation
-This overwrites the maven environment variable
+Writing a project is really easy until it comes to your first deployment. You would need many plugins and manual tests until you project gets deployed in the default way.
+Like: The pom file in each project will raise (duplicated), the versioning, tagging, signing, readme updates, credentials and plugin configuration feels a bit hacky.
+Its not even testable.
+This plugin will handle "everything" default for you. So that you don't need anything in your pom file.
+Auto handling semantic versioning, maven plugins, and much more while you can still use the original maven userProperties to configure the plugins
 
 ### Usage as a plugin
 ````xml
@@ -49,9 +53,9 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 
 # Builder files (like README.builder.md)
 ### Parameters
-| Parameter           | Type    | Default            |  Description                                                                        |
-|:--------------------|:--------|:-------------------|:------------------------------------------------------------------------------------|
-| builder             | Boolean | false              | Will start translating all builder files with pattern "fileName.builder.extension"  |
+| Parameter           | Type    | Default            |  Description                                                                    |
+|:--------------------|:--------|:-------------------|:--------------------------------------------------------------------------------|
+| builder             | Boolean | false              | Will start translating builder files with pattern "fileName.builder.extension"  |
 
 ### Builder file content
 * Builder files are simple templates mainly used for readme files
@@ -60,6 +64,7 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 * 'target' (optional special variable) defines the target directory (starting from project.basedir) else target is the same folder
 * Example
 ````text
+
 [var myVariableName]: # (This is my variable value)
 [var project.description]: # (This overwrites the maven environment variable)
 [var varInVar]: # (This contains !{myVariableName} variable)
@@ -68,10 +73,8 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 # My project name: !{project.name}
 ## My project git origin url: !{git.remote.origin.url}
 ### My display own variable: !{varInVar}
-```` 
-* Example:
-* ````semantic.format="[.-]::release.*::feature.*::bugfix\|hotfix::custom_1.*[A-Z]"````
 
+```` 
 
 # Tagging & Committing
 ### Parameters
