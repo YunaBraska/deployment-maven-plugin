@@ -10,22 +10,23 @@ import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.StringReader;
 import java.util.Collection;
 import java.util.List;
+import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
 
-//FIXME: add GitLibrary like JGit
 public class GitService {
 
     private final Logger log;
     private final boolean fake;
     private final File workDir;
-    private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME_ORG = Pattern.compile("(?<prefix>.*refs\\/.*?\\/)(?<branchName>.*?)(?<suffix>@.*?)");
     private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME = Pattern.compile("(?<prefix>.*?\\:\\s)(?<branchName>.*)");
+    private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME_COMMAND_LINE = Pattern.compile("(?<prefix>.*refs\\/.*?\\/)(?<branchName>.*?)(?<suffix>@.*?)");
 
     public GitService(final Logger log, final File workDir, final boolean fake) {
         this.workDir = workDir;
@@ -43,6 +44,19 @@ public class GitService {
             tag = getString("git describe --tag --always --abbrev=0");
         }
         return tag;
+    }
+
+    public Properties getConfig() {
+        final Properties properties = new Properties();
+        final String config = getString("git config -l | cat");
+        if (config != null) {
+            try {
+                properties.load(new StringReader(config.replaceAll("[\\n|\\r|\\s|$|]", "\n")));
+            } catch (IOException e) {
+                log.error("Could not read git config due [%s]" + e, config);
+            }
+        }
+        return properties;
     }
 
     public Collection<ReflogEntry> getRefLog() {
@@ -74,9 +88,9 @@ public class GitService {
         if (fake) {
             log.warn("fake stash");
         }
-        try{
-            RevCommit stash = Git.open(workDir).stashCreate().call();
-            return stash == null? false : true;
+        try {
+            final RevCommit stash = Git.open(workDir).stashCreate().call();
+            return stash != null;
         } catch (GitAPIException | IOException e) {
             log.error("Failed to stash " + e);
             return false;
@@ -111,8 +125,8 @@ public class GitService {
     private String getBranchName() {
         //        return getString("git rev-parse --abbrev-ref HEAD");
         try {
-            ReflogEntry reflogEntry = getRefLog().iterator().next();
-            List<Ref> branches = Git.open(workDir).branchList().call();
+            final ReflogEntry reflogEntry = getRefLog().iterator().next();
+            final List<Ref> branches = Git.open(workDir).branchList().call();
             for (Ref branch : branches) {
                 if (branch.getObjectId().equals(reflogEntry.getNewId())) {
                     return branch.getName();

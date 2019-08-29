@@ -6,7 +6,7 @@ import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
-import berlin.yuna.mavendeploy.config.Resources;
+import berlin.yuna.mavendeploy.config.ReadmeBuilder;
 import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Surefire;
 import berlin.yuna.mavendeploy.config.Versions;
@@ -15,6 +15,8 @@ import berlin.yuna.mavendeploy.logic.SemanticService;
 import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.ThrowingFunction;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.model.Developer;
+import org.apache.maven.model.License;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecution;
@@ -29,12 +31,10 @@ import org.apache.maven.settings.Activation;
 import org.apache.maven.settings.Profile;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
-import org.eclipse.jgit.api.Git;
-import org.eclipse.jgit.api.errors.GitAPIException;
 
 import java.io.File;
-import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executionEnvironment;
@@ -90,6 +90,21 @@ public class MojoRun extends AbstractMojo {
                 final String newTag = prepareNewTagVersion(newProjectVersion);
                 final boolean hasNewTag = hasNewTag(newTag, GIT_SERVICE.getLastGitTag());
 
+                //SET GIT PROPERTIES
+                for (Map.Entry<Object, Object> config : GIT_SERVICE.getConfig().entrySet()) {
+                    setParameter("git." + config.getKey().toString(), config.getValue().toString());
+                }
+
+                //SET PROJECT DEVELOPER PROPERTIES
+                for (Map.Entry<Object, Object> config : readDeveloperProperties(project).entrySet()) {
+                    setParameter(config.getKey().toString(), config.getValue().toString());
+                }
+
+                //SET PROJECT LICENSE PROPERTIES
+                for (Map.Entry<Object, Object> config : readLicenseProperties(project).entrySet()) {
+                    setParameter(config.getKey().toString(), config.getValue().toString());
+                }
+
                 //SET PROPERTIES
                 setWhen("newVersion", newProjectVersion, !isEmpty(newProjectVersion) && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
                 setWhen("removeSnapshot", "true", isTrue("remove.snapshot"));
@@ -116,6 +131,7 @@ public class MojoRun extends AbstractMojo {
 
                 //RUN MOJOS
                 runWhen(() -> Clean.build(ENVIRONMENT, LOG).clean(), isTrue("clean", "clean.cache"));
+                runWhen(() -> ReadmeBuilder.build(ENVIRONMENT, LOG).render(), isTrue("builder"));
                 runWhen(() -> Dependency.build(ENVIRONMENT, LOG).resolvePlugins(), isTrue("clean", "clean.cache"));
                 runWhen(() -> Dependency.build(ENVIRONMENT, LOG).purgeLocalRepository(), isTrue("clean.cache"));
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).updateParent(), isTrue("update.major", "update.minor"));
@@ -366,6 +382,38 @@ public class MojoRun extends AbstractMojo {
 
     private String getParam(final String key, final String fallback) {
         return MojoHelper.getString(session, key, fallback);
+    }
+
+    public static Properties readDeveloperProperties(final MavenProject mavenProject) {
+        final Properties properties = new Properties();
+        final List<Developer> developer = mavenProject.getDevelopers();
+        properties.put("project.developers", developer.size());
+        for (int i = 0; i < developer.size(); i++) {
+            properties.put("project.developers[" + i + "]", developer.get(i));
+            properties.put("project.developers[" + i + "].name", setEmptyOnNull(developer.get(i).getName()));
+            properties.put("project.developers[" + i + "].url", setEmptyOnNull(developer.get(i).getUrl()));
+            properties.put("project.developers[" + i + "].email", setEmptyOnNull(developer.get(i).getEmail()));
+            properties.put("project.developers[" + i + "].organization", setEmptyOnNull(developer.get(i).getOrganization()));
+        }
+        return properties;
+    }
+
+    public static Properties readLicenseProperties(final MavenProject mavenProject) {
+        final Properties properties = new Properties();
+        final List<License> licenses = mavenProject.getLicenses();
+        properties.put("project.licenses", licenses.size());
+        for (int i = 0; i < licenses.size(); i++) {
+            properties.put("project.licenses[" + i + "]", licenses.get(i));
+            properties.put("project.licenses[" + i + "].name", setEmptyOnNull(licenses.get(i).getName()));
+            properties.put("project.licenses[" + i + "].url", setEmptyOnNull(licenses.get(i).getUrl()));
+            properties.put("project.licenses[" + i + "].distribution", setEmptyOnNull(licenses.get(i).getDistribution()));
+            properties.put("project.licenses[" + i + "].comments", setEmptyOnNull(licenses.get(i).getComments()));
+        }
+        return properties;
+    }
+
+    private static String setEmptyOnNull(final String test) {
+        return test == null ? "" : test;
     }
 
 }

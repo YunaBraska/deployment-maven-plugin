@@ -11,8 +11,6 @@ import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
 //TODO: auto detect version like generate pom file with plugins, update in test and parse on runtime
 //TODO: import mojo-executor without any dependencies...
-//TODO: make interface or abstract super class
-
 public class Clean extends MojoBase {
 
     public Clean(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {

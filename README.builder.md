@@ -1,4 +1,6 @@
-# deployment-maven-plugin
+[var dummyVariable]: # (This is a template generated and usable with this project)
+
+# !{project.name}
 
 ![Build][Build-shield] 
 [![Maintainable][Maintainable-image]][Maintainable-Url]
@@ -14,14 +16,14 @@
 # CURRENTLY REFACTORING FROM BASH TO REAL MAVEN MOJO
 
 ### Motivation
-This overwrites the maven environment variable
+!{project.description}
 
 ### Usage as a plugin
 ````xml
 <plugin>
-    <groupId>berlin.yuna</groupId>
-    <artifactId>deployment-maven-plugin</artifactId>
-    <version>0.0.1</version>
+    <groupId>!{project.groupId}</groupId>
+    <artifactId>!{project.artifactId}</artifactId>
+    <version>!{project.version}</version>
 </plugin>
 ````
 
@@ -49,9 +51,9 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 
 # Builder files (like README.builder.md)
 ### Parameters
-| Parameter           | Type    | Default            |  Description                                                                        |
-|:--------------------|:--------|:-------------------|:------------------------------------------------------------------------------------|
-| builder             | Boolean | false              | Will start translating all builder files with pattern "fileName.builder.extension"  |
+| Parameter           | Type    | Default            |  Description                                                                    |
+|:--------------------|:--------|:-------------------|:--------------------------------------------------------------------------------|
+| builder             | Boolean | false              | Will start translating builder files with pattern "fileName.builder.extension"  |
 
 ### Builder file content
 * Builder files are simple templates mainly used for readme files
@@ -60,18 +62,17 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 * 'target' (optional special variable) defines the target directory (starting from project.basedir) else target is the same folder
 * Example
 ````text
-[var myVariableName]: # (This is my variable value)
-[var project.description]: # (This overwrites the maven environment variable)
-[var varInVar]: # (This contains !{myVariableName} variable)
-[var target]: # (/new/readme/directory/path)
 
-# My project name: !{project.name}
-## My project git origin url: !{git.remote.origin.url}
-### My display own variable: !{varInVar}
+\[var myVariableName]: # (This is my variable value)
+\[var project.description]: # (This overwrites the maven environment variable)
+\[var varInVar]: # (This contains \!{myVariableName} variable)
+\[var target]: # (/new/readme/directory/path)
+
+# My project name: \!{project.name}
+## My project git origin url: \!{git.remote.origin.url}
+### My display own variable: \!{varInVar}
+
 ```` 
-* Example:
-* ````semantic.format="[.-]::release.*::feature.*::bugfix\|hotfix::custom_1.*[A-Z]"````
-
 
 # Tagging & Committing
 ### Parameters
@@ -164,26 +165,26 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 * [ ] org.sonatype.plugins
 * [ ] own or buy logo https://www.designevo.com/apps/logo/?name=blue-hexagon-and-3d-container
 
-![deployment-maven-plugin](src/main/resources/banner.png "deployment-maven-plugin")
+![!{project.artifactId}](src/main/resources/banner.png "!{project.artifactId}")
 
 [License-Url]: https://www.apache.org/licenses/LICENSE-2.0
-[Build-Status-Url]: https://travis-ci.org/YunaBraska/deployment-maven-plugin
-[Build-Status-Image]: https://travis-ci.org/YunaBraska/deployment-maven-plugin.svg?branch=master
-[Coverage-Url]: https://codecov.io/gh/YunaBraska/deployment-maven-plugin?branch=master
-[Coverage-image]: https://codecov.io/gh/YunaBraska/deployment-maven-plugin/branch/master/graphs/badge.svg
-[Maintainable-Url]: https://codeclimate.com/github/YunaBraska/deployment-maven-plugin
-[Maintainable-image]: https://codeclimate.com/github/YunaBraska/deployment-maven-plugin.svg
-[Javadoc-url]: http://javadoc.io/doc/berlin.yuna/deployment-maven-plugin
-[Javadoc-image]: http://javadoc.io/badge/berlin.yuna/deployment-maven-plugin.svg
+[Build-Status-Url]: https://travis-ci.org/YunaBraska/!{project.artifactId}
+[Build-Status-Image]: https://travis-ci.org/YunaBraska/!{project.artifactId}.svg?branch=master
+[Coverage-Url]: https://codecov.io/gh/YunaBraska/!{project.artifactId}?branch=master
+[Coverage-image]: https://codecov.io/gh/YunaBraska/!{project.artifactId}/branch/master/graphs/badge.svg
+[Maintainable-Url]: https://codeclimate.com/github/YunaBraska/!{project.artifactId}
+[Maintainable-image]: https://codeclimate.com/github/YunaBraska/!{project.artifactId}.svg
+[Javadoc-url]: http://javadoc.io/doc/berlin.yuna/!{project.artifactId}
+[Javadoc-image]: http://javadoc.io/badge/berlin.yuna/!{project.artifactId}.svg
 [Gitter-Url]: https://gitter.im/nats-streaming-server-embedded/Lobby
 [Gitter-image]: https://img.shields.io/badge/gitter-join%20chat%20%E2%86%92-brightgreen.svg
 
-[Dependency-shield]: https://img.shields.io/librariesio/github/YunaBraska/deployment-maven-plugin?style=flat-square
-[Tag-shield]: https://img.shields.io/github/v/tag/YunaBraska/deployment-maven-plugin?style=flat-square
-[Central-shield]: https://img.shields.io/maven-central/v/berlin.yuna/deployment-maven-plugin?style=flat-square
-[Size-shield]: https://img.shields.io/github/repo-size/YunaBraska/deployment-maven-plugin?style=flat-square
-[Issues-shield]: https://img.shields.io/github/issues/YunaBraska/deployment-maven-plugin?style=flat-square
-[License-shield]: https://img.shields.io/github/license/YunaBraska/deployment-maven-plugin?style=flat-square
-[Commit-shield]: https://img.shields.io/github/last-commit/YunaBraska/deployment-maven-plugin?style=flat-square
+[Dependency-shield]: https://img.shields.io/librariesio/github/YunaBraska/!{project.artifactId}?style=flat-square
+[Tag-shield]: https://img.shields.io/github/v/tag/YunaBraska/!{project.artifactId}?style=flat-square
+[Central-shield]: https://img.shields.io/maven-central/v/berlin.yuna/!{project.artifactId}?style=flat-square
+[Size-shield]: https://img.shields.io/github/repo-size/YunaBraska/!{project.artifactId}?style=flat-square
+[Issues-shield]: https://img.shields.io/github/issues/YunaBraska/!{project.artifactId}?style=flat-square
+[License-shield]: https://img.shields.io/github/license/YunaBraska/!{project.artifactId}?style=flat-square
+[Commit-shield]: https://img.shields.io/github/last-commit/YunaBraska/!{project.artifactId}?style=flat-square
 [Label-shield]: https://img.shields.io/badge/Yuna-QueenInside-blueviolet?style=flat-square
-[Build-shield]: https://img.shields.io/travis/YunaBraska/deployment-maven-plugin/master?style=flat-square
+[Build-shield]: https://img.shields.io/travis/YunaBraska/!{project.artifactId}/master?style=flat-square

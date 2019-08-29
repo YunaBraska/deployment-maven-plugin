@@ -5,6 +5,7 @@ import berlin.yuna.mavendeploy.config.Compiler;
 import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
+import berlin.yuna.mavendeploy.config.ReadmeBuilder;
 import berlin.yuna.mavendeploy.config.Resources;
 import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Surefire;
@@ -300,5 +301,12 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         assertThat(terminal.consoleInfo(), not(containsString("No tests to run")));
         assertThat(terminal.consoleInfo(), containsString("Running berlin.yuna.project.logic.TimeServiceTest"));
         assertThat(terminal.consoleInfo(), containsString("Running berlin.yuna.project.controller.WebControllerUnitTest"));
+    }
+
+    @Test
+    public void readmeBuilder_shouldExecuteSuccessful() {
+        terminal.execute(mvnCmd("-Dbuilder"));
+
+        expectMojoRun(g(ReadmeBuilder.class, "render"));
     }
 }

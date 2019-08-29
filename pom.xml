@@ -9,8 +9,11 @@
     <packaging>maven-plugin</packaging>
 
     <name>${project.artifactId}</name>
-    <description>Get rit of huge deployment definitions in your pom files and keep them small.
-        Auto handling semantic versioning, maven plugins, and much more
+    <description>Writing a project is really easy until it comes to your first deployment. You would need many plugins and manual tests until you project gets deployed in the default way.
+        Like: The pom file in each project will raise (duplicated), the versioning, tagging, signing, readme updates, credentials and plugin configuration feels a bit hacky.
+        Its not even testable.
+        This plugin will handle "everything" default for you. So that you don't need anything in your pom file.
+        Auto handling semantic versioning, maven plugins, and much more while you can still use the original maven userProperties to configure the plugins
     </description>
     <url>${git-project.url}</url>
 
@@ -138,6 +141,13 @@
             <version>1.18.8</version>
             <scope>provided</scope>
         </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>3.0.0</version>
+            <scope>test</scope>
+        </dependency>
+
 
         <!-- TEST -->
         <dependency>

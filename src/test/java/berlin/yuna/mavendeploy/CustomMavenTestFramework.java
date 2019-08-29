@@ -138,7 +138,7 @@ public class CustomMavenTestFramework {
         return getPomFile(pom.getPomFile());
     }
 
-    Model getPomFile(final File pom) {
+    public static Model getPomFile(final File pom) {
         assertThat("pom file [%s] does not exist", pom.exists(), is(true));
         assertThat("pom file [%s] is not a file", pom.isFile(), is(true));
         try {
@@ -203,7 +203,7 @@ public class CustomMavenTestFramework {
         assertThat(format("[%s] is not a directory", src.toUri().toString()), Files.isDirectory(src), is(true));
         final Path tempDirectory = Files.createTempDirectory(getClass().getSimpleName() + "_" + src.getFileName().toString() + "_");
         copyFolder(src, tempDirectory);
-        Git git = Git.init().setDirectory(tempDirectory.toFile()).call();
+        final Git git = Git.init().setDirectory(tempDirectory.toFile()).call();
         git.add().addFilepattern(".").call();
         git.commit().setMessage("init").call();
         return tempDirectory;
@@ -252,8 +252,8 @@ public class CustomMavenTestFramework {
     static List<MojoBase> getAllMojos() {
         final List<MojoBase> mojoList = new ArrayList<>();
         try {
-            Reflections reflections = new Reflections(MojoBase.class.getPackage().getName());
-            Set<Class<? extends MojoBase>> classes = reflections.getSubTypesOf(MojoBase.class);
+            final Reflections reflections = new Reflections(MojoBase.class.getPackage().getName());
+            final Set<Class<? extends MojoBase>> classes = reflections.getSubTypesOf(MojoBase.class);
 
             for (Class<? extends MojoBase> mojo : classes) {
                 mojoList.add(mojo.getDeclaredConstructor(MojoExecutor.ExecutionEnvironment.class, Logger.class).newInstance(null, null));

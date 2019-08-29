@@ -49,9 +49,9 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 
 # Builder files (like README.builder.md)
 ### Parameters
-| Parameter           | Type    | Default            |  Description                                                                        |
-|:--------------------|:--------|:-------------------|:------------------------------------------------------------------------------------|
-| builder             | Boolean | false              | Will start translating all builder files with pattern "fileName.builder.extension"  |
+| Parameter           | Type    | Default            |  Description                                                                    |
+|:--------------------|:--------|:-------------------|:--------------------------------------------------------------------------------|
+| builder             | Boolean | false              | Will start translating builder files with pattern "fileName.builder.extension"  |
 
 ### Builder file content
 * Builder files are simple templates mainly used for readme files
@@ -60,6 +60,7 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 * 'target' (optional special variable) defines the target directory (starting from project.basedir) else target is the same folder
 * Example
 ````text
+
 [var myVariableName]: # (This is my variable value)
 [var project.description]: # (This overwrites the maven environment variable)
 [var varInVar]: # (This contains !{myVariableName} variable)
@@ -68,10 +69,8 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 # My project name: !{project.name}
 ## My project git origin url: !{git.remote.origin.url}
 ### My display own variable: !{varInVar}
-```` 
-* Example:
-* ````semantic.format="[.-]::release.*::feature.*::bugfix\|hotfix::custom_1.*[A-Z]"````
 
+```` 
 
 # Tagging & Committing
 ### Parameters
