@@ -21,13 +21,16 @@ import static java.util.Collections.singletonList;
 
 public class ReadmeBuilder extends MojoBase {
 
-    public static final String NAME_PLACEHOLDER = "PLACEHOLDER";
-    public static final String NAME_VARIABLE = "VARIABLE";
-    public static final String NAME_TEXT = "TEXT";
-    public static final String NAME_ESCAPE = "ESCAPED";
-    public static final String BUILDER_FILE_PATTERN = "(?<name>.*)(?<value>\\.builder\\.)(?<type>\\w*)(?<end>\\#+)";
-    public static Pattern BUILDER_VAR_PATTERN = Pattern.compile("\\[(?<type>var)\\s+(?<name>.*)\\]\\:\\s+\\#\\s+\\((?<value>.*)\\)");
-    public static Pattern BUILDER_PLACEHOLDER_PATTERN = Pattern.compile("\\!\\{(?<name>.*)\\}");
+    private static final String NAME_PLACEHOLDER = "PLACEHOLDER";
+    private static final String NAME_VARIABLE = "VARIABLE";
+    private static final String NAME_INCLUDE = "INCLUDE";
+    private static final String NAME_TEXT = "TEXT";
+    private static final String NAME_ESCAPE = "ESCAPED";
+    private static final String BUILDER_FILE_PATTERN = "(?<name>.*)(?<value>\\.builder\\.)(?<type>\\w*)(?<end>\\#+)";
+    private static Pattern BUILDER_VAR_PATTERN = Pattern.compile("\\[(?<type>var)\\s+(?<name>.*)\\]\\:\\s+\\#\\s+\\((?<value>.*)\\)");
+    private static Pattern BUILDER_INCLUDE_PATTERN = Pattern.compile("(?<name>.*)\\[(?<type>include)" +
+            "\\]\\:\\s+\\#\\s+\\((?<value>.*)\\)");
+    private static Pattern BUILDER_PLACEHOLDER_PATTERN = Pattern.compile("\\!\\{(?<name>.*)\\}");
 
     public ReadmeBuilder(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         super("berlin.yuna", "readme-buider", "0.0.1", environment, log);
@@ -41,7 +44,7 @@ public class ReadmeBuilder extends MojoBase {
         final String goal = "render";
         logGoal(goal, true);
         final Path start = environment.getMavenProject().getBasedir().toPath();
-        Files.walk(start)
+        Files.walk(start, 99)
                 .filter(path -> Files.isRegularFile(path))
                 .filter(file -> (file.getFileName().toString() + "#end").split(BUILDER_FILE_PATTERN).length > 1)
                 .forEach(this::render);
@@ -49,26 +52,36 @@ public class ReadmeBuilder extends MojoBase {
         return this;
     }
 
-    //TODO: includes
     private void render(final Path builderPath) {
+        render(builderPath, true);
+    }
+
+    private String render(final Path builderPath, final boolean writeFile) {
         try {
-            log.debug("Rendering [%s]", builderPath);
+            log.debug("Rendering [%s]", builderPath.getFileName());
             List<Content> content = new ArrayList<>();
             content.add(new Content(NAME_TEXT, new String(Files.readAllBytes(builderPath), UTF_8)));
             content = splitContentAt(content, Pattern.compile("\\\\" + BUILDER_VAR_PATTERN), NAME_ESCAPE);
             content = splitContentAt(content, Pattern.compile("\\\\" + BUILDER_PLACEHOLDER_PATTERN), NAME_ESCAPE);
+            content = splitContentAt(content, Pattern.compile("\\\\" + BUILDER_INCLUDE_PATTERN), NAME_ESCAPE);
             content = splitContentAt(content, BUILDER_VAR_PATTERN, NAME_VARIABLE);
+            content = splitContentAt(content, BUILDER_INCLUDE_PATTERN, NAME_INCLUDE);
             content = splitContentAt(content, BUILDER_PLACEHOLDER_PATTERN, NAME_PLACEHOLDER);
 
             final HashMap<String, String> variables = readVariables(content);
             content = resolvePlaceholders(content, variables);
+            content = resolveIncludes(content, variables, builderPath);
             content = removeVariablesAndEscapes(content);
 
             final String result = content.stream().map(c -> c.value).collect(Collectors.joining("")).trim();
-            writeFile(builderPath, result, variables.get("target"));
+            if (writeFile) {
+                writeFile(builderPath, result, variables.get("target"));
+            }
+            return result;
         } catch (IOException e) {
             log.error(e);
         }
+        return "";
     }
 
     private HashMap<String, String> readVariables(final List<Content> content) {
@@ -105,9 +118,23 @@ public class ReadmeBuilder extends MojoBase {
         return result;
     }
 
+    private List<Content> resolveIncludes(final List<Content> content, final HashMap<String, String> variables, final Path builderPath) {
+        final List<Content> result = new ArrayList<>(content);
+        result.stream().filter(o -> NAME_INCLUDE.equals(o.key)).forEach(variable -> {
+            final Content include = readVariable(variable, BUILDER_INCLUDE_PATTERN);
+            final File file = include.value.startsWith("/") ?
+                    new File(environment.getMavenProject().getBasedir(), include.value.substring(1)) :
+                    new File(builderPath.getParent().toFile(), include.value);
+            variable.value = include.key + render(file.toPath(), false);
+            variable.key = NAME_TEXT;
+        });
+        return result;
+    }
+
     private List<Content> removeVariablesAndEscapes(final List<Content> content) {
         final List<Content> result = new ArrayList<>(content);
         content.stream().filter(c -> NAME_VARIABLE.equals(c.key)).forEach(result::remove);
+        content.stream().filter(c -> NAME_INCLUDE.equals(c.key)).forEach(result::remove);
         content.stream().filter(c -> NAME_ESCAPE.equals(c.key)).forEach(c -> c.value = c.value.substring(1));
         return result;
     }
@@ -133,17 +160,24 @@ public class ReadmeBuilder extends MojoBase {
     }
 
     private void writeFile(final Path builderPath, final String content, final String optionalPath) throws IOException {
+        final Path outputPath = getOutputPath(builderPath, optionalPath);
+        Files.write(outputPath, content.getBytes());
+        log.info("Generated [%s]", outputPath);
+    }
+
+    private Path getOutputPath(final Path builderPath, final String optionalPath) throws IOException {
         final Path basePath = builderPath.getParent();
-        final File outputBase = (optionalPath == null ? basePath.toFile() : new File(environment.getMavenProject().getBasedir(), optionalPath));
+        final File outputBase = (optionalPath == null ? basePath.toFile() : new File(
+                (optionalPath.startsWith("/") ? environment.getMavenProject().getBasedir() : basePath.toFile()),
+                optionalPath
+        ));
 
         if (!outputBase.exists()) {
             Files.createDirectories(outputBase.toPath());
         }
 
         final String fileName = (builderPath.getFileName().toString() + "#").replaceAll(BUILDER_FILE_PATTERN, "${name}.${type}");
-        final Path outputPath = new File(outputBase, fileName).toPath();
-        Files.write(outputPath, content.getBytes());
-        log.info("Generated [%s]", outputPath);
+        return new File(outputBase, fileName).toPath();
     }
 
     public class Content {

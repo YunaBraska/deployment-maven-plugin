@@ -24,7 +24,7 @@ public class Logger {
 
     public void debug(final Object... format) {
         if (LOG == null) {
-            System.out.println(formatMsg(format) + " [DEBUG]   ");
+            System.out.println("[DEBUG]   " + formatMsg(format));
         } else {
             LOG.debug("   " + formatMsg(format));
         }
@@ -32,7 +32,7 @@ public class Logger {
 
     public void info(final Object... format) {
         if (LOG == null) {
-            System.out.println(formatMsg(format) + " [INFO]    ");
+            System.out.println("[INFO]    " + formatMsg(format));
         } else {
             LOG.info("    " + formatMsg(format));
         }
@@ -40,7 +40,7 @@ public class Logger {
 
     public void warn(final Object... format) {
         if (LOG == null) {
-            System.err.println(formatMsg(format) + " [WARNING] ");
+            System.err.println("[WARNING] " + formatMsg(format));
         } else {
             LOG.warn(" " + formatMsg(format));
         }
@@ -48,7 +48,7 @@ public class Logger {
 
     public void error(final Object... format) {
         if (LOG == null) {
-            System.err.println(formatMsg(format) + " [ERROR]   ");
+            System.err.println("ERROR   " + formatMsg(format));
         } else {
             LOG.error("   " + formatMsg(format));
         }
