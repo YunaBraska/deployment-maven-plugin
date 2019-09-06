@@ -20,7 +20,7 @@ Its not even testable.
 This plugin will handle "everything" default for you. So that you don't need anything in your pom file.
 Auto handling semantic versioning, maven plugins, and much more while you can still use the original maven userProperties to configure the plugins
 
-### Usage as a plugin
+### Usage as plugin
 ````xml
 <plugin>
     <groupId>berlin.yuna</groupId>
@@ -29,7 +29,7 @@ Auto handling semantic versioning, maven plugins, and much more while you can st
 </plugin>
 ````
 
-### Usage on command line
+### Usage as command line
 ````bash
 mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 ````

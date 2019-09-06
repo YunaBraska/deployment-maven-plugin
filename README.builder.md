@@ -1,4 +1,6 @@
-[var dummyVariable]: # (This is a template generated and usable with this project)
+[var builder_usage]: # (Usage as)
+[var builder_usage_plugin]: # (!{builder_usage} plugin)
+[var builder_usage_command]: # (!{builder_usage} command line)
 
 # !{project.name}
 
@@ -18,7 +20,7 @@
 ### Motivation
 !{project.description}
 
-### Usage as a plugin
+### !{builder_usage_plugin}
 ````xml
 <plugin>
     <groupId>!{project.groupId}</groupId>
@@ -27,7 +29,7 @@
 </plugin>
 ````
 
-### Usage on command line
+### !{builder_usage_command}
 ````bash
 mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 ````
@@ -65,7 +67,7 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 
 \[var myVariableName]: # (This is my variable value)
 \[var project.description]: # (This overwrites the maven environment variable)
-\[var varInVar]: # (This contains \!{myVariableName} variable)
+\[var varInVar]: # (This contains !{myVariableName} variable)
 \[var target]: # (/new/readme/directory/path)
 
 # My project name: \!{project.name}

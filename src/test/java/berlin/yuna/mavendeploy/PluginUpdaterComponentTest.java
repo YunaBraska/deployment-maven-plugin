@@ -25,12 +25,12 @@ public class PluginUpdaterComponentTest extends CustomMavenTestFramework {
 
     @Test
     public void displayPluginUpdates() throws IOException, XmlPullParserException {
-        File pomFile = TEST_POM.getPomFile();
-        List<MojoBase> mojoList = getAllMojos();
+        final File pomFile = TEST_POM.getPomFile();
+        final List<MojoBase> mojoList = getAllMojos();
         createPomFile(pomFile, mojoList);
 
         getTerminal().execute(mvnCmd("-Dupdate.major"));
-        HashMap<MojoBase, String> availableVersions = reportPluginUpdates(mojoList, pomFile);
+        final HashMap<MojoBase, String> availableVersions = reportPluginUpdates(mojoList, pomFile);
 
         availableVersions.forEach((mojo, newVersion) -> {
             System.err.println(format("[%s] [%s] -> [%s]", mojo.artifactId(), mojo.version(), newVersion));
@@ -57,8 +57,8 @@ public class PluginUpdaterComponentTest extends CustomMavenTestFramework {
         return newVersionAvailable;
     }
 
-    private void createPomFile(File pomFile, List<MojoBase> mojoList) {
-        Element project = new Element("project");
+    private void createPomFile(final File pomFile, final List<MojoBase> mojoList) {
+        final Element project = new Element("project");
         project.addContent(new Element("modelVersion").addContent("4.0.0"));
         project.addContent(new Element("groupId").addContent("berlin.yuna"));
         project.addContent(new Element("artifactId").addContent("plugin-updater"));
@@ -69,7 +69,7 @@ public class PluginUpdaterComponentTest extends CustomMavenTestFramework {
     }
 
     private Element preparePlugins(final List<MojoBase> mojoList) {
-        Element plugins = new Element("dependencies");
+        final Element plugins = new Element("dependencies");
         mojoList.forEach(mojoBase -> {
             final Element plugin = new Element("dependency");
             plugin.addContent(new Element("groupId").addContent(mojoBase.groupId()));
@@ -88,7 +88,7 @@ public class PluginUpdaterComponentTest extends CustomMavenTestFramework {
         }
     }
 
-    private void updateMojoVersions(final MojoBase mojo, String newVersion, Path path) throws IOException {
+    private void updateMojoVersions(final MojoBase mojo, final String newVersion, final Path path) throws IOException {
         String content = new String(Files.readAllBytes(path), UTF_8);
         Files.write(path, content.replace(format("\"%s\",", mojo.version()), format("\"%s\",", newVersion)).getBytes(UTF_8));
     }

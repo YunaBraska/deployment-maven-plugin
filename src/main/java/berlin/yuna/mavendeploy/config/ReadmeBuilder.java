@@ -7,6 +7,7 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -14,8 +15,16 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Collections.singletonList;
+
 public class ReadmeBuilder extends MojoBase {
 
+    public static final String NAME_PLACEHOLDER = "PLACEHOLDER";
+    public static final String NAME_VARIABLE = "VARIABLE";
+    public static final String NAME_TEXT = "TEXT";
+    public static final String NAME_ESCAPE = "ESCAPED";
     public static final String BUILDER_FILE_PATTERN = "(?<name>.*)(?<value>\\.builder\\.)(?<type>\\w*)(?<end>\\#+)";
     public static Pattern BUILDER_VAR_PATTERN = Pattern.compile("\\[(?<type>var)\\s+(?<name>.*)\\]\\:\\s+\\#\\s+\\((?<value>.*)\\)");
     public static Pattern BUILDER_PLACEHOLDER_PATTERN = Pattern.compile("\\!\\{(?<name>.*)\\}");
@@ -40,68 +49,87 @@ public class ReadmeBuilder extends MojoBase {
         return this;
     }
 
+    //TODO: includes
     private void render(final Path builderPath) {
         try {
-            String content = escapeVariables(new String(Files.readAllBytes(builderPath)), false);
-            final HashMap<String, String> variables = new HashMap<>();
-            environment.getMavenSession().getUserProperties().forEach((k, v) -> variables.put(String.valueOf(k), String.valueOf(v)));
-            variables.putAll(readVariables(content));
+            log.debug("Rendering [%s]", builderPath);
+            List<Content> content = new ArrayList<>();
+            content.add(new Content(NAME_TEXT, new String(Files.readAllBytes(builderPath), UTF_8)));
+            content = splitContentAt(content, Pattern.compile("\\\\" + BUILDER_VAR_PATTERN), NAME_ESCAPE);
+            content = splitContentAt(content, Pattern.compile("\\\\" + BUILDER_PLACEHOLDER_PATTERN), NAME_ESCAPE);
+            content = splitContentAt(content, BUILDER_VAR_PATTERN, NAME_VARIABLE);
+            content = splitContentAt(content, BUILDER_PLACEHOLDER_PATTERN, NAME_PLACEHOLDER);
 
-            content = resolveContent(content, compileVariables(variables));
-            content = content.replaceAll(BUILDER_VAR_PATTERN.pattern(), "");
-            content = escapeVariables(escapePlaceholder(content, true), true);
-            writeFile(builderPath, content.trim(), variables.get("target"));
+            final HashMap<String, String> variables = readVariables(content);
+            content = resolvePlaceholders(content, variables);
+            content = removeVariablesAndEscapes(content);
+
+            final String result = content.stream().map(c -> c.value).collect(Collectors.joining("")).trim();
+            writeFile(builderPath, result, variables.get("target"));
         } catch (IOException e) {
             log.error(e);
         }
     }
 
-    private String resolveContent(final String content, final HashMap<String, String> variables) {
-        String result = escapePlaceholder(content, false);
-        for (Map.Entry<String, String> var : variables.entrySet()) {
-            result = result.replace("\\!{" + var.getKey() + "}", "\\!_{" + var.getKey() + "}");
-            result = result.replace("!{" + var.getKey() + "}", var.getValue());
-        }
-        return result;
-    }
-
-    private HashMap<String, String> readVariables(final String file) {
+    private HashMap<String, String> readVariables(final List<Content> content) {
         final HashMap<String, String> variables = new HashMap<>();
-        final Matcher matcher = BUILDER_VAR_PATTERN.matcher(file);
-        while (matcher.find()) {
-//            final String type = matcher.group("type");
-            final String name = matcher.group("name");
-            final String value = matcher.group("value");
-            variables.put(name, value);
-        }
+        environment.getMavenSession().getUserProperties().forEach((k, v) -> variables.put(String.valueOf(k), String.valueOf(v)));
+        variables.putAll(readVariables(content, variables));
         return variables;
     }
 
-    private HashMap<String, String> compileVariables(final HashMap<String, String> variables) {
+    private Map<String, String> readVariables(final List<Content> content, final HashMap<String, String> variables) {
         final HashMap<String, String> result = new HashMap<>(variables);
-        final List<Map.Entry<String, String>> vars = variables
-                .entrySet().stream()
-                .filter(var -> ("#" + var.getValue() + "#").split(BUILDER_PLACEHOLDER_PATTERN.pattern()).length > 1)
-                .collect(Collectors.toList());
-
-        for (Map.Entry<String, String> var : vars) {
-            result.put(var.getKey(), resolveContent(var.getValue(), variables));
-        }
+        content.stream().filter(c -> NAME_VARIABLE.equals(c.key)).forEach(c -> {
+            final Content variable = readVariable(c, BUILDER_VAR_PATTERN);
+            result.put(variable.key, resolvePlaceholders(singletonList(variable), result).get(0).value);
+        });
         return result;
     }
 
-    private String escapePlaceholder(final String content, final boolean liftEscape) {
-        if (liftEscape) {
-            return content.replaceAll("\\\\!_" + BUILDER_PLACEHOLDER_PATTERN.pattern().substring(2), "!{${name}}");
+    private Content readVariable(final Content content, final Pattern pattern) {
+        final Matcher matcher = pattern.matcher(content.value);
+        if (matcher.find()) {
+            return new Content(matcher.group("name"), matcher.group("value"));
         }
-        return content.replaceAll("\\\\" + BUILDER_PLACEHOLDER_PATTERN.pattern(), "\\\\!_{${name}}");
+        throw new RuntimeException(format("No variable found in [%s]", content.value));
     }
 
-    private String escapeVariables(final String content, final boolean liftEscape) {
-        if (liftEscape) {
-            return content.replaceAll("\\\\!]" + BUILDER_VAR_PATTERN.pattern().substring(2), "[${type} ${name}]: # \\(${value}\\)");
+    private List<Content> resolvePlaceholders(final List<Content> content, final HashMap<String, String> variables) {
+        final List<Content> result = new ArrayList<>(content);
+        result.stream().filter(o -> !NAME_ESCAPE.equals(o.key)).forEach(placeholder -> {
+            for (Map.Entry<String, String> var : variables.entrySet()) {
+                placeholder.value = placeholder.value.replace("!{" + var.getKey() + "}", var.getValue());
+            }
+        });
+        return result;
+    }
+
+    private List<Content> removeVariablesAndEscapes(final List<Content> content) {
+        final List<Content> result = new ArrayList<>(content);
+        content.stream().filter(c -> NAME_VARIABLE.equals(c.key)).forEach(result::remove);
+        content.stream().filter(c -> NAME_ESCAPE.equals(c.key)).forEach(c -> c.value = c.value.substring(1));
+        return result;
+    }
+
+    private List<Content> splitContentAt(final List<Content> content, final Pattern pattern, final String name) {
+        final List<Content> result = new ArrayList<>();
+        for (Content part : content) {
+            if (part.key.equals(NAME_TEXT) && !part.value.isEmpty()) {
+                final String value = part.value;
+                final Matcher matcher = pattern.matcher(value);
+                int endMatch = 0;
+                while (matcher.find()) {
+                    result.add(new Content(part.key, value.substring(endMatch, matcher.start())));
+                    endMatch = matcher.end();
+                    result.add(new Content(name, value.substring(matcher.start(), endMatch)));
+                }
+                result.add(new Content(part.key, value.substring(endMatch)));
+            } else if (!part.value.isEmpty()) {
+                result.add(part);
+            }
         }
-        return content.replaceAll("\\\\" + BUILDER_VAR_PATTERN.pattern(), "\\\\!]${type} ${name}]: # \\(${value}\\)");
+        return result;
     }
 
     private void writeFile(final Path builderPath, final String content, final String optionalPath) throws IOException {
@@ -113,6 +141,42 @@ public class ReadmeBuilder extends MojoBase {
         }
 
         final String fileName = (builderPath.getFileName().toString() + "#").replaceAll(BUILDER_FILE_PATTERN, "${name}.${type}");
-        Files.write(new File(outputBase, fileName).toPath(), content.getBytes());
+        final Path outputPath = new File(outputBase, fileName).toPath();
+        Files.write(outputPath, content.getBytes());
+        log.info("Generated [%s]", outputPath);
+    }
+
+    public class Content {
+
+        public String key;
+        public String value;
+
+        public Content(final String key, final String value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        @Override
+        public boolean equals(final Object o) {
+            if (this == o) return true;
+            if (o == null || getClass() != o.getClass()) return false;
+
+            final Content content = (Content) o;
+
+            if (key != null ? !key.equals(content.key) : content.key != null) return false;
+            return value != null ? value.equals(content.value) : content.value == null;
+        }
+
+        @Override
+        public int hashCode() {
+            int result = key != null ? key.hashCode() : 0;
+            result = 31 * result + (value != null ? value.hashCode() : 0);
+            return result;
+        }
+
+        @Override
+        public String toString() {
+            return format("[%S] [%s]", key, value);
+        }
     }
 }
