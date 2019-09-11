@@ -15,6 +15,10 @@ public class Logger {
     private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
     private LocalDateTime lastLog = LocalDateTime.now();
 
+    public Logger() {
+        this(null);
+    }
+
     public Logger(final Log log) {
         LOG = log;
         if (LOG == null) {

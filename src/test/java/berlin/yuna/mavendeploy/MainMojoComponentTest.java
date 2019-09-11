@@ -5,11 +5,12 @@ import berlin.yuna.mavendeploy.config.Compiler;
 import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
+import berlin.yuna.mavendeploy.config.PluginUpdater;
 import berlin.yuna.mavendeploy.config.ReadmeBuilder;
-import berlin.yuna.mavendeploy.config.Resources;
 import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Surefire;
 import berlin.yuna.mavendeploy.config.Versions;
+import berlin.yuna.mavendeploy.helper.CustomMavenTestFramework;
 import org.junit.Test;
 
 import java.io.File;
@@ -59,6 +60,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         );
 
         expectMojoRun(
+                g(PluginUpdater.class, "update"),
                 g(Versions.class, "update-parent"),
                 g(Versions.class, "update-properties"),
                 g(Versions.class, "update-child-modules"),
@@ -79,6 +81,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         );
 
         expectMojoRun(
+                g(PluginUpdater.class, "update"),
                 g(Versions.class, "update-parent"),
                 g(Versions.class, "update-properties"),
                 g(Versions.class, "update-child-modules"),

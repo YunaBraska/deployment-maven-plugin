@@ -15,7 +15,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Properties;
 
-import static berlin.yuna.mavendeploy.CustomMavenTestFramework.getPomFile;
+import static berlin.yuna.mavendeploy.helper.CustomMavenTestFramework.getPomFile;
 import static berlin.yuna.mavendeploy.plugin.MojoRun.readDeveloperProperties;
 import static berlin.yuna.mavendeploy.plugin.MojoRun.readLicenseProperties;
 import static java.lang.String.format;
@@ -29,7 +29,7 @@ import static org.mockito.Mockito.when;
 
 public class ReadmeBuilderTest {
 
-    private static final Logger log = new Logger(null);
+    private static final Logger log = new Logger();
     private MojoExecutor.ExecutionEnvironment environment;
     private MavenProject mavenProject;
     private String projectPath = System.getProperty("user.dir");

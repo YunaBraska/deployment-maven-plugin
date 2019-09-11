@@ -1,4 +1,4 @@
-package berlin.yuna.mavendeploy;
+package berlin.yuna.mavendeploy.helper;
 
 import berlin.yuna.mavendeploy.config.MojoBase;
 import berlin.yuna.mavendeploy.model.Logger;

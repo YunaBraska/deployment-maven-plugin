@@ -1,4 +1,4 @@
-package berlin.yuna.mavendeploy;
+package berlin.yuna.mavendeploy.helper;
 
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.config.Clean;
@@ -8,6 +8,8 @@ import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.MojoBase;
+import berlin.yuna.mavendeploy.config.PluginUpdater;
+import berlin.yuna.mavendeploy.config.ReadmeBuilder;
 import berlin.yuna.mavendeploy.config.Resources;
 import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Surefire;
@@ -16,6 +18,7 @@ import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.Prop;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.model.Model;
+import org.apache.maven.model.Plugin;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.jgit.api.Git;
@@ -42,7 +45,6 @@ import java.util.List;
 import java.util.Set;
 
 import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.util.Arrays.asList;
@@ -55,17 +57,19 @@ import static org.hamcrest.core.IsNot.not;
 
 public class CustomMavenTestFramework {
 
-    private static final boolean DEBUG = true;
-    static Model TEST_POM;
-    private static Model PROJECT_POM;
+    protected static Model TEST_POM;
+    protected static Model PROJECT_POM;
+    protected Terminal terminal;
+    protected Terminal terminalNoLog;
 
-    Terminal terminal;
-    Terminal terminalNoLog;
+    private static final boolean DEBUG = true;
 
     private final List<ActiveGoal> definedMojoList = asList(
             g(Clean.class, "clean"),
             g(Dependency.class, "resolve-plugins"),
             g(Dependency.class, "purge-local-repository"),
+            g(PluginUpdater.class, "update"),
+            g(ReadmeBuilder.class, "render"),
             g(Versions.class, "update-parent"),
             g(Versions.class, "update-properties"),
             g(Versions.class, "update-child-modules"),
@@ -109,7 +113,7 @@ public class CustomMavenTestFramework {
         deleteDir(TEST_POM.getPomFile().getParentFile().toPath());
     }
 
-    void mergeBranch(final String branchName) {
+    protected void mergeBranch(final String branchName) {
         try {
             final Path filePath = Paths.get(TEST_POM.getPomFile().getParentFile().toString(), new File(branchName).getName());
             terminal.execute("git checkout -b " + branchName);
@@ -122,20 +126,18 @@ public class CustomMavenTestFramework {
         }
     }
 
-
-    // TODO: generate plugins to pom file, update them and parse it on runtime
-    String mvnCmd(final String parameter) {
+    protected String mvnCmd(final String parameter) {
         final String mvnCmd = "mvn"
                 + " " + PROJECT_POM.getGroupId()
                 + ":" + PROJECT_POM.getArtifactId()
                 + ":" + PROJECT_POM.getVersion()
-                + ":run -Dfake -X " + parameter
+                + ":run -Dfake -X "
                 + " -Djava.version=1.8 " + parameter;
         System.out.println(format("Running maven command [%s]", mvnCmd));
         return mvnCmd;
     }
 
-    Model parse(final Model pom) {
+    protected Model parse(final Model pom) {
         return getPomFile(pom.getPomFile());
     }
 
@@ -159,7 +161,7 @@ public class CustomMavenTestFramework {
         return new Terminal().dir(System.getProperty("user.dir")).consumerError(System.err::println);
     }
 
-    void expectMojoRun(final ActiveGoal... expectedMojos) {
+    protected void expectMojoRun(final ActiveGoal... expectedMojos) {
         final String console = terminal.consoleInfo();
         assertThat(console, containsString("Building example-maven-test-project"));
         assertThat(console, not(containsString("Unable to invoke plugin")));
@@ -175,7 +177,7 @@ public class CustomMavenTestFramework {
         }
     }
 
-    void expectProperties(final Prop... configs) {
+    protected void expectProperties(final Prop... configs) {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
             System.out.println(format("[INFO] Config expected key [%s] value [%s] ", config.key, config.value));
@@ -185,7 +187,7 @@ public class CustomMavenTestFramework {
         }
     }
 
-    void expectPropertiesOverwrite(final Prop... configs) {
+    protected void expectPropertiesOverwrite(final Prop... configs) {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
             System.out.println("[INFO] Config not expected: " + config.key);
@@ -194,7 +196,7 @@ public class CustomMavenTestFramework {
         }
     }
 
-    ActiveGoal g(final Class<? extends MojoBase> activeMojo, final String activeGoal) {
+    protected ActiveGoal g(final Class<? extends MojoBase> activeMojo, final String activeGoal) {
         return new ActiveGoal(activeMojo, activeGoal);
     }
 
@@ -233,7 +235,7 @@ public class CustomMavenTestFramework {
         }
     }
 
-    void setPackaging(final String packaging) {
+    protected void setPackaging(final String packaging) {
         replaceInPom("<packaging>.*<\\/packaging>", "<packaging>" + packaging + "</packaging>");
     }
 
@@ -250,7 +252,7 @@ public class CustomMavenTestFramework {
         }
     }
 
-    static List<MojoBase> getAllMojos() {
+    protected static List<MojoBase> getAllMojos() {
         final List<MojoBase> mojoList = new ArrayList<>();
         try {
             final Reflections reflections = new Reflections(MojoBase.class.getPackage().getName());

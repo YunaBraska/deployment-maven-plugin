@@ -181,7 +181,11 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
 ### TODO
+* [ ] Readme links
+* [ ] Readme pictures (GIF ?)
+* [ ] test semantic versioning with characters like 'beta' 
 * [ ] tag message can contain environment properties
+* [ ] set last commit information to environment
 * [ ] not tag when last commit was tag commit
 * [ ] set always autoReleaseAfterClose=false and add "mvn nexus-staging:release" to release process
 * [ ] Deploy dynamic to nexus
@@ -189,5 +193,4 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 * [ ] try to use JGit for git service
 * [ ] org.sonatype.plugins
 * [ ] own or buy logo https://www.designevo.com/apps/logo/?name=blue-hexagon-and-3d-container
-
 ![deployment-maven-plugin](src/main/resources/banner.png "deployment-maven-plugin")

@@ -6,6 +6,7 @@ import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
+import berlin.yuna.mavendeploy.config.PluginUpdater;
 import berlin.yuna.mavendeploy.config.ReadmeBuilder;
 import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Surefire;
@@ -141,6 +142,7 @@ public class MojoRun extends AbstractMojo {
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).useLatestReleases(), isTrue("update.major", "update.minor"));
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).useLatestVersions(), isTrue("update.major", "update.minor"));
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).useNextSnapshots(), isTrue("update.major", "update.minor"));
+                runWhen(() -> PluginUpdater.build(ENVIRONMENT, LOG).update(), isTrue("update.major", "update.minor"));
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).commit(), isTrue("update.major", "update.minor"));
                 runWhen(() -> Versions.build(ENVIRONMENT, LOG).set(), hasText("newVersion"), isTrue("removeSnapshot"));
                 runWhen(() -> Javadoc.build(ENVIRONMENT, LOG).jar(), (!isLibrary() && isTrue("java.doc")));
@@ -153,20 +155,18 @@ public class MojoRun extends AbstractMojo {
                 runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(ENVIRONMENT, LOG).testCompiler(), isTrue("test.run", "test.unit", "test.integration"));
                 runWhen(() -> Surefire.build(ENVIRONMENT, LOG).test(), isTrue("test.run", "test.unit"));
 
-
-                //Should stay at the end after everything is
+                //Should stay at the end after everything is done
                 runWhen(() -> Gpg.build(ENVIRONMENT, LOG).sign(), hasText("gpg.passphrase"));
                 runWhen(() -> Scm.build(ENVIRONMENT, LOG).tag(), hasNewTag);
 
-
+                //TODO: printEnvironmentVariables (exclude startsWith("pass"), startsWith("secret") values)
                 //TODO: git-commit-id-plugin
                 //TODO: JACOCO
                 //TODO: DUPLICATE FINDER (not test resources)
                 //TODO: GIT CREDENTIALS
                 //TODO: FAILSAFE
-                //TODO: SURFIRE
                 //TODO: REPORT
-                //TODO: run script after each task
+                //TODO: custom run script after each task
                 //TODO: provide environment target/environment.json file before running anything
 
                 //TODO: git push everything at the end when success?

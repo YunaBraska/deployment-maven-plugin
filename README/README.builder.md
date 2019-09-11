@@ -85,14 +85,5 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 * [maven-scm-plugin](http://maven.apache.org/scm/maven-scm-plugin/plugin-info.html)
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
-### TODO
-* [ ] tag message can contain environment properties
-* [ ] not tag when last commit was tag commit
-* [ ] set always autoReleaseAfterClose=false and add "mvn nexus-staging:release" to release process
-* [ ] Deploy dynamic to nexus
-* [ ] Deploy dynamic to artifactory
-* [ ] try to use JGit for git service
-* [ ] org.sonatype.plugins
-* [ ] own or buy logo https://www.designevo.com/apps/logo/?name=blue-hexagon-and-3d-container
-
+[include]: # (todo.include.md)
 ![!{project.artifactId}](src/main/resources/banner.png "!{project.artifactId}")

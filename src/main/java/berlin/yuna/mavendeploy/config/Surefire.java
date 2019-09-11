@@ -39,6 +39,7 @@ public class Surefire extends MojoBase {
                         prop("includes",
                                 prop("include", "**/*Test.java")),
                         prop("excludes",
+                                prop("exclude", "**/*GeneratorTest.java"),
                                 prop("exclude", "**/*IntegrationTest.java"),
                                 prop("exclude", "**/*IntTest.java"),
                                 prop("exclude", "**/*ComponentTest.java"),

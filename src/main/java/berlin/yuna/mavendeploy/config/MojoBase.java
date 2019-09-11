@@ -46,6 +46,14 @@ public abstract class MojoBase {
         return log;
     }
 
+    public Plugin toPlugin() {
+        final Plugin plugin = new Plugin();
+        plugin.setGroupId(groupId);
+        plugin.setArtifactId(artifactId);
+        plugin.setVersion(version);
+        return plugin;
+    }
+
     protected Plugin getPlugin() {
         return plugin(
                 MojoExecutor.groupId(groupId),
@@ -57,6 +65,7 @@ public abstract class MojoBase {
     protected void logGoal(final String goal, final boolean start) {
         log.info(format("--------------------------<=[ %s %s:%s:%s:%s ]=>--------------------------", start ? "Start" : "End", groupId, artifactId, goal, version));
     }
+
 
     @Override
     public boolean equals(final Object o) {
