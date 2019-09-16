@@ -3,6 +3,7 @@ package berlin.yuna.mavendeploy.plugin;
 import berlin.yuna.clu.logic.CommandLineReader;
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Dependency;
+import berlin.yuna.mavendeploy.config.Deploy;
 import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
@@ -36,6 +37,7 @@ import org.apache.maven.settings.Settings;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.Optional;
 import java.util.Properties;
 
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executionEnvironment;
@@ -90,6 +92,7 @@ public class MojoRun extends AbstractMojo {
                 final String newProjectVersion = prepareProjectVersion();
                 final String newTag = prepareNewTagVersion(newProjectVersion);
                 final boolean hasNewTag = hasNewTag(newTag, GIT_SERVICE.getLastGitTag());
+                final String deployUrl = isTrue("deploy", "deploy.snapshot") ? prepareDeployUrl() : null;
 
                 //SET GIT PROPERTIES
                 for (Map.Entry<Object, Object> config : GIT_SERVICE.getConfig().entrySet()) {
@@ -128,6 +131,7 @@ public class MojoRun extends AbstractMojo {
                 setWhen("connectionUrl", getConnectionUrl(), !hasText("connectionUrl"));
                 setWhen("project.scm.connection", getConnectionUrl(), !hasText("project.scm.connection"));
                 overwriteWhen("tag", newTag, !isEmpty(newTag));
+                setWhen("altDeploymentRepository", deployUrl, !isEmpty(deployUrl) && !deployUrl.endsWith("::null"));
                 setWhen("message", prepareCommitMessage(newProjectVersion, hasNewTag, isTrue("update.minor", "update.major")), (hasNewTag && !hasText("message")));
 
                 //RUN MOJOS
@@ -158,6 +162,7 @@ public class MojoRun extends AbstractMojo {
                 //Should stay at the end after everything is done
                 runWhen(() -> Gpg.build(ENVIRONMENT, LOG).sign(), hasText("gpg.passphrase"));
                 runWhen(() -> Scm.build(ENVIRONMENT, LOG).tag(), hasNewTag);
+                runWhen(() -> Deploy.build(ENVIRONMENT, LOG).deploy(), isTrue("deploy", "deploy.snapshot") && hasText("altDeploymentRepository"));
 
                 //TODO: printEnvironmentVariables (exclude startsWith("pass"), startsWith("secret") values)
                 //TODO: git-commit-id-plugin
@@ -178,6 +183,40 @@ public class MojoRun extends AbstractMojo {
         } finally {
             after();
         }
+    }
+
+    private String prepareDeployUrl() {
+        final String paramName = "deploy.id";
+        final String deployId = getParam(paramName, null);
+        if (isEmpty(deployId)) {
+            LOG.warn("[%s] not set", paramName);
+            final Optional<Server> server = getServerContains("nexus", "artifact", "archiva", "repository", "snapshot");
+            if (server.isPresent()) {
+                LOG.warn("[%s] fallback to [%s]", paramName, server.get().getId());
+                return server.get().getId() + "::default::" + getParam("deploy.url", null);
+            }
+            LOG.error("[%s] cant find any credentials", paramName);
+            return null;
+        } else if (session.getSettings() != null && !isEmpty(session.getSettings().getServer(deployId).getId())) {
+            return deployId + "::default::" + getParam("deploy.url", null);
+        }
+        LOG.error("[%s] cant find any credentials", paramName);
+        return null;
+    }
+
+    private Optional<Server> getServerContains(final String... names) {
+        final List<Server> servers = session.getSettings().getServers();
+        if (servers != null && !servers.isEmpty())
+            for (String name : names) {
+                final Optional<Server> server = servers.stream()
+                        .filter(s -> !isEmpty(s.getId()))
+                        .filter(s -> s.getId().toLowerCase().contains(name) || (!isEmpty(s.getId()) && s.getUsername().toLowerCase().contains(name)))
+                        .findFirst();
+                if (server.isPresent()) {
+                    return server;
+                }
+            }
+        return Optional.empty();
     }
 
     private String getTagVersion(final String property, final String newProjectVersion) {
@@ -250,6 +289,11 @@ public class MojoRun extends AbstractMojo {
         projectVersion = isEmpty(semanticFormat) ?
                 projectVersion : SEMANTIC_SERVICE.getNextSemanticVersion(project.getVersion(), GIT_SERVICE, projectVersion);
         LOG.debug("Prepared project version [%s]", projectVersion);
+
+        //ADD SNAPSHOT
+        if (isTrue("deploy.snapshot") && !projectVersion.endsWith("-SNAPSHOT")) {
+            projectVersion = projectVersion + "-SNAPSHOT";
+        }
         return projectVersion;
     }
 

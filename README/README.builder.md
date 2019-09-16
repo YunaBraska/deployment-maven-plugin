@@ -49,10 +49,10 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 ### Deployment
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
-| DEPLOY_ID           | String  | ''                 | (Nexus) Deploys artifacts (server id = Settings.xml)                       |
-| RELEASE             | Boolean | false              | (Nexus) Releases the deployment                                            |
-| NEXUS_BASE_URL      | String  | ''                 | (Nexus) The nexus base url (e.g https://my.nexus.com)                      |
-| NEXUS_DEPLOY_URL    | String  | ''                 | (Nexus) Staging url (e.g https://my.nexus.com/service/local/staging/deploy)|
+| deploy              | Boolean | ''                 | Start deployment                                                           |
+| deploy.snapshot     | Boolean | ''                 | Start snapshot deployment && adds "-SNAPSHOT" to the version               |
+| deploy.id           | String  | ${settings.get(0)} | Id from server settings or settings.xml - default first setting server id containing ids like 'nexus', 'artifact', 'archiva', 'repository', 'snapshot'|
+| deploy.url          | String  | ''                 | url to artifact repository                                                 |
 ### Add to Settings.xml session
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
@@ -66,7 +66,7 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 ### Misc
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
-| REPORT              | Boolean | false              | Generates report about version updates                                     |                                            |                                                  |
+| REPORT              | Boolean | false              | Generates report about version updates                                     |
 | test.skip           | Boolean | false              | same as "maven.test.skip"                                                  |
 | project.encoding    | Boolean | false              | sets default encoding to every encoding parameter definition               |
 | java.version        | Boolean | false              | sets default java version to every java version parameter definition       |

@@ -1,4 +1,5 @@
 ### TODO
+* [ ] support environment properties with caseInsensitive and "." can be also "_"
 * [ ] Readme links
 * [ ] Readme pictures (GIF ?)
 * [ ] test semantic versioning with characters like 'beta' 

@@ -11,6 +11,7 @@ import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Surefire;
 import berlin.yuna.mavendeploy.config.Versions;
 import berlin.yuna.mavendeploy.helper.CustomMavenTestFramework;
+import berlin.yuna.mavendeploy.logic.SettingsXmlBuilder;
 import org.junit.Test;
 
 import java.io.File;
@@ -23,7 +24,7 @@ import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
 
-//FIXME: how to make a GPG test? ¯\_(ツ)_/¯
+//FIXME: how to do a GPG test? ¯\_(ツ)_/¯
 public class MainMojoComponentTest extends CustomMavenTestFramework {
 
     @Test
@@ -312,4 +313,47 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
         expectMojoRun(g(ReadmeBuilder.class, "render"));
     }
+
+//    deploy              | Boolean | ''                 | Start deployment                                                           |
+//            | deploy.snapshot     | Boolean | ''                 | Start snapshot deployment && adds "-SNAPSHOT" to the version               |
+//            | deploy.id           | String  | ${settings.get(0)} | Id from server settings or settings.xml - default first or settings id containing ids like 'nexus', 'artifact' , 'archiv'|
+//            | deploy.url
+
+    @Test
+    public void deploy_withEmptySettings_shouldNotStartDeployment() {
+        terminal.execute(mvnCmd("-Ddeploy --settings=" + new SettingsXmlBuilder().create()));
+        assertThat(terminal.consoleInfo(), containsString("[deploy.id] not set"));
+        assertThat(terminal.consoleInfo(), containsString("[deploy.id] cant find any credentials"));
+
+        expectMojoRun(g(Clean.class, "clean"));
+    }
+
+    @Test
+    public void deploy_withServerSettings_shouldFallBackToNamedServer() {
+        for (String server : new String[]{
+                "my-nexus",
+                "artifactsHoesHere",
+                "archivaIsNow",
+                "some-repository",
+                "whatASnapshot"
+        }) {
+            final SettingsXmlBuilder sxb = new SettingsXmlBuilder();
+
+            sxb.addServer("aa", "bb", "cc");
+            sxb.addServer("dd", "ee", "ff");
+            sxb.addServer(server, "11", "22");
+            sxb.addServer("gg", "hh", "ii");
+            sxb.addServer("jj", "kk", "ll");
+
+            terminal.execute(mvnCmd("-Dclean -Ddeploy --settings=" + sxb.create()));
+            assertThat(terminal.consoleInfo(), containsString("[deploy.id] not set"));
+            assertThat(terminal.consoleInfo(), containsString("[deploy.id] fallback to [" + server + "]"));
+
+            expectMojoRun(g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"));
+            terminal.clearConsole();
+        }
+    }
+
+    //Deploy with id should not use autodetect server
+    //Deploy url && validate URL && should not start with null url
 }

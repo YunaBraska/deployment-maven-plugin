@@ -9,7 +9,6 @@ import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
 import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
-//TODO: auto detect version like generate pom file with plugins, update in test and parse on runtime
 //TODO: import mojo-executor without any dependencies...
 public class Clean extends MojoBase {
 

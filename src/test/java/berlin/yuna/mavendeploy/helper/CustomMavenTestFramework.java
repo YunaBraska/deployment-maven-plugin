@@ -4,6 +4,7 @@ import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Compiler;
 import berlin.yuna.mavendeploy.config.Dependency;
+import berlin.yuna.mavendeploy.config.Deploy;
 import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
@@ -86,7 +87,8 @@ public class CustomMavenTestFramework {
             g(Resources.class, "resources"),
             g(Resources.class, "testResources"),
             g(Compiler.class, "compile"),
-            g(Compiler.class, "testCompile")
+            g(Compiler.class, "testCompile"),
+            g(Deploy.class, "deploy")
     );
 
     @BeforeClass
