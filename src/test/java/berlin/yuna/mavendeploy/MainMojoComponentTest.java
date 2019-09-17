@@ -314,46 +314,98 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         expectMojoRun(g(ReadmeBuilder.class, "render"));
     }
 
-//    deploy              | Boolean | ''                 | Start deployment                                                           |
-//            | deploy.snapshot     | Boolean | ''                 | Start snapshot deployment && adds "-SNAPSHOT" to the version               |
-//            | deploy.id           | String  | ${settings.get(0)} | Id from server settings or settings.xml - default first or settings id containing ids like 'nexus', 'artifact' , 'archiv'|
-//            | deploy.url
-
     @Test
-    public void deploy_withEmptySettings_shouldNotStartDeployment() {
-        terminal.execute(mvnCmd("-Ddeploy --settings=" + new SettingsXmlBuilder().create()));
-        assertThat(terminal.consoleInfo(), containsString("[deploy.id] not set"));
-        assertThat(terminal.consoleInfo(), containsString("[deploy.id] cant find any credentials"));
+    public void deploySnapshot_shouldAddSnapshotToProjectVersion() {
+        final String oldPomVersion = getPomFile(TEST_POM.getPomFile()).getVersion();
+        terminal.execute(mvnCmd("-Ddeploy.snapshot"));
 
-        expectMojoRun(g(Clean.class, "clean"));
+        expectProperties(prop("newVersion", oldPomVersion + "-SNAPSHOT"));
+        expectProperties(prop("newVersion", oldPomVersion));
+        expectMojoRun(g(Versions.class, "set"));
     }
 
     @Test
-    public void deploy_withServerSettings_shouldFallBackToNamedServer() {
-        for (String server : new String[]{
-                "my-nexus",
-                "artifactsHoesHere",
-                "archivaIsNow",
-                "some-repository",
-                "whatASnapshot"
-        }) {
-            final SettingsXmlBuilder sxb = new SettingsXmlBuilder();
+    public void deploy_withEmptyDeployUrl_shouldNotStartDeployment() {
+        terminal.execute(mvnCmd("-Dclean -Ddeploy -Ddeploy.url=''"));
 
+        assertThat(terminal.consoleInfo(), not(containsString("Config added key [altDeploymentRepository]")));
+        expectMojoRun(g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"));
+    }
+
+    @Test
+    public void deploy_withEmptySettings_shouldNotStartDeployment() {
+        terminal.execute(mvnCmd("-Dclean -Ddeploy -Ddeploy.url='https://aa.bb' --settings=" + new SettingsXmlBuilder().create()));
+        assertThat(terminal.consoleInfo(), containsString("[deploy.id] not set"));
+        assertThat(terminal.consoleInfo(), containsString("Cant find any credentials for deploy.id [null] deploy.url [https://aa.bb]"));
+
+        expectMojoRun(g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"));
+    }
+
+    @Test
+    public void deploy_withDeployIdAndDeployUrlButEmptySettings_shouldNotStartDeployment() {
+        terminal.execute(mvnCmd("-Dclean -Ddeploy -Ddeploy.id='invalid' -Ddeploy.url='https://nexus.com' --settings=" + new SettingsXmlBuilder().create()));
+
+        assertThat(terminal.consoleInfo(), containsString("DeployUrl [https://nexus.com]"));
+        assertThat(terminal.consoleInfo(), containsString("Cant find any credentials for deploy.id [invalid] deploy.url [https://nexus.com]"));
+        expectMojoRun(g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"));
+    }
+
+    //TODO: test settings as parameter
+    @Test
+    public void deploy_withDeployIdAndDeployUrlAndSettings_shouldStartDeployment() {
+        final SettingsXmlBuilder sxb = new SettingsXmlBuilder();
+        sxb.addServer("validId", "username", "password");
+
+        terminal.execute(mvnCmd("-Ddeploy -Ddeploy.id='validId' -Ddeploy.url='https://nexus.com' --settings=" + sxb.create()));
+
+        assertThat(terminal.consoleInfo(), containsString("DeployId [validId] deployUrl [https://nexus.com]"));
+    }
+
+    @Test
+    public void deploy_withoutDeployId_shouldFindServerByUrl() {
+        final SettingsXmlBuilder sxb = new SettingsXmlBuilder();
+        for (String server : getServerVariants()) {
+            sxb.addServer(server, "username", "password");
+        }
+        final File settingsXml = sxb.create();
+
+        for (String server : getServerVariants()) {
+            terminal.execute(mvnCmd("-Ddeploy -Ddeploy.url='https://aa-" + server + "-bb.com' --settings=" + settingsXml));
+
+            assertThat(terminal.consoleInfo(), containsString("[deploy.id] not set"));
+            assertThat(terminal.consoleInfo(), containsString("Fallback to deployId [" + server + "]"));
+            assertThat(terminal.consoleInfo(), containsString(" The packaging for this project did not assign a file to the build artifact"));
+            terminal.clearConsole();
+        }
+    }
+
+
+    @Test
+    public void deploy_withoutDeployID_shouldFindServerByFirstName() {
+        for (String server : getServerVariants()) {
+            final SettingsXmlBuilder sxb = new SettingsXmlBuilder();
             sxb.addServer("aa", "bb", "cc");
             sxb.addServer("dd", "ee", "ff");
             sxb.addServer(server, "11", "22");
             sxb.addServer("gg", "hh", "ii");
             sxb.addServer("jj", "kk", "ll");
 
-            terminal.execute(mvnCmd("-Dclean -Ddeploy --settings=" + sxb.create()));
-            assertThat(terminal.consoleInfo(), containsString("[deploy.id] not set"));
-            assertThat(terminal.consoleInfo(), containsString("[deploy.id] fallback to [" + server + "]"));
+            terminal.execute(mvnCmd("-Ddeploy -Ddeploy.url='https://aa.bb' --settings=" + sxb.create()));
 
-            expectMojoRun(g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"));
+            assertThat(terminal.consoleInfo(), containsString("[deploy.id] not set"));
+            assertThat(terminal.consoleInfo(), containsString("Fallback to deployId [" + server + "]"));
+            assertThat(terminal.consoleInfo(), containsString(" The packaging for this project did not assign a file to the build artifact"));
             terminal.clearConsole();
         }
     }
 
-    //Deploy with id should not use autodetect server
-    //Deploy url && validate URL && should not start with null url
+    private String[] getServerVariants() {
+        return new String[]{
+                "my-nexus",
+                "artifactsHoesHere",
+                "archivaIsNow",
+                "some-repository",
+                "whatASnapshot"
+        };
+    }
 }

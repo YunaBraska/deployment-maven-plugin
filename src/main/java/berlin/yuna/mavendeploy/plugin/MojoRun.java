@@ -35,6 +35,8 @@ import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 
 import java.io.File;
+import java.util.Arrays;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -76,6 +78,7 @@ public class MojoRun extends AbstractMojo {
     private GitService GIT_SERVICE;
     private SemanticService SEMANTIC_SERVICE;
     private boolean HAS_GIT_CHANGES;
+    private boolean SNAPSHOT_DEPLOYMENT = false;
     private MojoExecutor.ExecutionEnvironment ENVIRONMENT;
 
     public void execute() {
@@ -131,7 +134,7 @@ public class MojoRun extends AbstractMojo {
                 setWhen("connectionUrl", getConnectionUrl(), !hasText("connectionUrl"));
                 setWhen("project.scm.connection", getConnectionUrl(), !hasText("project.scm.connection"));
                 overwriteWhen("tag", newTag, !isEmpty(newTag));
-                setWhen("altDeploymentRepository", deployUrl, !isEmpty(deployUrl) && !deployUrl.endsWith("::null"));
+                setWhen("altDeploymentRepository", deployUrl, !isEmpty(deployUrl));
                 setWhen("message", prepareCommitMessage(newProjectVersion, hasNewTag, isTrue("update.minor", "update.major")), (hasNewTag && !hasText("message")));
 
                 //RUN MOJOS
@@ -162,7 +165,13 @@ public class MojoRun extends AbstractMojo {
                 //Should stay at the end after everything is done
                 runWhen(() -> Gpg.build(ENVIRONMENT, LOG).sign(), hasText("gpg.passphrase"));
                 runWhen(() -> Scm.build(ENVIRONMENT, LOG).tag(), hasNewTag);
-                runWhen(() -> Deploy.build(ENVIRONMENT, LOG).deploy(), isTrue("deploy", "deploy.snapshot") && hasText("altDeploymentRepository"));
+                runWhen(() -> Deploy.build(ENVIRONMENT, LOG).deploy(), hasText("altDeploymentRepository"));
+
+                //remove snapshot if only added for deployment
+                if(SNAPSHOT_DEPLOYMENT) {
+                    overwriteWhen("newVersion", newProjectVersion.split("-SNAPSHOT")[0], SNAPSHOT_DEPLOYMENT);
+                    runWhen(() -> Versions.build(ENVIRONMENT, LOG).set(), SNAPSHOT_DEPLOYMENT);
+                }
 
                 //TODO: printEnvironmentVariables (exclude startsWith("pass"), startsWith("secret") values)
                 //TODO: git-commit-id-plugin
@@ -186,22 +195,46 @@ public class MojoRun extends AbstractMojo {
     }
 
     private String prepareDeployUrl() {
-        final String paramName = "deploy.id";
-        final String deployId = getParam(paramName, null);
-        if (isEmpty(deployId)) {
-            LOG.warn("[%s] not set", paramName);
-            final Optional<Server> server = getServerContains("nexus", "artifact", "archiva", "repository", "snapshot");
-            if (server.isPresent()) {
-                LOG.warn("[%s] fallback to [%s]", paramName, server.get().getId());
-                return server.get().getId() + "::default::" + getParam("deploy.url", null);
+        final String deployUrl = getParam("deploy.url", null);
+        if (!isEmpty(deployUrl)) {
+            final String paramName = "deploy.id";
+            final String deployId = getParam(paramName, null);
+            LOG.debug("DeployUrl [%s]", deployUrl);
+            if (isEmpty(deployId)) {
+                final Optional<Server> server = findServerByDeployUrl(deployUrl, paramName);
+                if (server.isPresent()) {
+                    LOG.info("Fallback to deployId [%s]", server.get().getId());
+                    return server.get().getId() + "::default::" + getParam("deploy.url", null);
+                }
+                LOG.error(
+                        "Cant find any credentials for deploy.id [%s] deploy.url [%s]",
+                        deployId,
+                        deployUrl
+                );
+            } else if (
+                    session.getSettings() != null
+                            && session.getSettings().getServer(deployId) != null
+                            && !isEmpty(session.getSettings().getServer(deployId).getId())
+            ) {
+                LOG.info("DeployId [%s] deployUrl [%s]", deployId, deployUrl);
+                return deployId + "::default::" + getParam("deploy.url", null);
             }
-            LOG.error("[%s] cant find any credentials", paramName);
-            return null;
-        } else if (session.getSettings() != null && !isEmpty(session.getSettings().getServer(deployId).getId())) {
-            return deployId + "::default::" + getParam("deploy.url", null);
+            LOG.error(
+                    "Cant find any credentials for deploy.id [%s] deploy.url [%s]",
+                    deployId,
+                    deployUrl
+            );
         }
-        LOG.error("[%s] cant find any credentials", paramName);
         return null;
+    }
+
+    private Optional<Server> findServerByDeployUrl(final String deployUrl, final String paramName) {
+        final String[] artifactRepositories = Arrays
+                .stream(new String[]{"nexus", "artifact", "archiva", "repository", "snapshot"})
+                .sorted(Comparator.comparingInt(o -> (deployUrl.toLowerCase().contains(o.toLowerCase()) ? -1 : 1)))
+                .toArray(String[]::new);
+        LOG.warn("[%s] not set", paramName);
+        return getServerContains(artifactRepositories);
     }
 
     private Optional<Server> getServerContains(final String... names) {
@@ -291,8 +324,10 @@ public class MojoRun extends AbstractMojo {
         LOG.debug("Prepared project version [%s]", projectVersion);
 
         //ADD SNAPSHOT
-        if (isTrue("deploy.snapshot") && !projectVersion.endsWith("-SNAPSHOT")) {
-            projectVersion = projectVersion + "-SNAPSHOT";
+        final String snapshotVersion = projectVersion == null ? project.getVersion() : projectVersion;
+        if ((isTrue("project.snapshot") || isTrue("deploy.snapshot")) && !snapshotVersion.endsWith("-SNAPSHOT")) {
+            SNAPSHOT_DEPLOYMENT = true;
+            return snapshotVersion + "-SNAPSHOT";
         }
         return projectVersion;
     }
@@ -380,7 +415,7 @@ public class MojoRun extends AbstractMojo {
     private void overwriteWhen(final String key, final String value, final boolean... when) {
         for (boolean trigger : when) {
             if (trigger) {
-                LOG.debug("+ Config added key [tag] value [%s]", value);
+                LOG.debug("+ Config added key [%s] value [%s]", key, value);
                 session.getUserProperties().setProperty(key, value);
                 break;
             }

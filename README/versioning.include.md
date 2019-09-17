@@ -3,6 +3,7 @@
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | project.version     | String  | ''                 | Sets project version in pom                                                |
+| project.snapshot    | Boolean | false              | Adds -SNAPSHOT to project version in pom                                   |
 | remove.snapshot     | Boolean | false              | Removes snapshot from version                                              |
 | semantic.format     | String  | ''                 | Updates semantic version from regex pattern (overwrites project.version)   |
 
