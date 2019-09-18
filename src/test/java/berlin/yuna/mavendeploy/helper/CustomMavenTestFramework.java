@@ -109,8 +109,11 @@ public class CustomMavenTestFramework {
         TEST_POM = getPomFile(new File(tmpDir.toFile(), "pom.xml"));
         terminal = getTerminal().dir(tmpDir);
         terminalNoLog = getTerminalNoLog().dir(tmpDir);
-        assertThat(format("Terminal does not point to test project [%s]", terminal.dir()),
-                terminal.dir().getAbsolutePath().startsWith(System.getProperty("user.dir")), is(false));
+        assertThat(
+                format("Terminal does not point to test project [%s]", terminal.dir()),
+                terminal.dir().getAbsolutePath().startsWith(System.getProperty("user.dir")),
+                is(false)
+        );
         System.out.println(format("Work dir [%s]", tmpDir));
     }
 
