@@ -15,9 +15,12 @@ import berlin.yuna.mavendeploy.logic.SettingsXmlBuilder;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
@@ -273,6 +276,12 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
         terminal.execute(mvnCmd("-Dproject.version=10.06.19 -Dtag"));
 
+        System.out.println(terminal.consoleInfo());
+        try {
+            System.out.println(new String(Files.readAllBytes(TEST_POM.getPomFile().toPath()), UTF_8));
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
         expectMojoRun(g(Versions.class, "set"));
         assertThat(terminal.consoleInfo(), containsString("Tagging requested [10.06.19]"));
         assertThat(terminal.consoleInfo(), containsString("Git tag [10.06.19] already exists"));
