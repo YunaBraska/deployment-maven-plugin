@@ -137,7 +137,7 @@ public class CustomMavenTestFramework {
                 + ":" + PROJECT_POM.getVersion()
                 + ":run -Dfake -X "
                 + " -Djava.version=1.8 " + parameter;
-        System.out.println(format("Running maven command [%s]", mvnCmd));
+        System.out.println(format("Running maven command [%s]", mvnCmd.trim()));
         return mvnCmd;
     }
 

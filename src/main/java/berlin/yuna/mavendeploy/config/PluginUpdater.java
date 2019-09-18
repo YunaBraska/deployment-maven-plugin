@@ -48,6 +48,8 @@ public class PluginUpdater extends MojoBase {
         reportPluginUpdates(log, plugins, pomFile.toFile());
 
         logGoal(goal, false);
+        Files.deleteIfExists(pomFile);
+        Files.deleteIfExists(tmpProjectPath);
         return this;
     }
 

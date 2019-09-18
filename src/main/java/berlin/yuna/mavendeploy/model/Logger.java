@@ -65,8 +65,12 @@ public class Logger {
     private String formatMsg(final Object[] format) {
         final LocalDateTime now = LocalDateTime.now();
         final long diff = lastLog.until(now, SECONDS);
-        final String msg = format.length > 1 ? format(String.valueOf(format[0]), (Object[]) Arrays.copyOfRange(format, 1, format.length)) : String.valueOf(format[0]);
+        final String msg = format.length > 1 ? format(String.valueOf(format[0]), Arrays.copyOfRange(format, 1, format.length)) : String.valueOf(format[0]);
         lastLog = now;
-        return format("[%s]%s %s", now.format(formatter), (LOG != null && LOG.isDebugEnabled()) ? " [" + diff + "s]" : "", msg);
+        return format(
+                "[%s]%s %s", now.format(formatter),
+                ((LOG != null && LOG.isDebugEnabled()) ? " [" + diff + "s]" : ""),
+                msg
+        );
     }
 }

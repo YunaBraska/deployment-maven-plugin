@@ -169,8 +169,9 @@ public class MojoRun extends AbstractMojo {
 
                 //remove snapshot if only added for deployment
                 if(SNAPSHOT_DEPLOYMENT) {
-                    overwriteWhen("newVersion", newProjectVersion.split("-SNAPSHOT")[0], SNAPSHOT_DEPLOYMENT);
-                    runWhen(() -> Versions.build(ENVIRONMENT, LOG).set(), SNAPSHOT_DEPLOYMENT);
+                    overwriteWhen("oldVersion", newProjectVersion, true);
+                    overwriteWhen("newVersion", newProjectVersion.split("-SNAPSHOT")[0], true);
+                    runWhen(() -> Versions.build(ENVIRONMENT, LOG).set(), true);
                 }
 
                 //TODO: printEnvironmentVariables (exclude startsWith("pass"), startsWith("secret") values)
