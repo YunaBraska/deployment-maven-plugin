@@ -297,16 +297,6 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         assertThat(terminalNoLog.clearConsole().execute("git describe --tag --always --abbrev=0").consoleInfo(), is(equalTo("20.04.19")));
     }
 
-    private void travisReadingPomFix() {
-        //FIXME: somehow travis has trouble to read the file again - this forces it for some reason
-        try {
-            new String(Files.readAllBytes(TEST_POM.getPomFile().toPath()), UTF_8);
-        } catch (IOException e) {
-            System.out.println(terminal.consoleInfo());
-            e.printStackTrace();
-        }
-    }
-
     @Test
     public void surfire_WithTestRun_shouldExecuteSuccessful() {
         terminal.execute(mvnCmd("-Dtest.run"));
@@ -423,5 +413,15 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
                 "some-repository",
                 "whatASnapshot"
         };
+    }
+
+    private void travisReadingPomFix() {
+        //FIXME: somehow travis has trouble to read the file again - this forces it for some reason
+        try {
+            new String(Files.readAllBytes(TEST_POM.getPomFile().toPath()), UTF_8);
+        } catch (IOException e) {
+            System.out.println(terminal.consoleInfo());
+            e.printStackTrace();
+        }
     }
 }
