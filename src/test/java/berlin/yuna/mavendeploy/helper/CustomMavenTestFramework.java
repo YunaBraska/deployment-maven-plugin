@@ -19,7 +19,6 @@ import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.Prop;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.model.Model;
-import org.apache.maven.model.Plugin;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.jgit.api.Git;
@@ -45,6 +44,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
+import static berlin.yuna.mavendeploy.plugin.MojoHelper.isEmpty;
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.APPEND;
@@ -63,7 +64,8 @@ public class CustomMavenTestFramework {
     protected Terminal terminal;
     protected Terminal terminalNoLog;
 
-    private static final boolean DEBUG = true;
+    private static final String DEBUG_ENV = System.getenv("DEBUG");
+    private static final boolean DEBUG = isEmpty(DEBUG_ENV) || parseBoolean(DEBUG_ENV);
 
     private final List<ActiveGoal> definedMojoList = asList(
             g(Clean.class, "clean"),
