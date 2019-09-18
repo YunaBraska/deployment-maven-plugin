@@ -162,7 +162,7 @@ public class CustomMavenTestFramework {
                     Thread.sleep(64);
                 }
                 tries++;
-            } while ((pomModel == null || isEmpty(pomModel.getVersion())) && tries > TRAVIS_POM_TRY);
+            } while ((pomModel == null || isEmpty(pomModel.getVersion())) && tries < TRAVIS_POM_TRY);
             if (tries >= TRAVIS_POM_TRY) {
                 System.err.println("No pom version? " + new String(readAllBytes(pom.toPath()), UTF_8));
             }
