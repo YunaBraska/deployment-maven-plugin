@@ -276,12 +276,6 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
         terminal.execute(mvnCmd("-Dproject.version=10.06.19 -Dtag"));
 
-        System.out.println(terminal.consoleInfo());
-        try {
-            System.out.println(new String(Files.readAllBytes(TEST_POM.getPomFile().toPath()), UTF_8));
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
         expectMojoRun(g(Versions.class, "set"));
         assertThat(terminal.consoleInfo(), containsString("Tagging requested [10.06.19]"));
         assertThat(terminal.consoleInfo(), containsString("Git tag [10.06.19] already exists"));
@@ -297,6 +291,15 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         assertThat(terminal.consoleInfo(), containsString("Tagging requested [20.04.19]"));
         assertThat(terminal.consoleInfo(), containsString("Git tag [20.04.19] already exists"));
         assertThat(terminal.consoleInfo(), is(containsString("BUILD FAILURE")));
+
+        try {
+            System.out.println(terminal.consoleInfo());
+            new String(Files.readAllBytes(TEST_POM.getPomFile().toPath()), UTF_8);
+        } catch (IOException e) {
+            System.out.println(terminal.consoleInfo());
+            e.printStackTrace();
+        }
+
         assertThat(parse(TEST_POM).getVersion(), is(equalTo("20.04.19")));
         assertThat(terminalNoLog.clearConsole().execute("git describe --tag --always --abbrev=0").consoleInfo(), is(equalTo("20.04.19")));
     }
