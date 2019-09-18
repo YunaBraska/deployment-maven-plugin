@@ -24,6 +24,7 @@
 !{project.description}
 
 ### !{builder_usage_plugin}
+*version = \<version>java.major.minor/fixes\</version>*
 ````xml
 <plugin>
     <groupId>!{project.groupId}</groupId>

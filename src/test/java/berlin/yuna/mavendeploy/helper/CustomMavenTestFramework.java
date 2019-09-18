@@ -113,7 +113,8 @@ public class CustomMavenTestFramework {
         assertThat(format("Terminal does not point to test project [%s]", terminal.dir()),
                 terminal.dir().getAbsolutePath().startsWith(System.getProperty("user.dir")), is(false));
         System.out.println(format("Work dir [%s]", tmpDir));
-        TRAVIS_POM_TRY = 10;
+        //every 64 millisecond until 30 seconds
+        TRAVIS_POM_TRY = (30 * 1000) / 64;
     }
 
     @After
@@ -152,14 +153,15 @@ public class CustomMavenTestFramework {
     public static Model getPomFile(final File pom) {
         assertThat("pom file [%s] does not exist", pom.exists(), is(true));
         assertThat("pom file [%s] is not a file", pom.isFile(), is(true));
+        final int TRAVIS_POM_TRY_MAX = TRAVIS_POM_TRY;
         try {
             Model pomModel;
             do {
                 pomModel = new MavenXpp3Reader().read(new ByteArrayInputStream(readAllBytes(pom.toPath())));
                 TRAVIS_POM_TRY--;
-                if (TRAVIS_POM_TRY < 10) {
-                    System.err.println("Try read pom file [" + (10 - TRAVIS_POM_TRY) + "]");
-                    Thread.sleep(500);
+                if (TRAVIS_POM_TRY < TRAVIS_POM_TRY_MAX) {
+                    System.err.println("Try read pom file [" + (TRAVIS_POM_TRY_MAX - TRAVIS_POM_TRY) + "/" + TRAVIS_POM_TRY_MAX + "]");
+                    Thread.sleep(128);
                 }
             } while ((pomModel == null || isEmpty(pomModel.getVersion())) && TRAVIS_POM_TRY > 0);
             if (TRAVIS_POM_TRY <= 0) {
@@ -169,6 +171,8 @@ public class CustomMavenTestFramework {
             return pomModel;
         } catch (IOException | XmlPullParserException | InterruptedException e) {
             throw new RuntimeException("could not read pom.xml \n ", e);
+        } finally {
+            TRAVIS_POM_TRY = TRAVIS_POM_TRY_MAX;
         }
     }
 
