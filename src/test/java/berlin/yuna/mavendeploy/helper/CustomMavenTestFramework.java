@@ -168,7 +168,9 @@ public class CustomMavenTestFramework {
         assertThat("pom file [%s] does not exist", pom.exists(), is(true));
         assertThat("pom file [%s] is not a file", pom.isFile(), is(true));
         try {
-            return new MavenXpp3Reader().read(new ByteArrayInputStream(readAllBytes(pom.toPath())));
+            final Model pomModel = new MavenXpp3Reader().read(new ByteArrayInputStream(readAllBytes(pom.toPath())));
+            pomModel.setPomFile(pom);
+            return pomModel;
         } catch (Exception e) {
             throw new RuntimeException("could not read pom.xml \n ", e);
         }
