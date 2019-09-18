@@ -20,7 +20,6 @@ import berlin.yuna.mavendeploy.model.Prop;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.After;
@@ -152,25 +151,24 @@ public class CustomMavenTestFramework {
     public static Model getPomFile(final File pom) {
         assertThat("pom file [%s] does not exist", pom.exists(), is(true));
         assertThat("pom file [%s] is not a file", pom.isFile(), is(true));
-        int tries = 0;
         try {
-            Model pomModel;
-            do {
+            Model pomModel = null;
+            for (int tries = 0; tries < TRAVIS_POM_TRY; tries++) {
                 pomModel = new MavenXpp3Reader().read(new ByteArrayInputStream(readAllBytes(pom.toPath())));
-                if (tries > 0) {
+                if (pomModel != null && !isEmpty(pomModel.getVersion())) {
+                    pomModel.setPomFile(pom);
+                    break;
+                } else if (tries > 0) {
                     System.err.println("Try read pom file [" + tries + "/" + TRAVIS_POM_TRY + "]");
                     Thread.sleep(64);
                 }
-                tries++;
-            } while ((pomModel == null || isEmpty(pomModel.getVersion())) && tries < TRAVIS_POM_TRY);
-            if (tries >= TRAVIS_POM_TRY) {
-                System.err.println("No pom version? " + new String(readAllBytes(pom.toPath()), UTF_8));
+                if (tries == TRAVIS_POM_TRY - 1) {
+                    System.err.println("No pom version? " + new String(readAllBytes(pom.toPath()), UTF_8));
+                }
             }
-            pomModel.setPomFile(pom);
             return pomModel;
-        } catch (IOException | XmlPullParserException | InterruptedException e) {
+        } catch (Exception e) {
             throw new RuntimeException("could not read pom.xml \n ", e);
-        } finally {
         }
     }
 
