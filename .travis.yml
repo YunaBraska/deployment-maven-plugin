@@ -9,8 +9,7 @@ cache:
 sudo: false
 install: false
 
-script:
-- bash build.sh
+script: bash build.sh
 
 after_success:
   - bash <(curl -s https://codecov.io/bash) -t ab6f3540-1a81-4b13-b45c-d7369dac0eed
