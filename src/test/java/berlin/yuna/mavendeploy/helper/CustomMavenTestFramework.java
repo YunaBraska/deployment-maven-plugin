@@ -156,6 +156,7 @@ public class CustomMavenTestFramework {
             for (int tries = 0; tries < TRAVIS_POM_TRY; tries++) {
                 pomModel = new MavenXpp3Reader().read(new ByteArrayInputStream(readAllBytes(pom.toPath())));
                 if (pomModel != null && !isEmpty(pomModel.getVersion())) {
+                    System.out.println("POM VERSION: [" + pomModel.getVersion() + "]");
                     pomModel.setPomFile(pom);
                     break;
                 } else if (tries > 0) {
