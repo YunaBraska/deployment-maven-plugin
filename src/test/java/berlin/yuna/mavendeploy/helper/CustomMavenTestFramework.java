@@ -65,7 +65,8 @@ public class CustomMavenTestFramework {
     protected static Model PROJECT_POM;
     protected Terminal terminal;
     protected Terminal terminalNoLog;
-    private static int TRAVIS_POM_TRY;
+    //every 64 millisecond until 30 seconds
+    private static final int TRAVIS_POM_TRY = (30 * 1000) / 64;
 
     private static final String DEBUG_ENV = System.getenv("DEBUG");
     protected static final boolean DEBUG = isEmpty(DEBUG_ENV) || parseBoolean(DEBUG_ENV);
@@ -113,8 +114,6 @@ public class CustomMavenTestFramework {
         assertThat(format("Terminal does not point to test project [%s]", terminal.dir()),
                 terminal.dir().getAbsolutePath().startsWith(System.getProperty("user.dir")), is(false));
         System.out.println(format("Work dir [%s]", tmpDir));
-        //every 64 millisecond until 30 seconds
-        TRAVIS_POM_TRY = (30 * 1000) / 64;
     }
 
     @After
@@ -153,18 +152,18 @@ public class CustomMavenTestFramework {
     public static Model getPomFile(final File pom) {
         assertThat("pom file [%s] does not exist", pom.exists(), is(true));
         assertThat("pom file [%s] is not a file", pom.isFile(), is(true));
-        final int TRAVIS_POM_TRY_MAX = TRAVIS_POM_TRY;
+        int tries = 0;
         try {
             Model pomModel;
             do {
                 pomModel = new MavenXpp3Reader().read(new ByteArrayInputStream(readAllBytes(pom.toPath())));
-                TRAVIS_POM_TRY--;
-                if (TRAVIS_POM_TRY < TRAVIS_POM_TRY_MAX) {
-                    System.err.println("Try read pom file [" + (TRAVIS_POM_TRY_MAX - TRAVIS_POM_TRY) + "/" + TRAVIS_POM_TRY_MAX + "]");
-                    Thread.sleep(128);
+                if (tries > 0) {
+                    System.err.println("Try read pom file [" + tries + "/" + TRAVIS_POM_TRY + "]");
+                    Thread.sleep(64);
                 }
-            } while ((pomModel == null || isEmpty(pomModel.getVersion())) && TRAVIS_POM_TRY > 0);
-            if (TRAVIS_POM_TRY <= 0) {
+                tries++;
+            } while ((pomModel == null || isEmpty(pomModel.getVersion())) && tries > TRAVIS_POM_TRY);
+            if (tries >= TRAVIS_POM_TRY) {
                 System.err.println("No pom version? " + new String(readAllBytes(pom.toPath()), UTF_8));
             }
             pomModel.setPomFile(pom);
@@ -172,7 +171,6 @@ public class CustomMavenTestFramework {
         } catch (IOException | XmlPullParserException | InterruptedException e) {
             throw new RuntimeException("could not read pom.xml \n ", e);
         } finally {
-            TRAVIS_POM_TRY = TRAVIS_POM_TRY_MAX;
         }
     }
 

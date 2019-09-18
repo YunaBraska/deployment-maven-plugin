@@ -54,11 +54,12 @@ This plugin will handle "everything" default for you. So that you don't need any
 Auto handling semantic versioning, maven plugins, and much more while you can still use the original maven userProperties or systemProperties (ignoring ".", "_", "-") to configure the plugins
 
 ### Usage as plugin
+*version = \<version>java.major.minor/fixes\</version>*
 ````xml
 <plugin>
     <groupId>berlin.yuna</groupId>
     <artifactId>deployment-maven-plugin</artifactId>
-    <version>0.0.1</version>
+    <version>12.0.1</version>
 </plugin>
 ````
 
