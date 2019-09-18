@@ -65,7 +65,7 @@ public class CustomMavenTestFramework {
     protected Terminal terminalNoLog;
 
     private static final String DEBUG_ENV = System.getenv("DEBUG");
-    private static final boolean DEBUG = isEmpty(DEBUG_ENV) || parseBoolean(DEBUG_ENV);
+    protected static final boolean DEBUG = isEmpty(DEBUG_ENV) || parseBoolean(DEBUG_ENV);
 
     private final List<ActiveGoal> definedMojoList = asList(
             g(Clean.class, "clean"),
