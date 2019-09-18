@@ -156,6 +156,7 @@ public class CustomMavenTestFramework {
             final Model pomModel = parse(TEST_POM);
             version = pomModel == null ? null : pomModel.getVersion();
             if (!isEmpty(version)) {
+                System.err.println("PROJECT_VERSION [" + version + "]");
                 break;
             }
             sleep(64);
