@@ -46,7 +46,6 @@ import java.util.Set;
 import static berlin.yuna.mavendeploy.plugin.MojoHelper.isEmpty;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.Files.readAllBytes;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.APPEND;
@@ -148,26 +147,24 @@ public class CustomMavenTestFramework {
         return getPomFile(pom.getPomFile());
     }
 
+    protected String getTestPomVersion() {
+        String version = null;
+        for (int tries = 0; tries < TRAVIS_POM_TRY; tries++) {
+            version = parse(TEST_POM).getVersion();
+            if (!isEmpty(version)) {
+                break;
+            }
+            sleep(64);
+            System.out.println("Try getTestPomVersion [" + tries + "/" + TRAVIS_POM_TRY + "]");
+        }
+        return version;
+    }
+
     public static Model getPomFile(final File pom) {
         assertThat("pom file [%s] does not exist", pom.exists(), is(true));
         assertThat("pom file [%s] is not a file", pom.isFile(), is(true));
         try {
-            Model pomModel = null;
-            for (int tries = 0; tries < TRAVIS_POM_TRY; tries++) {
-                pomModel = new MavenXpp3Reader().read(new ByteArrayInputStream(readAllBytes(pom.toPath())));
-                if (pomModel != null && !isEmpty(pomModel.getVersion())) {
-                    System.out.println("POM VERSION: [" + pomModel.getVersion() + "]");
-                    pomModel.setPomFile(pom);
-                    break;
-                } else if (tries > 0) {
-                    System.err.println("Try read pom file [" + tries + "/" + TRAVIS_POM_TRY + "]");
-                    Thread.sleep(64);
-                }
-                if (tries == TRAVIS_POM_TRY - 1) {
-                    System.err.println("No pom version? " + new String(readAllBytes(pom.toPath()), UTF_8));
-                }
-            }
-            return pomModel;
+            return new MavenXpp3Reader().read(new ByteArrayInputStream(readAllBytes(pom.toPath())));
         } catch (Exception e) {
             throw new RuntimeException("could not read pom.xml \n ", e);
         }
@@ -285,5 +282,13 @@ public class CustomMavenTestFramework {
             e.printStackTrace();
         }
         return mojoList;
+    }
+
+    private void sleep(int timeMs) {
+        try {
+            Thread.sleep(timeMs);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }
