@@ -7,7 +7,9 @@ cache:
     - $HOME/.m2
 
 sudo: false
-script:
+install: false
+
+before_script:
   - bash build.sh
 
 after_success:
