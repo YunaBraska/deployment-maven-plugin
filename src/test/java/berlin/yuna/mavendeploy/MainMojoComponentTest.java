@@ -319,6 +319,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         final String oldPomVersion = getPomFile(TEST_POM.getPomFile()).getVersion();
         terminal.execute(mvnCmd("-Ddeploy.snapshot"));
 
+        assertThat(getPomFile(TEST_POM.getPomFile()).getVersion(), is(equalTo(oldPomVersion)));
         expectProperties(prop("newVersion", oldPomVersion + "-SNAPSHOT"));
         expectProperties(prop("newVersion", oldPomVersion));
         expectMojoRun(g(Versions.class, "set"));

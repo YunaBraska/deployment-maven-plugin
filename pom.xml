@@ -13,7 +13,7 @@
         Like: The pom file in each project will raise (duplicated), the versioning, tagging, signing, readme updates, credentials and plugin configuration feels a bit hacky.
         Its not even testable.
         This plugin will handle "everything" default for you. So that you don't need anything in your pom file.
-        Auto handling semantic versioning, maven plugins, and much more while you can still use the original maven userProperties to configure the plugins
+        Auto handling semantic versioning, maven plugins, and much more while you can still use the original maven userProperties or systemProperties (ignoring ".", "_", "-") to configure the plugins
     </description>
     <url>${git-project.url}</url>
 

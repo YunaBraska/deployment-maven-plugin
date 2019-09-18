@@ -1,4 +1,3 @@
-# Update dependencies
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | update.minor        | Boolean | false              | Updates parent, properties, dependencies                                   |

@@ -8,7 +8,17 @@
 
 [include]: # (/README/shields.include.md)
 
-# CURRENTLY REFACTORING FROM BASH TO REAL MAVEN MOJO
+### Index
+* [Motivation](#motivation)
+* [Usage](#builder_usage_plugin)
+* [Building](#building)
+* [Semantic and Versioning](#semantic-and-versioning)
+* [Tagging and Committing](#tagging-and-committing)
+* [Update dependencies and plugins](#update-dependencies-and-plugins)
+* [Deployment](#deployment)
+* [Builder files (like README.builder.md)](#builder-files-like-readmebuildermd)
+* [Settings with Servers and Credentials](#settings-with-servers-and-credentials)
+* [Misc](#misc)
 
 ### Motivation
 !{project.description}
@@ -28,17 +38,23 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 ````
 * Will create java doc, java sources, and updates dependencies
 
+### Semantic and Versioning
 [include]: # (versioning.include.md)
 
-[include]: # (builder.include.md)
-
+### Tagging and Committing
 [include]: # (tagging.include.md)
 
+### Update dependencies and plugins
 [include]: # (update.include.md)
 
-# UNDER CONSTRUCTION
+### Deployment
+[include]: # (deploy.include.md)
+
+### Builder files (like README.builder.md)
+[include]: # (builder.include.md)
 
 ### Building
+#### UNDER CONSTRUCTION (NOT STABLE)
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | clean               | Boolean | false              | cleans target and resolves dependencies                                    |
@@ -46,14 +62,8 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 | java.doc            | Boolean | false              | Creates java doc (javadoc.jar) if its not a pom artifact                   |
 | java.source         | Boolean | false              | Creates java sources (sources.jar) if its not a pom artifact               |
 | gpg.pass            | String  | ''                 | Signs artifacts (.asc) with GPG 2.1                                        |
-### Deployment
-| Parameter           | Type    | Default            |  Description                                                               |
-|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
-| deploy              | Boolean | ''                 | Start deployment                                                           |
-| deploy.snapshot     | Boolean | ''                 | Start snapshot deployment && adds temporary "-SNAPSHOT" to the project version |
-| deploy.id           | String  | ${settings.get(0)} | Id from server settings or settings.xml - default first setting server id containing ids like 'nexus', 'artifact', 'archiva', 'repository', 'snapshot'|
-| deploy.url          | String  | ''                 | url to artifact repository - reprioritize default setting server id if contains keywords from 'deploy.id' |
-### Add to Settings.xml session
+### Settings with Servers and Credentials
+#### UNDER CONSTRUCTION (NOT STABLE)
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | Server              | String | ''                  | server id (multiple possible && caseInsensitive)                           |
@@ -64,6 +74,7 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 | FilePermissions     | String | ''                  | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
 | DirectoryPermissions| String | ''                  | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
 ### Misc
+#### UNDER CONSTRUCTION (NOT STABLE)
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | REPORT              | Boolean | false              | Generates report about version updates                                     |

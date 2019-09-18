@@ -1,6 +1,14 @@
 language: java
+jdk: openjdk12
+dist: trusty
+
+cache:
+  directories:
+    - $HOME/.m2
+
 sudo: false
-script: mvn clean verify
+script:
+  - bash build.sh
 
 after_success:
   - bash <(curl -s https://codecov.io/bash) -t ab6f3540-1a81-4b13-b45c-d7369dac0eed

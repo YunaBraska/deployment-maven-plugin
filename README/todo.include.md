@@ -1,5 +1,5 @@
 ### TODO
-* [ ] support environment properties with caseInsensitive and "." can be also "_"
+* [ ] finish converting from bash to real mojo
 * [ ] Readme links
 * [ ] Readme pictures (GIF ?)
 * [ ] test semantic versioning with characters like 'beta' 
