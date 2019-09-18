@@ -28,8 +28,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.reflections.Reflections;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
@@ -48,6 +48,7 @@ import static berlin.yuna.mavendeploy.plugin.MojoHelper.isEmpty;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.nio.file.Files.readAllBytes;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.util.Arrays.asList;
@@ -154,15 +155,19 @@ public class CustomMavenTestFramework {
         try {
             Model pomModel;
             do {
-                pomModel = new MavenXpp3Reader().read(new FileReader(pom));
+                pomModel = new MavenXpp3Reader().read(new ByteArrayInputStream(readAllBytes(pom.toPath())));
                 TRAVIS_POM_TRY--;
+                if (TRAVIS_POM_TRY < 10) {
+                    System.err.println("Try read pom file [" + (10 - TRAVIS_POM_TRY) + "]");
+                    Thread.sleep(500);
+                }
             } while ((pomModel == null || isEmpty(pomModel.getVersion())) && TRAVIS_POM_TRY > 0);
             if (TRAVIS_POM_TRY <= 0) {
-                System.err.println("No pom version? " + new String(Files.readAllBytes(pom.toPath()), UTF_8));
+                System.err.println("No pom version? " + new String(readAllBytes(pom.toPath()), UTF_8));
             }
             pomModel.setPomFile(pom);
             return pomModel;
-        } catch (IOException | XmlPullParserException e) {
+        } catch (IOException | XmlPullParserException | InterruptedException e) {
             throw new RuntimeException("could not read pom.xml \n ", e);
         }
     }
@@ -258,7 +263,7 @@ public class CustomMavenTestFramework {
             final Path path = TEST_POM.getPomFile().toPath();
             final Charset charset = StandardCharsets.UTF_8;
 
-            String content = new String(Files.readAllBytes(path), charset);
+            String content = new String(readAllBytes(path), charset);
             content = content.replaceAll(regex, replacement);
             Files.write(path, content.getBytes(charset));
         } catch (Exception e) {
