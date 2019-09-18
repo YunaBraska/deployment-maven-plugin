@@ -47,6 +47,7 @@ import java.util.Set;
 import static berlin.yuna.mavendeploy.plugin.MojoHelper.isEmpty;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.util.Arrays.asList;
@@ -63,6 +64,7 @@ public class CustomMavenTestFramework {
     protected static Model PROJECT_POM;
     protected Terminal terminal;
     protected Terminal terminalNoLog;
+    private static int TRAVIS_POM_TRY;
 
     private static final String DEBUG_ENV = System.getenv("DEBUG");
     protected static final boolean DEBUG = isEmpty(DEBUG_ENV) || parseBoolean(DEBUG_ENV);
@@ -110,6 +112,7 @@ public class CustomMavenTestFramework {
         assertThat(format("Terminal does not point to test project [%s]", terminal.dir()),
                 terminal.dir().getAbsolutePath().startsWith(System.getProperty("user.dir")), is(false));
         System.out.println(format("Work dir [%s]", tmpDir));
+        TRAVIS_POM_TRY = 10;
     }
 
     @After
@@ -149,7 +152,14 @@ public class CustomMavenTestFramework {
         assertThat("pom file [%s] does not exist", pom.exists(), is(true));
         assertThat("pom file [%s] is not a file", pom.isFile(), is(true));
         try {
-            final Model pomModel = new MavenXpp3Reader().read(new FileReader(pom));
+            Model pomModel;
+            do {
+                pomModel = new MavenXpp3Reader().read(new FileReader(pom));
+                TRAVIS_POM_TRY--;
+            } while ((pomModel == null || isEmpty(pomModel.getVersion())) && TRAVIS_POM_TRY > 0);
+            if (TRAVIS_POM_TRY <= 0) {
+                System.err.println("No pom version? " + new String(Files.readAllBytes(pom.toPath()), UTF_8));
+            }
             pomModel.setPomFile(pom);
             return pomModel;
         } catch (IOException | XmlPullParserException e) {

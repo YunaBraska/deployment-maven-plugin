@@ -7,7 +7,8 @@ cache:
     - $HOME/.m2
 
 sudo: false
-install: bash build.sh
+install: ./install-dependencies.sh
+script: mvn clean verify
 
 after_success:
   - bash <(curl -s https://codecov.io/bash) -t ab6f3540-1a81-4b13-b45c-d7369dac0eed
