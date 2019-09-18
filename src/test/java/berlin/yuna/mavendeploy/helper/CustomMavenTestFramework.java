@@ -153,12 +153,13 @@ public class CustomMavenTestFramework {
     protected String getTestPomVersion() {
         String version = null;
         for (int tries = 0; tries < TRAVIS_POM_TRY; tries++) {
-            version = parse(TEST_POM).getVersion();
+            final Model pomModel = parse(TEST_POM);
+            version = pomModel == null ? null : pomModel.getVersion();
             if (!isEmpty(version)) {
                 break;
             }
             sleep(64);
-            System.out.println("Try getTestPomVersion [" + tries + "/" + TRAVIS_POM_TRY + "]");
+            System.err.println("Try getTestPomVersion [" + tries + "/" + TRAVIS_POM_TRY + "]");
         }
         return version;
     }
