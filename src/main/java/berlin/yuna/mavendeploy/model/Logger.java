@@ -27,7 +27,7 @@ public class Logger {
         formatter = DateTimeFormatter.ofPattern(timeFormat == null ? "yyyy-MM-dd HH:mm:ss" : timeFormat);
         LOG = log;
         if (LOG == null) {
-            warn("Logger is null - fall back to console");
+            warn("Maven logger is not set - fall back to console");
         }
     }
 
