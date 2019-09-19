@@ -132,30 +132,30 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     @Test
     public void setProjectVersion_withNoSemanticMatch_shouldFallBackToDefinedVersion() {
         terminalNoLog.execute(mvnCmd("-Dproject.version=1.2.3"));
-        assertThat(getTestPomVersion(), is(equalTo("1.2.3")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("1.2.3")));
 
         mergeBranch("feature/shouldNotBeRecognized");
 
         terminal.execute(mvnCmd("-Dproject.version=1.0.0-fallBackVersion -Dsemantic.format='[.]::none::none::none'"));
-        assertThat(getTestPomVersion(), is(equalTo("1.0.0-fallBackVersion")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("1.0.0-fallBackVersion")));
         expectProperties(prop("newVersion", "1.0.0-fallBackVersion"));
     }
 
     @Test
     public void setProjectVersion_withNoSemanticMatch_shouldFallBackToOriginalVersion() {
         terminalNoLog.execute(mvnCmd("-Dproject.version=1.2.3"));
-        assertThat(getTestPomVersion(), is(equalTo("1.2.3")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("1.2.3")));
 
         mergeBranch("feature/shouldNotBeRecognized");
         terminal.execute(mvnCmd("-Dsemantic.format='[.]::none::none::none'"));
 
-        assertThat(getTestPomVersion(), is(equalTo("1.2.3")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("1.2.3")));
     }
 
     @Test
     public void setProjectVersion_withSemantic_shouldAutoSetNewSemanticMajorVersion() {
         terminalNoLog.execute(mvnCmd("-Dproject.version=1.2.3"));
-        assertThat(getTestPomVersion(), is(equalTo("1.2.3")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("1.2.3")));
 
         mergeBranch("feature/MarketingJustWantsThis");
         mergeBranch("bugfix/bugsEverywhere");
@@ -163,14 +163,14 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         terminal.execute(mvnCmd("-Dsemantic.format='[.]::major.*::feature.*::bugfix.*'"));
 
         expectMojoRun(g(Versions.class, "set"));
-        assertThat(getTestPomVersion(), is(equalTo("2.0.0")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("2.0.0")));
         expectProperties(prop("newVersion", "2.0.0"));
     }
 
     @Test
     public void setProjectVersion_withSemantic_shouldAutoSetNewSemanticFeatureVersion() {
         terminalNoLog.execute(mvnCmd("-Dproject.version=1.2.3"));
-        assertThat(getTestPomVersion(), is(equalTo("1.2.3")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("1.2.3")));
 
         mergeBranch("major/newAge");
         mergeBranch("bugfix/bugsEverywhere");
@@ -178,14 +178,14 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         terminal.execute(mvnCmd("-Dproject.version=definedVersion -Dsemantic.format='[.]::major.*::feature.*::bugfix.*'"));
 
         expectMojoRun(g(Versions.class, "set"));
-        assertThat(getTestPomVersion(), is(equalTo("1.3.0")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("1.3.0")));
         expectProperties(prop("newVersion", "1.3.0"));
     }
 
     @Test
     public void setProjectVersion_withSemantic_shouldAutoSetNewSemanticBugFixVersion() {
         terminalNoLog.execute(mvnCmd("-Dproject.version=1.2.3"));
-        assertThat(getTestPomVersion(), is(equalTo("1.2.3")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("1.2.3")));
 
         mergeBranch("major/newAge");
         mergeBranch("feature/MarketingJustWantsThis");
@@ -193,19 +193,19 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         terminal.execute(mvnCmd("-Dproject.version=definedVersion -Dsemantic.format='[.]::major.*::feature.*::bugfix.*'"));
 
         expectMojoRun(g(Versions.class, "set"));
-        assertThat(getTestPomVersion(), is(equalTo("1.2.4")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("1.2.4")));
         expectProperties(prop("newVersion", "1.2.4"));
     }
 
     @Test
     public void removeSnapshot_shouldBeSuccessful() {
         terminalNoLog.execute(mvnCmd("-Dproject.version=1.2.3-SNAPSHOT"));
-        assertThat(getTestPomVersion(), is(equalTo("1.2.3-SNAPSHOT")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("1.2.3-SNAPSHOT")));
 
         terminal.execute(mvnCmd("-Dremove.snapshot"));
 
         expectMojoRun(g(Versions.class, "set"));
-        assertThat(getTestPomVersion(), is(equalTo("1.2.3")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("1.2.3")));
     }
 
     @Test
@@ -249,8 +249,8 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
                 g(Versions.class, "set"),
                 g(Scm.class, "tag"));
         assertThat(terminal.consoleInfo(), containsString("Tagging requested [20.04.19]"));
-        assertThat(getTestPomVersion(), is(equalTo("20.04.19")));
-        assertThat(terminalNoLog.execute("git describe --tag --always --abbrev=0").consoleInfo(), is(equalTo("20.04.19")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("20.04.19")));
+        assertThat(getCurrentGitTag(), is(equalTo("20.04.19")));
     }
 
     @Test
@@ -261,22 +261,22 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
                 g(Versions.class, "set"),
                 g(Scm.class, "tag"));
         assertThat(terminal.consoleInfo(), containsString("Tagging requested [20.04.19]"));
-        assertThat(getTestPomVersion(), is(equalTo("20.04.19")));
-        assertThat(terminalNoLog.execute("git describe --tag --always --abbrev=0").consoleInfo(), is(equalTo("20.04.19")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("20.04.19")));
+        assertThat(getCurrentGitTag(), is(equalTo("20.04.19")));
     }
 
     @Test
     public void tagging_twice_shouldBeSuccessfulAndNotTagTwice() {
         terminalNoLog.execute(mvnCmd("-Dtag=10.06.19"));
         terminalNoLog.execute(mvnCmd("-Dproject.version=1.2.3"));
-        assertThat(getTestPomVersion(), is(equalTo("1.2.3")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("1.2.3")));
 
         terminal.execute(mvnCmd("-Dproject.version=10.06.19 -Dtag"));
 
         expectMojoRun(g(Versions.class, "set"));
         assertThat(terminal.consoleInfo(), containsString("Tagging requested [10.06.19]"));
         assertThat(terminal.consoleInfo(), containsString("Git tag [10.06.19] already exists"));
-        assertThat(getTestPomVersion(), is(equalTo("10.06.19")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("10.06.19")));
         assertThat(terminalNoLog.clearConsole().execute("git describe --tag --always --abbrev=0").consoleInfo(), is(equalTo("10.06.19")));
     }
 
@@ -288,7 +288,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         assertThat(terminal.consoleInfo(), containsString("Tagging requested [20.04.19]"));
         assertThat(terminal.consoleInfo(), containsString("Git tag [20.04.19] already exists"));
         assertThat(terminal.consoleInfo(), is(containsString("BUILD FAILURE")));
-        assertThat(getTestPomVersion(), is(equalTo("20.04.19")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("20.04.19")));
         assertThat(terminalNoLog.clearConsole().execute("git describe --tag --always --abbrev=0").consoleInfo(), is(equalTo("20.04.19")));
     }
 

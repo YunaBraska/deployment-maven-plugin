@@ -15,6 +15,7 @@ import berlin.yuna.mavendeploy.config.Resources;
 import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Surefire;
 import berlin.yuna.mavendeploy.config.Versions;
+import berlin.yuna.mavendeploy.logic.GitService;
 import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.Prop;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
@@ -65,6 +66,8 @@ public class CustomMavenTestFramework {
     protected Terminal terminalNoLog;
     //every 64 millisecond until 30 seconds
     private static final int TRAVIS_POM_TRY = (30 * 1000) / 64;
+    protected static Logger log = new Logger();
+    protected static GitService gitService;
 
     private static final String DEBUG_ENV = System.getenv("DEBUG");
     protected static final boolean DEBUG = isEmpty(DEBUG_ENV) || parseBoolean(DEBUG_ENV);
@@ -97,9 +100,9 @@ public class CustomMavenTestFramework {
 
     @BeforeClass
     public static void setUpClass() {
-        System.out.println(format("Start preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
+        log.debug(format("Start preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
         getTerminal().execute("mvn -Dmaven.test.skip=true install");
-        System.out.println(format("End preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
+        log.debug(format("End preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
     }
 
     @Before
@@ -109,12 +112,13 @@ public class CustomMavenTestFramework {
         TEST_POM = getPomFile(new File(tmpDir.toFile(), "pom.xml"));
         terminal = getTerminal().dir(tmpDir);
         terminalNoLog = getTerminalNoLog().dir(tmpDir);
+        gitService = new GitService(log, tmpDir.toFile(), true);
         assertThat(
                 format("Terminal does not point to test project [%s]", terminal.dir()),
                 terminal.dir().getAbsolutePath().startsWith(System.getProperty("user.dir")),
                 is(false)
         );
-        System.out.println(format("Work dir [%s]", tmpDir));
+        log.debug(format("Work dir [%s]", tmpDir));
     }
 
     @After
@@ -142,7 +146,7 @@ public class CustomMavenTestFramework {
                 + ":" + PROJECT_POM.getVersion()
                 + ":run -Dfake -X "
                 + " -Djava.version=1.8 " + parameter;
-        System.out.println(format("Running maven command [%s]", mvnCmd.trim()));
+        log.debug(format("Running maven command [%s]", mvnCmd.trim()));
         return mvnCmd;
     }
 
@@ -150,11 +154,14 @@ public class CustomMavenTestFramework {
         return getPomFile(pom.getPomFile());
     }
 
-    protected String getTestPomVersion() {
+    protected String getCurrentProjectVersion() {
+        return parse(TEST_POM).getVersion();
+    }
+
+    protected String getCurrentGitTag() {
         String version = null;
         for (int tries = 0; tries < TRAVIS_POM_TRY; tries++) {
-            final Model pomModel = parse(TEST_POM);
-            version = pomModel == null ? null : pomModel.getVersion();
+            version = gitService.getLastGitTag();
             if (!isEmpty(version)) {
                 System.err.println("PROJECT_VERSION [" + version + "]");
                 break;
@@ -192,7 +199,7 @@ public class CustomMavenTestFramework {
         final List<ActiveGoal> expectedMojoList = expectedMojos == null ? new ArrayList<>() : asList(expectedMojos);
         for (ActiveGoal definedMojo : definedMojoList) {
             if (expectedMojoList.contains(definedMojo)) {
-                System.out.println("[INFO] Plugin expected: " + definedMojo.toString());
+                log.debug("[INFO] Plugin expected: " + definedMojo.toString());
                 assertThat(format("Mojo did not start [%s]", definedMojo), console, containsString("-<=[ Start " + definedMojo.toString()));
                 assertThat(format("Mojo did not run [%s]", definedMojo), console, containsString("-<=[ End " + definedMojo.toString()));
             } else {
@@ -204,7 +211,7 @@ public class CustomMavenTestFramework {
     protected void expectProperties(final Prop... configs) {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
-            System.out.println(format("[INFO] Config expected key [%s] value [%s] ", config.key, config.value));
+            log.debug(format("[INFO] Config expected key [%s] value [%s] ", config.key, config.value));
             assertThat(format("Config [%s] is dropped", config.key), consoleInfo, not(containsString(format("- Config key [%s] already set", config.key))));
             assertThat(format("Config [%s] is not set", config.key), consoleInfo, containsString(format("+ Config added key [%s]", config.key)));
             assertThat(format("Config [%s] has wrong value", config.key), consoleInfo, containsString(format("+ Config added key [%s] value [%s]", config.key, config.value)));
@@ -214,7 +221,7 @@ public class CustomMavenTestFramework {
     protected void expectPropertiesOverwrite(final Prop... configs) {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
-            System.out.println("[INFO] Config not expected: " + config.key);
+            log.debug("[INFO] Config not expected: " + config.key);
             assertThat(format("Config [%s] is set but not overwritten", config.key), consoleInfo, not(containsString(format("+ Config added key [%s]", config.key))));
             assertThat(format("Config [%s] was not set at all", config.key), consoleInfo, containsString(format("- Config key [%s] already set with [%s]", config.key, config.value)));
         }
