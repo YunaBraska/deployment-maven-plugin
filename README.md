@@ -16,9 +16,9 @@
 [Build-Status-Url]: https://travis-ci.org/YunaBraska/deployment-maven-plugin
 [Build-Status-Image]: https://travis-ci.org/YunaBraska/deployment-maven-plugin.svg?branch=master
 [Coverage-Url]: https://codecov.io/gh/YunaBraska/deployment-maven-plugin?branch=master
-[Coverage-image]: https://codecov.io/gh/YunaBraska/deployment-maven-plugin/branch/master/graphs/badge.svg
-[Maintainable-Url]: https://codeclimate.com/github/YunaBraska/deployment-maven-plugin
-[Maintainable-image]: https://codeclimate.com/github/YunaBraska/deployment-maven-plugin.svg
+[Coverage-image]: https://img.shields.io/codecov/c/github/YunaBraska/maven-deployment?style=flat-square
+[Maintainable-Url]: https://codeclimate.com/github/YunaBraska/maven-deployment/maintainability
+[Maintainable-image]: https://img.shields.io/codeclimate/maintainability/YunaBraska/maven-deployment?style=flat-square
 [Javadoc-url]: http://javadoc.io/doc/berlin.yuna/deployment-maven-plugin
 [Javadoc-image]: http://javadoc.io/badge/berlin.yuna/deployment-maven-plugin.svg
 [Gitter-Url]: https://gitter.im/nats-streaming-server-embedded/Lobby
