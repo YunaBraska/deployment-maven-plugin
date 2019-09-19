@@ -14,8 +14,8 @@
 [Build-Status-Image]: https://travis-ci.org/YunaBraska/!{project.artifactId}.svg?branch=master
 [Coverage-Url]: https://codecov.io/gh/YunaBraska/!{project.artifactId}?branch=master
 [Coverage-image]: https://codecov.io/gh/YunaBraska/!{project.artifactId}/branch/master/graphs/badge.svg
-[Maintainable-Url]: https://codeclimate.com/github/YunaBraska/!{project.artifactId}
-[Maintainable-image]: https://codeclimate.com/github/YunaBraska/!{project.artifactId}.svg
+[Maintainable-Url]: https://codeclimate.com/github/YunaBraska/maven-deployment/maintainability
+[Maintainable-image]: https://img.shields.io/codeclimate/maintainability/YunaBraska/maven-deployment?style=flat-square
 [Javadoc-url]: http://javadoc.io/doc/berlin.yuna/!{project.artifactId}
 [Javadoc-image]: http://javadoc.io/badge/berlin.yuna/!{project.artifactId}.svg
 [Gitter-Url]: https://gitter.im/nats-streaming-server-embedded/Lobby
