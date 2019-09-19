@@ -16,7 +16,7 @@
 [Build-Status-Url]: https://travis-ci.org/YunaBraska/deployment-maven-plugin
 [Build-Status-Image]: https://travis-ci.org/YunaBraska/deployment-maven-plugin.svg?branch=master
 [Coverage-Url]: https://codecov.io/gh/YunaBraska/deployment-maven-plugin?branch=master
-[Coverage-image]: https://codecov.io/gh/YunaBraska/deployment-maven-plugin/branch/master/graphs/badge.svg
+[Coverage-image]: https://img.shields.io/codecov/c/github/YunaBraska/maven-deployment?style=flat-square
 [Maintainable-Url]: https://codeclimate.com/github/YunaBraska/maven-deployment/maintainability
 [Maintainable-image]: https://img.shields.io/codeclimate/maintainability/YunaBraska/maven-deployment?style=flat-square
 [Javadoc-url]: http://javadoc.io/doc/berlin.yuna/deployment-maven-plugin
