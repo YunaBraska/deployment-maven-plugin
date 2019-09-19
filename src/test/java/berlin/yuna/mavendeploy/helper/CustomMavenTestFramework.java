@@ -1,23 +1,37 @@
-package berlin.yuna.mavendeploy;
+package berlin.yuna.mavendeploy.helper;
 
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.config.Clean;
+import berlin.yuna.mavendeploy.config.Compiler;
 import berlin.yuna.mavendeploy.config.Dependency;
+import berlin.yuna.mavendeploy.config.Deploy;
+import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.MojoBase;
+import berlin.yuna.mavendeploy.config.PluginUpdater;
+import berlin.yuna.mavendeploy.config.ReadmeBuilder;
+import berlin.yuna.mavendeploy.config.Resources;
+import berlin.yuna.mavendeploy.config.Scm;
+import berlin.yuna.mavendeploy.config.Surefire;
 import berlin.yuna.mavendeploy.config.Versions;
+import berlin.yuna.mavendeploy.logic.GitService;
+import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.Prop;
+import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
+import org.eclipse.jgit.api.Git;
+import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.BeforeClass;
+import org.reflections.Reflections;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -28,8 +42,12 @@ import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.Set;
 
+import static berlin.yuna.mavendeploy.plugin.MojoHelper.isEmpty;
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
+import static java.nio.file.Files.readAllBytes;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.util.Arrays.asList;
@@ -42,15 +60,22 @@ import static org.hamcrest.core.IsNot.not;
 
 public class CustomMavenTestFramework {
 
-    private static final boolean DEBUG = true;
-    static Model TEST_POM;
-    private static Model PROJECT_POM;
+    protected static Model TEST_POM;
+    protected static Model PROJECT_POM;
+    protected Terminal terminal;
+    protected Terminal terminalNoLog;
+    protected static Logger log = new Logger(null, "HH:mm:ss");
+    protected static GitService gitService;
 
-    Terminal terminal;
+    private static final String DEBUG_ENV = System.getenv("DEBUG");
+    protected static final boolean DEBUG = isEmpty(DEBUG_ENV) || parseBoolean(DEBUG_ENV);
+
     private final List<ActiveGoal> definedMojoList = asList(
             g(Clean.class, "clean"),
             g(Dependency.class, "resolve-plugins"),
             g(Dependency.class, "purge-local-repository"),
+            g(PluginUpdater.class, "update"),
+            g(ReadmeBuilder.class, "render"),
             g(Versions.class, "update-parent"),
             g(Versions.class, "update-properties"),
             g(Versions.class, "update-child-modules"),
@@ -60,25 +85,38 @@ public class CustomMavenTestFramework {
             g(Versions.class, "commit"),
             g(Versions.class, "set"),
             g(Javadoc.class, "jar"),
-            g(JavaSource.class, "jar-no-fork")
+            g(JavaSource.class, "jar-no-fork"),
+            g(Gpg.class, "sign"),
+            g(Scm.class, "tag"),
+            g(Surefire.class, "test"),
+            g(Resources.class, "resources"),
+            g(Resources.class, "testResources"),
+            g(Compiler.class, "compile"),
+            g(Compiler.class, "testCompile"),
+            g(Deploy.class, "deploy")
     );
 
     @BeforeClass
     public static void setUpClass() {
-        System.out.println(format("Start preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
+        log.debug(format("Start preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
         getTerminal().execute("mvn -Dmaven.test.skip=true install");
-        System.out.println(format("End preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
+        log.debug(format("End preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
     }
 
     @Before
-    public void setUp() throws IOException, URISyntaxException {
+    public void setUp() throws IOException, URISyntaxException, GitAPIException {
         final Path tmpDir = prepareTestProject("testApplication");
         PROJECT_POM = getPomFile(new File(System.getProperty("user.dir"), "pom.xml"));
         TEST_POM = getPomFile(new File(tmpDir.toFile(), "pom.xml"));
         terminal = getTerminal().dir(tmpDir);
-        assertThat(format("Terminal does not point to test project [%s]", terminal.dir()),
-                terminal.dir().getAbsolutePath().startsWith(System.getProperty("user.dir")), is(false));
-        System.out.println(format("Work dir [%s]", tmpDir));
+        terminalNoLog = getTerminalNoLog().dir(tmpDir);
+        gitService = new GitService(log, tmpDir.toFile(), true);
+        assertThat(
+                format("Terminal does not point to test project [%s]", terminal.dir()),
+                terminal.dir().getAbsolutePath().startsWith(System.getProperty("user.dir")),
+                is(false)
+        );
+        log.debug(format("Work dir [%s]", tmpDir));
     }
 
     @After
@@ -86,7 +124,7 @@ public class CustomMavenTestFramework {
         deleteDir(TEST_POM.getPomFile().getParentFile().toPath());
     }
 
-    void mergeBranch(final String branchName) {
+    protected void mergeBranch(final String branchName) {
         try {
             final Path filePath = Paths.get(TEST_POM.getPomFile().getParentFile().toString(), new File(branchName).getName());
             terminal.execute("git checkout -b " + branchName);
@@ -99,88 +137,97 @@ public class CustomMavenTestFramework {
         }
     }
 
-
-    // TODO: generate plugins to pom file, update them and parse it on runtime
-    String mvnCmd(final String parameter) {
+    protected String mvnCmd(final String parameter) {
         final String mvnCmd = "mvn"
                 + " " + PROJECT_POM.getGroupId()
                 + ":" + PROJECT_POM.getArtifactId()
                 + ":" + PROJECT_POM.getVersion()
-                + ":run -Dfake -X " + parameter
+                + ":run -Dfake -X "
                 + " -Djava.version=1.8 " + parameter;
-        System.out.println(format("Running maven command [%s]", mvnCmd));
+        log.debug(format("Running maven command [%s]", mvnCmd.trim()));
         return mvnCmd;
     }
 
-    Model parse(final Model pom) {
+    protected Model parse(final Model pom) {
         return getPomFile(pom.getPomFile());
     }
 
-    Model getPomFile(final File pom) {
+    protected String getCurrentProjectVersion() {
+        return parse(TEST_POM).getVersion();
+    }
+
+    protected String getCurrentGitTag() {
+        return gitService.getLastGitTag();
+    }
+
+    public static Model getPomFile(final File pom) {
         assertThat("pom file [%s] does not exist", pom.exists(), is(true));
         assertThat("pom file [%s] is not a file", pom.isFile(), is(true));
         try {
-            final Model pomModel = new MavenXpp3Reader().read(new FileReader(pom));
+            final Model pomModel = new MavenXpp3Reader().read(new ByteArrayInputStream(readAllBytes(pom.toPath())));
             pomModel.setPomFile(pom);
             return pomModel;
-        } catch (IOException | XmlPullParserException e) {
+        } catch (Exception e) {
             throw new RuntimeException("could not read pom.xml \n ", e);
         }
     }
 
     private static Terminal getTerminal() {
-        final Terminal terminal = new Terminal().dir(System.getProperty("user.dir")).consumerError(System.err::println);
-        return DEBUG ? terminal.consumerInfo(System.out::println) : terminal;
+        return DEBUG ? getTerminalNoLog().consumerInfo(log::info) : getTerminalNoLog();
     }
 
-    void expectMojoRun(final ActiveGoal... expectedMojos) {
+    private static Terminal getTerminalNoLog() {
+        return new Terminal().dir(System.getProperty("user.dir")).consumerError(log::error);
+    }
+
+    protected void expectMojoRun(final ActiveGoal... expectedMojos) {
         final String console = terminal.consoleInfo();
-        assertThat(console, containsString("Building example-maven-project"));
+        assertThat(console, containsString("Building example-maven-test-project"));
         assertThat(console, not(containsString("Unable to invoke plugin")));
         final List<ActiveGoal> expectedMojoList = expectedMojos == null ? new ArrayList<>() : asList(expectedMojos);
         for (ActiveGoal definedMojo : definedMojoList) {
             if (expectedMojoList.contains(definedMojo)) {
-                System.out.println("[INFO] Plugin expected: " + definedMojo.toString());
+                log.debug("[INFO] Plugin expected: " + definedMojo.toString());
                 assertThat(format("Mojo did not start [%s]", definedMojo), console, containsString("-<=[ Start " + definedMojo.toString()));
                 assertThat(format("Mojo did not run [%s]", definedMojo), console, containsString("-<=[ End " + definedMojo.toString()));
             } else {
-//                System.out.println("[INFO] Plugin not expected: " + definedMojo.toString());
-                assertThat(format("Mojo unexpectedly start [%s]", definedMojo), console, is(not(containsString("-<=[ Start " + definedMojo.toString()))));
-                assertThat(format("Mojo unexpectedly run [%s]", definedMojo), console, is(not(containsString("-<=[ End " + definedMojo.toString()))));
+                assertThat(format("Mojo unexpectedly started [%s]", definedMojo), console, is(not(containsString("-<=[ Start " + definedMojo.toString()))));
             }
         }
     }
 
-    void expectProperties(final Prop... configs) {
+    protected void expectProperties(final Prop... configs) {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
-            System.out.println(format("[INFO] Config expected key [%s] value [%s] ", config.key, config.value));
+            log.debug(format("[INFO] Config expected key [%s] value [%s] ", config.key, config.value));
             assertThat(format("Config [%s] is dropped", config.key), consoleInfo, not(containsString(format("- Config key [%s] already set", config.key))));
             assertThat(format("Config [%s] is not set", config.key), consoleInfo, containsString(format("+ Config added key [%s]", config.key)));
             assertThat(format("Config [%s] has wrong value", config.key), consoleInfo, containsString(format("+ Config added key [%s] value [%s]", config.key, config.value)));
         }
     }
 
-    void expectPropertiesOverwrite(final Prop... configs) {
+    protected void expectPropertiesOverwrite(final Prop... configs) {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
-            System.out.println("[INFO] Config not expected: " + config.key);
+            log.debug("[INFO] Config not expected: " + config.key);
             assertThat(format("Config [%s] is set but not overwritten", config.key), consoleInfo, not(containsString(format("+ Config added key [%s]", config.key))));
             assertThat(format("Config [%s] was not set at all", config.key), consoleInfo, containsString(format("- Config key [%s] already set with [%s]", config.key, config.value)));
         }
     }
 
-    ActiveGoal g(final Class<? extends MojoBase> activeMojo, final String activeGoal) {
+    protected ActiveGoal g(final Class<? extends MojoBase> activeMojo, final String activeGoal) {
         return new ActiveGoal(activeMojo, activeGoal);
     }
 
-    private Path prepareTestProject(final String testSource) throws IOException, URISyntaxException {
+    private Path prepareTestProject(final String testSource) throws IOException, URISyntaxException, GitAPIException {
         final Path src = Paths.get(requireNonNull(getClass().getClassLoader().getResource(testSource)).toURI());
         assertThat(format("directory does not exists [%s]", src.toUri().toString()), Files.exists(src), is(true));
         assertThat(format("[%s] is not a directory", src.toUri().toString()), Files.isDirectory(src), is(true));
         final Path tempDirectory = Files.createTempDirectory(getClass().getSimpleName() + "_" + src.getFileName().toString() + "_");
         copyFolder(src, tempDirectory);
-        getTerminal().dir(tempDirectory).execute("git init; git add .; git commit -a -m 'init'");
+        final Git git = Git.init().setDirectory(tempDirectory.toFile()).call();
+        git.add().addFilepattern(".").call();
+        git.commit().setMessage("init").call();
         return tempDirectory;
     }
 
@@ -207,16 +254,35 @@ public class CustomMavenTestFramework {
         }
     }
 
+    protected void setPackaging(final String packaging) {
+        replaceInPom("<packaging>.*<\\/packaging>", "<packaging>" + packaging + "</packaging>");
+    }
+
     void replaceInPom(final String regex, final String replacement) {
         try {
             final Path path = TEST_POM.getPomFile().toPath();
             final Charset charset = StandardCharsets.UTF_8;
 
-            String content = new String(Files.readAllBytes(path), charset);
+            String content = new String(readAllBytes(path), charset);
             content = content.replaceAll(regex, replacement);
             Files.write(path, content.getBytes(charset));
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
+    }
+
+    protected static List<MojoBase> getAllMojos() {
+        final List<MojoBase> mojoList = new ArrayList<>();
+        try {
+            final Reflections reflections = new Reflections(MojoBase.class.getPackage().getName());
+            final Set<Class<? extends MojoBase>> classes = reflections.getSubTypesOf(MojoBase.class);
+
+            for (Class<? extends MojoBase> mojo : classes) {
+                mojoList.add(mojo.getDeclaredConstructor(MojoExecutor.ExecutionEnvironment.class, Logger.class).newInstance(null, null));
+            }
+        } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
+            e.printStackTrace();
+        }
+        return mojoList;
     }
 }

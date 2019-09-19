@@ -2,6 +2,7 @@ package berlin.yuna.mavendeploy;
 
 import berlin.yuna.mavendeploy.logic.Ci;
 import org.apache.maven.plugin.logging.SystemStreamLog;
+import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
@@ -33,6 +34,7 @@ public class CiTest {
 
     private static final File WORK_DIR = new File(System.getProperty("user.dir"));
 
+    @Ignore
     @Test
     public void prepareMaven_WithKeyAndWithoutValue_shouldResolve() {
         final String args = " --PROJECT_DIR=" + WORK_DIR
@@ -47,6 +49,7 @@ public class CiTest {
         assertThat(mavenCommand, containsString(CMD_MVN_UPDATE_MINOR));
     }
 
+    @Ignore
     @Test
     public void prepareMaven_WithAllFalse_shouldGetMinimalCommand() {
         final String args = " --PROJECT_DIR=" + WORK_DIR
@@ -58,6 +61,7 @@ public class CiTest {
                 is(equalTo("mvn verify -Dmaven.test.skip=true")));
     }
 
+    @Ignore
     @Test
     public void prepareMaven_withAllParameters_shouldBeSuccessful() {
         final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
@@ -126,6 +130,7 @@ public class CiTest {
         assertThat(mavenCommand, not(containsString("  ")));
     }
 
+    @Ignore
     @Test
     public void prepareNexusDeploy_shouldBeSuccessful() {
         final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
@@ -145,6 +150,7 @@ public class CiTest {
         assertThat(mavenCommand, containsString("-Dmaven.test.skip=true org.sonatype.plugins:nexus-staging-maven-plugin:1.6.8:deploy -DaltDeploymentRepository=nexus::default::https://my.nexus.com/service/local/staging/deploy/maven2 -DnexusUrl=https://my.nexus.com -DserverId=nexus -DautoReleaseAfterClose=false"));
     }
 
+    @Ignore
     @Test
     public void prepareNexusRelease_shouldBeSuccessful() {
         final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
@@ -165,6 +171,7 @@ public class CiTest {
         assertThat(mavenCommand, not(containsString("-DautoReleaseAfterClose=false")));
     }
 
+    @Ignore
     @Test
     public void setJavaDocDefaultVersion_shouldBeSuccessful() {
         final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
@@ -176,6 +183,7 @@ public class CiTest {
     }
 
 
+    @Ignore
     @Test
     public void setJavaDocCustomVersion_shouldBeSuccessful() {
         final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
@@ -187,6 +195,7 @@ public class CiTest {
         assertThat(mavenCommand, is(equalTo("mvn verify -Dmaven.test.skip=true source:jar-no-fork -D--source=11 -Dmaven.compiler.source=1.11 -Dmaven.compiler.target=1.11")));
     }
 
+    @Ignore
     @Test
     public void setCustomJavaVersion_shouldBeSuccessful() {
         final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))
@@ -197,6 +206,7 @@ public class CiTest {
         assertThat(mavenCommand, is(equalTo("mvn verify -Dmaven.test.skip=true -Dmaven.compiler.source=1.11 -Dmaven.compiler.target=1.11")));
     }
 
+    @Ignore
     @Test
     public void setCustomEncoding_shouldBeSuccessful() {
         final String args = "--PROJECT_DIR=" + new File(System.getProperty("user.dir"))

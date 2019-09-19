@@ -1,8 +1,8 @@
 package berlin.yuna.mavendeploy.config;
 
+import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.model.Plugin;
-import org.apache.maven.plugin.logging.Log;
 
 import java.util.Objects;
 
@@ -13,14 +13,15 @@ public abstract class MojoBase {
 
     protected final String groupId;
     protected final String artifactId;
-    protected String version;
+    protected final String version;
 
     protected final MojoExecutor.ExecutionEnvironment environment;
-    protected final Log log;
+    protected final Logger log;
 
-    protected MojoBase(final String groupId, final String artifactId, final MojoExecutor.ExecutionEnvironment environment, final Log log) {
+    protected MojoBase(final String groupId, final String artifactId, final String version, final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         this.groupId = groupId;
         this.artifactId = artifactId;
+        this.version = version;
         this.environment = environment;
         this.log = log;
     }
@@ -37,16 +38,20 @@ public abstract class MojoBase {
         return version;
     }
 
-    public void version(final String version) {
-        this.version = version;
-    }
-
     public MojoExecutor.ExecutionEnvironment environment() {
         return environment;
     }
 
-    public Log log() {
+    public Logger log() {
         return log;
+    }
+
+    public Plugin toPlugin() {
+        final Plugin plugin = new Plugin();
+        plugin.setGroupId(groupId);
+        plugin.setArtifactId(artifactId);
+        plugin.setVersion(version);
+        return plugin;
     }
 
     protected Plugin getPlugin() {
@@ -60,6 +65,7 @@ public abstract class MojoBase {
     protected void logGoal(final String goal, final boolean start) {
         log.info(format("--------------------------<=[ %s %s:%s:%s:%s ]=>--------------------------", start ? "Start" : "End", groupId, artifactId, goal, version));
     }
+
 
     @Override
     public boolean equals(final Object o) {

@@ -118,7 +118,8 @@ public class Ci {
         IS_POM = isPomArtifact(pom);
 
         semanticService = new SemanticService(isEmpty(SEMANTIC_FORMAT) ? "\\.:none" : SEMANTIC_FORMAT);
-        gitService = new GitService(LOG, PROJECT_DIR, false);
+        gitService = null;
+//        gitService = new GitService(LOG, PROJECT_DIR, false);
 
         PROJECT_VERSION = isEmpty(SEMANTIC_FORMAT) ?
                 PROJECT_VERSION : semanticService.getNextSemanticVersion(pom.getVersion(), gitService, PROJECT_VERSION);
@@ -130,17 +131,7 @@ public class Ci {
 
     public String getBranchName() {
         final String branchName = semanticService.getBranchName();
-        return branchName == null ? gitService.findOriginalBranchName(1) : branchName;
-    }
-
-    public String prepareCommitMessage() {
-        if (!isEmpty(MVN_COMMIT_MSG)) {
-            return MVN_COMMIT_MSG;
-        }
-        return format("[%s]", getProjectVersion())
-                + format("[%s]", getBranchName())
-                + ifDo(MVN_TAG || MVN_TAG_BREAK, "[TAG]")
-                + ifDo(MVN_UPDATE_MAJOR || MVN_UPDATE_MINOR, "[UPDATE]");
+        return branchName == null ? gitService.findOriginalBranchName() : branchName;
     }
 
     public boolean allowCommitMessage() {

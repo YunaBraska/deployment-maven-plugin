@@ -17,17 +17,16 @@ public class SemanticService {
     }
 
     public String getNextSemanticVersion(final String currentVersion, final GitService gitService, final String fallback) {
-        for (int commitNumber = 1; commitNumber < 32; commitNumber++) {
-            final String branchName = gitService.findOriginalBranchName(commitNumber);
-            final int semanticPosition = getSemanticPosition(branchName);
-            if (branchName != null && !branchName.trim().isEmpty() && semanticPosition != -1) {
-                this.branchName = branchName;
-                return getNextSemanticVersion(currentVersion, semanticPosition);
-            }
+        final String branchName = gitService.findOriginalBranchName();
+        final int semanticPosition = getSemanticPosition(branchName);
+        if (branchName != null && !branchName.trim().isEmpty() && semanticPosition != -1) {
+            this.branchName = branchName;
+            return getNextSemanticVersion(currentVersion, semanticPosition);
         }
         return fallback;
     }
 
+    //FIXME: separator bug, multiple separators will be replaced by the first one (e.g. 1.2-3 will be replaced by 1.2.3)
     String getNextSemanticVersion(final String versionOrg, final int semanticPosition) {
         final String separator = getSemanticSeparator(versionOrg);
         final StringBuilder nextVersion = new StringBuilder();

@@ -1,23 +1,22 @@
 package berlin.yuna.mavendeploy.config;
 
+import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.getBoolean;
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
+import static berlin.yuna.mavendeploy.plugin.MojoHelper.getBoolean;
+import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
 public class Dependency extends MojoBase {
 
-    public Dependency(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
-        super("org.apache.maven.plugins", "maven-dependency-plugin", environment, log);
-        version = "3.1.1";
+    public Dependency(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
+        super("org.apache.maven.plugins", "maven-dependency-plugin", "3.1.1", environment, log);
     }
 
-    public static Dependency build(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
+    public static Dependency build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         return new Dependency(environment, log);
     }
 
@@ -27,7 +26,7 @@ public class Dependency extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(environment,
+                prepareXpp3Dom(log, environment,
                         prop("appendOutput"),
                         prop("excludeClassifiers"),
                         prop("excludeReactor"),
@@ -59,7 +58,7 @@ public class Dependency extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(environment,
+                prepareXpp3Dom(log, environment,
                         prop("actTransitively"),
                         prop("reResolve"),
                         prop("resolutionFuzziness"),

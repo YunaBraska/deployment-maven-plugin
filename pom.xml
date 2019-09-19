@@ -5,12 +5,15 @@
 
     <groupId>berlin.yuna</groupId>
     <artifactId>deployment-maven-plugin</artifactId>
-    <version>0.0.1</version>
+    <version>12.0.1</version>
     <packaging>maven-plugin</packaging>
 
     <name>${project.artifactId}</name>
-    <description>Get rit of huge deployment definitions in your pom files and keep them small.
-        Auto handling semantic versioning, maven plugins, and much more
+    <description>Writing a project is really easy until it comes to your first deployment. You would need many plugins and manual tests until you project gets deployed in the default way.
+        Like: The pom file in each project will raise (duplicated), the versioning, tagging, signing, readme updates, credentials and plugin configuration feels a bit hacky.
+        Its not even testable.
+        This plugin will handle "everything" default for you. So that you don't need anything in your pom file.
+        Auto handling semantic versioning, maven plugins, and much more while you can still use the original maven userProperties or systemProperties (ignoring ".", "_", "-") to configure the plugins
     </description>
     <url>${git-project.url}</url>
 
@@ -34,7 +37,7 @@
         <project.build.sourceEncoding>${project.encoding}</project.build.sourceEncoding>
         <project.reporting.outputEncoding>${project.encoding}</project.reporting.outputEncoding>
         <git-project.url>https://github.com/YunaBraska/maven-deployment</git-project.url>
-        <maven.version>3.6.0</maven.version>
+        <maven.version>3.6.1</maven.version>
     </properties>
 
     <dependencies>
@@ -54,17 +57,17 @@
         <dependency>
             <groupId>org.apache.maven.resolver</groupId>
             <artifactId>maven-resolver-impl</artifactId>
-            <version>1.4.0</version>
+            <version>1.4.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.resolver</groupId>
             <artifactId>maven-resolver-api</artifactId>
-            <version>1.4.0</version>
+            <version>1.4.1</version>
         </dependency>
         <dependency>
             <groupId>org.apache.maven.resolver</groupId>
             <artifactId>maven-resolver-util</artifactId>
-            <version>1.4.0</version>
+            <version>1.4.1</version>
         </dependency>
 
         <!--mojo execution -->
@@ -105,6 +108,13 @@
             <optional>true</optional>
         </dependency>
 
+        <!-- GIT SUPPORT -->
+        <dependency>
+            <groupId>org.eclipse.jgit</groupId>
+            <artifactId>org.eclipse.jgit</artifactId>
+            <version>4.6.0.201612231935-r</version>
+        </dependency>
+
         <!-- SETTINGS XML -->
         <dependency>
             <groupId>org.jdom</groupId>
@@ -116,7 +126,7 @@
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
-            <version>4.12</version>
+            <version>4.13-beta-3</version>
             <optional>true</optional>
         </dependency>
         <dependency>
@@ -128,8 +138,23 @@
         <dependency>
             <groupId>org.projectlombok</groupId>
             <artifactId>lombok</artifactId>
-            <version>1.18.6</version>
+            <version>1.18.8</version>
             <scope>provided</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-core</artifactId>
+            <version>3.0.0</version>
+            <scope>test</scope>
+        </dependency>
+
+
+        <!-- TEST -->
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+            <version>0.9.11</version>
+            <scope>test</scope>
         </dependency>
     </dependencies>
 
@@ -149,7 +174,7 @@
                 <artifactId>maven-plugin-plugin</artifactId>
                 <version>3.5</version>
                 <configuration>
-                    <goalPrefix>package</goalPrefix>
+                    <goalPrefix>deployment</goalPrefix>
                     <skipErrorNoDescriptorsFound>true</skipErrorNoDescriptorsFound>
                 </configuration>
                 <executions>

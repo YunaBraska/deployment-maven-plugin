@@ -1,8 +1,8 @@
 package berlin.yuna.mavendeploy.config;
 
+import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.plugin.MojoExecutionException;
-import org.apache.maven.plugin.logging.Log;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
@@ -11,12 +11,11 @@ import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
 public class Javadoc extends MojoBase {
 
-    public Javadoc(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
-        super("org.apache.maven.plugins", "maven-javadoc-plugin", environment, log);
-        version = "2.10.4";
+    public Javadoc(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
+        super("org.apache.maven.plugins", "maven-javadoc-plugin", "3.1.1", environment, log);
     }
 
-    public static Javadoc build(final MojoExecutor.ExecutionEnvironment environment, final Log log) {
+    public static Javadoc build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         return new Javadoc(environment, log);
     }
 
@@ -26,8 +25,9 @@ public class Javadoc extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(environment,
-                        prop("additionalparam", "-Xdoclint:none"),
+                prepareXpp3Dom(log, environment,
+//                        prop("additionalparam", "-Xdoclint:none"),
+                        prop("doclint", "none"),
                         prop("maven.javadoc.classifier"),
                         prop("destDir"),
                         prop("additionalJOption"),
@@ -90,7 +90,7 @@ public class Javadoc extends MojoBase {
                         prop("serialwarn"),
                         prop("show"),
                         prop("maven.javadoc.skip"),
-                        prop("source"),
+//                        prop("source", getString(environment.getMavenSession(), "javadoc-source", "222222")),
                         prop("sourcepath"),
                         prop("sourcetab"),
                         prop("linksourcetab"),
