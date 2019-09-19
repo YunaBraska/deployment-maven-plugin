@@ -19,7 +19,6 @@ import berlin.yuna.mavendeploy.logic.GitService;
 import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.Prop;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
-import jdk.internal.org.jline.utils.Log;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.eclipse.jgit.api.Git;
@@ -168,7 +167,7 @@ public class CustomMavenTestFramework {
                 break;
             }
             sleep(64);
-            Log.error("Try getTestPomVersion [" + tries + "/" + TRAVIS_POM_TRY + "]");
+            log.error("Try getTestPomVersion [" + tries + "/" + TRAVIS_POM_TRY + "]");
         }
         return version;
     }
@@ -299,7 +298,7 @@ public class CustomMavenTestFramework {
         return mojoList;
     }
 
-    private void sleep(int timeMs) {
+    private void sleep(final int timeMs) {
         try {
             Thread.sleep(timeMs);
         } catch (InterruptedException e) {

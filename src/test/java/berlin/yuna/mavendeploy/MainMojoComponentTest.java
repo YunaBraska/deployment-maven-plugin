@@ -243,14 +243,14 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
     @Test
     public void tagging_shouldBeSuccessful() {
-        terminal.execute(mvnCmd("-Dproject.version=20.04.19 -Dtag"));
+        terminal.execute(mvnCmd("-Dproject.version=18.09.19 -Dtag"));
 
         expectMojoRun(
                 g(Versions.class, "set"),
                 g(Scm.class, "tag"));
-        assertThat(terminal.consoleInfo(), containsString("Tagging requested [20.04.19]"));
-        assertThat(getCurrentProjectVersion(), is(equalTo("20.04.19")));
-        assertThat(getCurrentGitTag(), is(equalTo("20.04.19")));
+        assertThat(terminal.consoleInfo(), containsString("Tagging requested [18.09.19]"));
+        assertThat(getCurrentProjectVersion(), is(equalTo("18.09.19")));
+        assertThat(getCurrentGitTag(), is(equalTo("18.09.19")));
     }
 
     @Test
@@ -282,13 +282,13 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
     @Test
     public void tagging_twiceWithTagBreak_shouldFailAlreadyExistsError() {
-        terminalNoLog.execute(mvnCmd("-Dproject.version=20.04.19 -Dtag.break"));
-        terminal.execute(mvnCmd("-Dproject.version=20.04.19 -Dtag.break"));
+        terminalNoLog.execute(mvnCmd("-Dproject.version=19.09.19 -Dtag.break"));
+        terminal.execute(mvnCmd("-Dproject.version=19.09.19 -Dtag.break"));
 
-        assertThat(terminal.consoleInfo(), containsString("Tagging requested [20.04.19]"));
-        assertThat(terminal.consoleInfo(), containsString("Git tag [20.04.19] already exists"));
+        assertThat(terminal.consoleInfo(), containsString("Tagging requested [19.09.19]"));
+        assertThat(terminal.consoleInfo(), containsString("Git tag [19.09.19] already exists"));
         assertThat(terminal.consoleInfo(), is(containsString("BUILD FAILURE")));
-        assertThat(getCurrentProjectVersion(), is(equalTo("20.04.19")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("19.09.19")));
         assertThat(terminalNoLog.clearConsole().execute("git describe --tag --always --abbrev=0").consoleInfo(), is(equalTo("20.04.19")));
     }
 
