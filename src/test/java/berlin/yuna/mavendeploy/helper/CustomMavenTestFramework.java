@@ -64,8 +64,6 @@ public class CustomMavenTestFramework {
     protected static Model PROJECT_POM;
     protected Terminal terminal;
     protected Terminal terminalNoLog;
-    //every 64 millisecond until 30 seconds
-    private static final int TRAVIS_POM_TRY = (30 * 1000) / 64;
     protected static Logger log = new Logger(null, "HH:mm:ss");
     protected static GitService gitService;
 
@@ -159,17 +157,7 @@ public class CustomMavenTestFramework {
     }
 
     protected String getCurrentGitTag() {
-        String version = null;
-        for (int tries = 0; tries < TRAVIS_POM_TRY; tries++) {
-            version = gitService.getLastGitTag();
-            if (!isEmpty(version)) {
-                log.error("PROJECT_VERSION [" + version + "]");
-                break;
-            }
-            sleep(64);
-            log.error("Try getTestPomVersion [" + tries + "/" + TRAVIS_POM_TRY + "]");
-        }
-        return version;
+        return gitService.getLastGitTag();
     }
 
     public static Model getPomFile(final File pom) {
@@ -296,13 +284,5 @@ public class CustomMavenTestFramework {
             e.printStackTrace();
         }
         return mojoList;
-    }
-
-    private void sleep(final int timeMs) {
-        try {
-            Thread.sleep(timeMs);
-        } catch (InterruptedException e) {
-            e.printStackTrace();
-        }
     }
 }
