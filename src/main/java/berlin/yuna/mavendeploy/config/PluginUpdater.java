@@ -54,16 +54,17 @@ public class PluginUpdater extends MojoBase {
     }
 
     private Terminal getTerminal(final Path pomFile) {
-        return new Terminal().dir(pomFile.getParent()).consumerError(System.err::println).consumerInfo(System.out::println);
+        return new Terminal().dir(pomFile.getParent()).consumerError(log::error).consumerInfo(log::info);
     }
 
+    //TODO: mojo execution
     private String mvnUpdate() {
         final Properties prop = environment.getMavenSession().getUserProperties();
         final boolean major = prop.containsKey("update.major");
         final boolean minor = prop.containsKey("update.minor");
         final String parameter = (major ? " -Dupdate.major" : "") + (minor ? " -Dupdate.minor" : "");
         final String mvnCmd = "mvn berlin.yuna:deployment-maven-plugin:0.0.1:run" + parameter;
-        System.out.println(format("Running maven command [%s]", mvnCmd));
+        log.info(format("Running maven command [%s]", mvnCmd));
         return mvnCmd;
     }
 

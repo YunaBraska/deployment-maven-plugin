@@ -19,6 +19,7 @@ import berlin.yuna.mavendeploy.logic.GitService;
 import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.Prop;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
+import jdk.internal.org.jline.utils.Log;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.eclipse.jgit.api.Git;
@@ -66,7 +67,7 @@ public class CustomMavenTestFramework {
     protected Terminal terminalNoLog;
     //every 64 millisecond until 30 seconds
     private static final int TRAVIS_POM_TRY = (30 * 1000) / 64;
-    protected static Logger log = new Logger();
+    protected static Logger log = new Logger(null, "HH:mm:ss");
     protected static GitService gitService;
 
     private static final String DEBUG_ENV = System.getenv("DEBUG");
@@ -163,11 +164,11 @@ public class CustomMavenTestFramework {
         for (int tries = 0; tries < TRAVIS_POM_TRY; tries++) {
             version = gitService.getLastGitTag();
             if (!isEmpty(version)) {
-                System.err.println("PROJECT_VERSION [" + version + "]");
+                log.error("PROJECT_VERSION [" + version + "]");
                 break;
             }
             sleep(64);
-            System.err.println("Try getTestPomVersion [" + tries + "/" + TRAVIS_POM_TRY + "]");
+            Log.error("Try getTestPomVersion [" + tries + "/" + TRAVIS_POM_TRY + "]");
         }
         return version;
     }
@@ -185,11 +186,11 @@ public class CustomMavenTestFramework {
     }
 
     private static Terminal getTerminal() {
-        return DEBUG ? getTerminalNoLog().consumerInfo(System.out::println) : getTerminalNoLog();
+        return DEBUG ? getTerminalNoLog().consumerInfo(log::info) : getTerminalNoLog();
     }
 
     private static Terminal getTerminalNoLog() {
-        return new Terminal().dir(System.getProperty("user.dir")).consumerError(System.err::println);
+        return new Terminal().dir(System.getProperty("user.dir")).consumerError(log::error);
     }
 
     protected void expectMojoRun(final ActiveGoal... expectedMojos) {

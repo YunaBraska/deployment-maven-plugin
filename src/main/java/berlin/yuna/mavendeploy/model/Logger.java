@@ -12,7 +12,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 public class Logger {
 
     private final Log LOG;
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private final DateTimeFormatter formatter;
     private LocalDateTime lastLog = LocalDateTime.now();
 
     public Logger() {
@@ -20,10 +20,15 @@ public class Logger {
     }
 
     public Logger(final Log log) {
+        this(log, null);
+    }
+
+    public Logger(final Log log, final String timeFormat) {
         LOG = log;
         if (LOG == null) {
-            error("Logger is null - fall back to console");
+            warn("Logger is null - fall back to console");
         }
+        formatter = DateTimeFormatter.ofPattern(timeFormat == null ? "yyyy-MM-dd HH:mm:ss" : timeFormat);
     }
 
     public void debug(final Object... format) {
@@ -52,7 +57,7 @@ public class Logger {
 
     public void error(final Object... format) {
         if (LOG == null) {
-            System.err.println("ERROR   " + formatMsg(format));
+            System.err.println("[ERROR]   " + formatMsg(format));
         } else {
             LOG.error("   " + formatMsg(format));
         }

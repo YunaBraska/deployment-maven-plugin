@@ -71,7 +71,7 @@ public class PluginUpdateGeneratorTest extends CustomMavenTestFramework {
     }
 
     private Terminal getTerminal() {
-        return new Terminal().dir(TEST_POM.getPomFile().getParentFile()).consumerError(System.err::println).consumerInfo(System.out::println);
+        return new Terminal().dir(TEST_POM.getPomFile().getParentFile()).consumerError(log::error).consumerInfo(log::info);
     }
 
     private Path getPath(final Class clazz) {
