@@ -15,13 +15,12 @@ import berlin.yuna.mavendeploy.config.Resources;
 import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Surefire;
 import berlin.yuna.mavendeploy.config.Versions;
+import berlin.yuna.mavendeploy.logic.GitService;
 import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.Prop;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import org.apache.maven.model.Model;
-import org.apache.maven.model.Plugin;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
-import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.junit.After;
@@ -29,8 +28,8 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.reflections.Reflections;
 
+import java.io.ByteArrayInputStream;
 import java.io.File;
-import java.io.FileReader;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.URISyntaxException;
@@ -45,7 +44,10 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
+import static berlin.yuna.mavendeploy.plugin.MojoHelper.isEmpty;
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
+import static java.nio.file.Files.readAllBytes;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
 import static java.nio.file.StandardOpenOption.APPEND;
 import static java.util.Arrays.asList;
@@ -62,8 +64,11 @@ public class CustomMavenTestFramework {
     protected static Model PROJECT_POM;
     protected Terminal terminal;
     protected Terminal terminalNoLog;
+    protected static Logger log = new Logger(null, "HH:mm:ss");
+    protected static GitService gitService;
 
-    private static final boolean DEBUG = true;
+    private static final String DEBUG_ENV = System.getenv("DEBUG");
+    protected static final boolean DEBUG = isEmpty(DEBUG_ENV) || parseBoolean(DEBUG_ENV);
 
     private final List<ActiveGoal> definedMojoList = asList(
             g(Clean.class, "clean"),
@@ -93,9 +98,9 @@ public class CustomMavenTestFramework {
 
     @BeforeClass
     public static void setUpClass() {
-        System.out.println(format("Start preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
+        log.debug(format("Start preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
         getTerminal().execute("mvn -Dmaven.test.skip=true install");
-        System.out.println(format("End preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
+        log.debug(format("End preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
     }
 
     @Before
@@ -105,9 +110,13 @@ public class CustomMavenTestFramework {
         TEST_POM = getPomFile(new File(tmpDir.toFile(), "pom.xml"));
         terminal = getTerminal().dir(tmpDir);
         terminalNoLog = getTerminalNoLog().dir(tmpDir);
-        assertThat(format("Terminal does not point to test project [%s]", terminal.dir()),
-                terminal.dir().getAbsolutePath().startsWith(System.getProperty("user.dir")), is(false));
-        System.out.println(format("Work dir [%s]", tmpDir));
+        gitService = new GitService(log, tmpDir.toFile(), true);
+        assertThat(
+                format("Terminal does not point to test project [%s]", terminal.dir()),
+                terminal.dir().getAbsolutePath().startsWith(System.getProperty("user.dir")),
+                is(false)
+        );
+        log.debug(format("Work dir [%s]", tmpDir));
     }
 
     @After
@@ -135,7 +144,7 @@ public class CustomMavenTestFramework {
                 + ":" + PROJECT_POM.getVersion()
                 + ":run -Dfake -X "
                 + " -Djava.version=1.8 " + parameter;
-        System.out.println(format("Running maven command [%s]", mvnCmd));
+        log.debug(format("Running maven command [%s]", mvnCmd.trim()));
         return mvnCmd;
     }
 
@@ -143,24 +152,32 @@ public class CustomMavenTestFramework {
         return getPomFile(pom.getPomFile());
     }
 
+    protected String getCurrentProjectVersion() {
+        return parse(TEST_POM).getVersion();
+    }
+
+    protected String getCurrentGitTag() {
+        return gitService.getLastGitTag();
+    }
+
     public static Model getPomFile(final File pom) {
         assertThat("pom file [%s] does not exist", pom.exists(), is(true));
         assertThat("pom file [%s] is not a file", pom.isFile(), is(true));
         try {
-            final Model pomModel = new MavenXpp3Reader().read(new FileReader(pom));
+            final Model pomModel = new MavenXpp3Reader().read(new ByteArrayInputStream(readAllBytes(pom.toPath())));
             pomModel.setPomFile(pom);
             return pomModel;
-        } catch (IOException | XmlPullParserException e) {
+        } catch (Exception e) {
             throw new RuntimeException("could not read pom.xml \n ", e);
         }
     }
 
     private static Terminal getTerminal() {
-        return DEBUG ? getTerminalNoLog().consumerInfo(System.out::println) : getTerminalNoLog();
+        return DEBUG ? getTerminalNoLog().consumerInfo(log::info) : getTerminalNoLog();
     }
 
     private static Terminal getTerminalNoLog() {
-        return new Terminal().dir(System.getProperty("user.dir")).consumerError(System.err::println);
+        return new Terminal().dir(System.getProperty("user.dir")).consumerError(log::error);
     }
 
     protected void expectMojoRun(final ActiveGoal... expectedMojos) {
@@ -170,7 +187,7 @@ public class CustomMavenTestFramework {
         final List<ActiveGoal> expectedMojoList = expectedMojos == null ? new ArrayList<>() : asList(expectedMojos);
         for (ActiveGoal definedMojo : definedMojoList) {
             if (expectedMojoList.contains(definedMojo)) {
-                System.out.println("[INFO] Plugin expected: " + definedMojo.toString());
+                log.debug("[INFO] Plugin expected: " + definedMojo.toString());
                 assertThat(format("Mojo did not start [%s]", definedMojo), console, containsString("-<=[ Start " + definedMojo.toString()));
                 assertThat(format("Mojo did not run [%s]", definedMojo), console, containsString("-<=[ End " + definedMojo.toString()));
             } else {
@@ -182,7 +199,7 @@ public class CustomMavenTestFramework {
     protected void expectProperties(final Prop... configs) {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
-            System.out.println(format("[INFO] Config expected key [%s] value [%s] ", config.key, config.value));
+            log.debug(format("[INFO] Config expected key [%s] value [%s] ", config.key, config.value));
             assertThat(format("Config [%s] is dropped", config.key), consoleInfo, not(containsString(format("- Config key [%s] already set", config.key))));
             assertThat(format("Config [%s] is not set", config.key), consoleInfo, containsString(format("+ Config added key [%s]", config.key)));
             assertThat(format("Config [%s] has wrong value", config.key), consoleInfo, containsString(format("+ Config added key [%s] value [%s]", config.key, config.value)));
@@ -192,7 +209,7 @@ public class CustomMavenTestFramework {
     protected void expectPropertiesOverwrite(final Prop... configs) {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
-            System.out.println("[INFO] Config not expected: " + config.key);
+            log.debug("[INFO] Config not expected: " + config.key);
             assertThat(format("Config [%s] is set but not overwritten", config.key), consoleInfo, not(containsString(format("+ Config added key [%s]", config.key))));
             assertThat(format("Config [%s] was not set at all", config.key), consoleInfo, containsString(format("- Config key [%s] already set with [%s]", config.key, config.value)));
         }
@@ -246,7 +263,7 @@ public class CustomMavenTestFramework {
             final Path path = TEST_POM.getPomFile().toPath();
             final Charset charset = StandardCharsets.UTF_8;
 
-            String content = new String(Files.readAllBytes(path), charset);
+            String content = new String(readAllBytes(path), charset);
             content = content.replaceAll(regex, replacement);
             Files.write(path, content.getBytes(charset));
         } catch (Exception e) {

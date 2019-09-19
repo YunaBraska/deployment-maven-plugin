@@ -12,7 +12,7 @@ import static java.time.temporal.ChronoUnit.SECONDS;
 public class Logger {
 
     private final Log LOG;
-    private final DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss");
+    private final DateTimeFormatter formatter;
     private LocalDateTime lastLog = LocalDateTime.now();
 
     public Logger() {
@@ -20,9 +20,14 @@ public class Logger {
     }
 
     public Logger(final Log log) {
+        this(log, null);
+    }
+
+    public Logger(final Log log, final String timeFormat) {
+        formatter = DateTimeFormatter.ofPattern(timeFormat == null ? "yyyy-MM-dd HH:mm:ss" : timeFormat);
         LOG = log;
         if (LOG == null) {
-            error("Logger is null - fall back to console");
+            warn("Maven logger is not set - fall back to console");
         }
     }
 
@@ -52,7 +57,7 @@ public class Logger {
 
     public void error(final Object... format) {
         if (LOG == null) {
-            System.err.println("ERROR   " + formatMsg(format));
+            System.err.println("[ERROR]   " + formatMsg(format));
         } else {
             LOG.error("   " + formatMsg(format));
         }
@@ -65,8 +70,12 @@ public class Logger {
     private String formatMsg(final Object[] format) {
         final LocalDateTime now = LocalDateTime.now();
         final long diff = lastLog.until(now, SECONDS);
-        final String msg = format.length > 1 ? format(String.valueOf(format[0]), (Object[]) Arrays.copyOfRange(format, 1, format.length)) : String.valueOf(format[0]);
+        final String msg = format.length > 1 ? format(String.valueOf(format[0]), Arrays.copyOfRange(format, 1, format.length)) : String.valueOf(format[0]);
         lastLog = now;
-        return format("[%s]%s %s", now.format(formatter), (LOG != null && LOG.isDebugEnabled()) ? " [" + diff + "s]" : "", msg);
+        return format(
+                "[%s]%s %s", now.format(formatter),
+                ((LOG != null && LOG.isDebugEnabled()) ? " [" + diff + "s]" : ""),
+                msg
+        );
     }
 }

@@ -34,21 +34,32 @@
 [Label-shield]: https://img.shields.io/badge/Yuna-QueenInside-blueviolet?style=flat-square
 [Build-shield]: https://img.shields.io/travis/YunaBraska/deployment-maven-plugin/master?style=flat-square
 
-# CURRENTLY REFACTORING FROM BASH TO REAL MAVEN MOJO
+### Index
+* [Motivation](#motivation)
+* [Usage](#builder_usage_plugin)
+* [Building](#building)
+* [Semantic and Versioning](#semantic-and-versioning)
+* [Tagging and Committing](#tagging-and-committing)
+* [Update dependencies and plugins](#update-dependencies-and-plugins)
+* [Deployment](#deployment)
+* [Builder files (like README.builder.md)](#builder-files-like-readmebuildermd)
+* [Settings with Servers and Credentials](#settings-with-servers-and-credentials)
+* [Misc](#misc)
 
 ### Motivation
 Writing a project is really easy until it comes to your first deployment. You would need many plugins and manual tests until you project gets deployed in the default way.
 Like: The pom file in each project will raise (duplicated), the versioning, tagging, signing, readme updates, credentials and plugin configuration feels a bit hacky.
 Its not even testable.
 This plugin will handle "everything" default for you. So that you don't need anything in your pom file.
-Auto handling semantic versioning, maven plugins, and much more while you can still use the original maven userProperties to configure the plugins
+Auto handling semantic versioning, maven plugins, and much more while you can still use the original maven userProperties or systemProperties (ignoring ".", "_", "-") to configure the plugins
 
 ### Usage as plugin
+*version = \<version>java.major.minor/fixes\</version>*
 ````xml
 <plugin>
     <groupId>berlin.yuna</groupId>
     <artifactId>deployment-maven-plugin</artifactId>
-    <version>0.0.1</version>
+    <version>12.0.1</version>
 </plugin>
 ````
 
@@ -58,7 +69,7 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 ````
 * Will create java doc, java sources, and updates dependencies
 
-# Semantic- && versioning
+### Semantic and Versioning
 ### Parameters
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
@@ -75,7 +86,47 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 * Example:
 * ````semantic.format="[.-]::release.*::feature.*::bugfix\|hotfix::custom_1.*[A-Z]"````
 
-# Builder files (like README.builder.md)
+### Tagging and Committing
+### Parameters
+| Parameter           | Type    | Default            |  Description                                                               |
+|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
+| tag                 | Boolean | false              | Tags the project (with project.version or semantic) if not already exists  |
+| tag                 | String  | ${project.version} | Tags the project (with project.version or semantic) if not already exists  |
+| tag.break           | Boolean | false              | Tags the project (with project.version or semantic) fails if already exists|
+| message             | String  | ${auto}            | Commit msg for tag default = \[project.version] \[branchname], \[tag] ...  |
+| scm.provider        | String  | scm:git            | needed for tagging & committing                                            |
+| COMMIT              | String  | ''                 | Custom commit message on changes - "false" = deactivate commits            |
+* Example tag with project.version (or semantic version if active)
+* ````tag```` 
+* ````tag=true```` 
+* ````tag="my.own.version"```` 
+* ````message="new release"```` 
+* 'tag.break' parameter will stop tagging if the tag already exists
+
+### Update dependencies and plugins
+| Parameter           | Type    | Default            |  Description                                                               |
+|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
+| update.minor        | Boolean | false              | Updates parent, properties, dependencies                                   |
+| update.major        | Boolean | false              | Updates parent, properties, dependencies                                   |
+
+# Testing
+| Parameter           | Type    | Default            |  Description                                                               |
+|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
+| test.run            | Boolean | false              | runs test.unit and test.integration                                        |
+| test.unit           | Boolean | false              | runs failsafe for unitTest                                                 |
+| test.int            | Boolean | false              | alias for test.integration                                                 |
+| test.integration    | Boolean | false              | runs surefire integration, component, contract, smoke                      |
+| JACOCO              | Boolean | false              | runs failsafe integration test and surefire unitTest                       |
+
+### Deployment
+| Parameter           | Type    | Default            |  Description                                                               |
+|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
+| deploy              | Boolean | ''                 | Start deployment                                                           |
+| deploy.snapshot     | Boolean | ''                 | Start snapshot deployment && adds temporary "-SNAPSHOT" to the project version |
+| deploy.id           | String  | ${settings.get(0)} | Id from server settings or settings.xml - default first setting server id containing ids like 'nexus', 'artifact', 'archiva', 'repository', 'snapshot'|
+| deploy.url          | String  | ''                 | url to artifact repository - re-prioritize default setting server id if contains keywords from 'deploy.id' |
+
+### Builder files (like README.builder.md)
 ### Parameters
 | Parameter           | Type    | Default            |  Description                                                                    |
 |:--------------------|:--------|:-------------------|:--------------------------------------------------------------------------------|
@@ -100,41 +151,8 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 ### My display own variable: !{varInVar}
 ````
 
-# Tagging & Committing
-### Parameters
-| Parameter           | Type    | Default            |  Description                                                               |
-|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
-| tag                 | Boolean | false              | Tags the project (with project.version or semantic) if not already exists  |
-| tag                 | String  | ${project.version} | Tags the project (with project.version or semantic) if not already exists  |
-| tag.break           | Boolean | false              | Tags the project (with project.version or semantic) fails if already exists|
-| message             | String  | ${auto}            | Commit msg for tag default = \[project.version] \[branchname], \[tag] ...  |
-| scm.provider        | String  | scm:git            | needed for tagging & committing                                            |
-| COMMIT              | String  | ''                 | Custom commit message on changes - "false" = deactivate commits            |
-* Example tag with project.version (or semantic version if active)
-* ````tag```` 
-* ````tag=true```` 
-* ````tag="my.own.version"```` 
-* ````message="new release"```` 
-* 'tag.break' parameter will stop tagging if the tag already exists
-
-# Update dependencies
-| Parameter           | Type    | Default            |  Description                                                               |
-|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
-| update.minor        | Boolean | false              | Updates parent, properties, dependencies                                   |
-| update.major        | Boolean | false              | Updates parent, properties, dependencies                                   |
-
-# Testing
-| Parameter           | Type    | Default            |  Description                                                               |
-|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
-| test.run            | Boolean | false              | runs test.unit and test.integration                                        |
-| test.unit           | Boolean | false              | runs failsafe for unitTest                                                 |
-| test.int            | Boolean | false              | alias for test.integration                                                 |
-| test.integration    | Boolean | false              | runs surefire integration, component, contract, smoke                      |
-| JACOCO              | Boolean | false              | runs failsafe integration test and surefire unitTest                       |
-
-# UNDER CONSTRUCTION
-
 ### Building
+#### UNDER CONSTRUCTION (NOT STABLE)
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | clean               | Boolean | false              | cleans target and resolves dependencies                                    |
@@ -142,14 +160,8 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 | java.doc            | Boolean | false              | Creates java doc (javadoc.jar) if its not a pom artifact                   |
 | java.source         | Boolean | false              | Creates java sources (sources.jar) if its not a pom artifact               |
 | gpg.pass            | String  | ''                 | Signs artifacts (.asc) with GPG 2.1                                        |
-### Deployment
-| Parameter           | Type    | Default            |  Description                                                               |
-|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
-| deploy              | Boolean | ''                 | Start deployment                                                           |
-| deploy.snapshot     | Boolean | ''                 | Start snapshot deployment && adds temporary "-SNAPSHOT" to the project version |
-| deploy.id           | String  | ${settings.get(0)} | Id from server settings or settings.xml - default first setting server id containing ids like 'nexus', 'artifact', 'archiva', 'repository', 'snapshot'|
-| deploy.url          | String  | ''                 | url to artifact repository - reprioritize default setting server id if contains keywords from 'deploy.id' |
-### Add to Settings.xml session
+### Settings with Servers and Credentials
+#### UNDER CONSTRUCTION (NOT STABLE)
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | Server              | String | ''                  | server id (multiple possible && caseInsensitive)                           |
@@ -160,6 +172,7 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 | FilePermissions     | String | ''                  | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
 | DirectoryPermissions| String | ''                  | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
 ### Misc
+#### UNDER CONSTRUCTION (NOT STABLE)
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | REPORT              | Boolean | false              | Generates report about version updates                                     |
@@ -182,7 +195,7 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
 ### TODO
-* [ ] support environment properties with caseInsensitive and "." can be also "_"
+* [ ] finish converting from bash to real mojo
 * [ ] Readme links
 * [ ] Readme pictures (GIF ?)
 * [ ] test semantic versioning with characters like 'beta' 

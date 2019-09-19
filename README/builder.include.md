@@ -1,4 +1,3 @@
-# Builder files (like README.builder.md)
 ### Parameters
 | Parameter           | Type    | Default            |  Description                                                                    |
 |:--------------------|:--------|:-------------------|:--------------------------------------------------------------------------------|

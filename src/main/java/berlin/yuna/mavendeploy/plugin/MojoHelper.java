@@ -9,11 +9,13 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.Properties;
 
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.configuration;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.element;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.name;
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 
 public class MojoHelper {
@@ -45,20 +47,42 @@ public class MojoHelper {
     }
 
     public static Boolean getBoolean(final MavenSession session, final String key, final boolean fallback) {
+        final String value = getString(session, key, "${!Present}");
+        if (value.equals("${!Present}")) {
+            return fallback;
+        }
+        return parseBoolean(value);
+    }
+
+    public static String getString(final MavenSession session, final String key, final String fallback) {
+        final Properties props = new Properties(session.getSystemProperties());
+        props.putAll(session.getUserProperties());
+        for (Map.Entry<Object, Object> entry : props.entrySet()) {
+            if (entry.getKey() instanceof String  && matchKey(key, (String) entry.getKey())) {
+                return String.valueOf(entry.getValue());
+            }
+        }
+        return fallback;
+    }
+
+    private static boolean matchKey(final String key1, final String key2) {
+        return key1.replace(".", "_").replace("-", "_").equalsIgnoreCase(
+                key2.replace(".", "_").replace("-", "_")
+        );
+
+    }
+
+    public static Boolean getBooleanOld(final MavenSession session, final String key, final boolean fallback) {
         final boolean present = session.getUserProperties().containsKey(key);
         final String value = session.getUserProperties().getProperty(key);
         if (present && isEmpty(value)) {
             return true;
         }
-        return getOrElse(value, fallback);
+        return !isEmpty(value) ? parseBoolean(value) : fallback;
     }
 
-    public static String getString(final MavenSession session, final String key, final String fallback) {
+    public static String getStringOld(final MavenSession session, final String key, final String fallback) {
         return session.getUserProperties().getProperty(key, fallback);
-    }
-
-    public static boolean getOrElse(final String test, final boolean fallback) {
-        return !isEmpty(test) ? Boolean.valueOf(test) : fallback;
     }
 
     public static boolean isEmpty(final String test) {
