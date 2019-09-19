@@ -24,11 +24,11 @@ public class Logger {
     }
 
     public Logger(final Log log, final String timeFormat) {
+        formatter = DateTimeFormatter.ofPattern(timeFormat == null ? "yyyy-MM-dd HH:mm:ss" : timeFormat);
         LOG = log;
         if (LOG == null) {
             warn("Logger is null - fall back to console");
         }
-        formatter = DateTimeFormatter.ofPattern(timeFormat == null ? "yyyy-MM-dd HH:mm:ss" : timeFormat);
     }
 
     public void debug(final Object... format) {
