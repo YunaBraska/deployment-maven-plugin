@@ -10,8 +10,8 @@
 
     <name>${project.artifactId}</name>
     <description>Once upon a time i had to define the deployment in each of my applications.
-        The pom.xml's and bash scripts didn't stopped growing up with build instructions which my app doesn't care about.
-        I needed thousands of hacky commits for testing my CI/CD systems even if i just do defaults like tagging or semantic versioning.
+        The pom.xml's and bash scripts didn't stop growing with build instructions which my app doesn't care about.
+        I needed thousands commits for hacky testing of my CI/CD systems even if i just want to do defaults like tagging or semantic versioning.
         So i started this project to keep the build instructions in my environment and have the plugin already tested.
         Now i can run with auto configuration my deployments daily.
         The plugin will even take care of updating all dependencies as semantic versioning.
