@@ -94,10 +94,34 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     }
 
     @Test
-    public void settingsSession_withServer_shouldAddServerToSession() {
+    public void settingsSession_withServerFormatOne_shouldAddServerToSession() {
         terminal.execute(mvnCmd("-Dsettings.xml='--Server=\"Server1\" --Username=User1 --Password=Pass1 --Server=\"Server2\" --Username=User2'"));
         assertThat(terminal.consoleInfo(), containsString("+ Settings added [Server] id [Server1] user [User1] pass [******]"));
         assertThat(terminal.consoleInfo(), containsString("+ Settings added [Server] id [Server2] user [User2] pass [null]"));
+    }
+
+    @Test
+    public void settingsSession_withServerFormatTwo_shouldAddServerToSession() {
+        terminal.execute(mvnCmd(
+                " -Dserver='servername1::username1::null::privateKey1::passphrase1' "
+                        + " -DSeRvEr0='servername2::username2::password2::::passphrase2' "
+                        + " -Dserver1='servername3::username3::::' "
+        ));
+        assertThat(terminal.consoleInfo(), containsString("+ Settings added [Server] id [servername1] user [username1] pass [null]"));
+        assertThat(terminal.consoleInfo(), containsString("+ Settings added [Server] id [servername2] user [username2] pass [**********]"));
+        assertThat(terminal.consoleInfo(), containsString("+ Settings added [Server] id [servername3] user [username3] pass [null]"));
+    }
+
+    @Test
+    public void settingsSession_withServerFormatThree_shouldAddServerToSession() {
+        terminal.execute(mvnCmd(
+                " -Dserver.Id='servername1' -Dserver.username='username1' -Dserver.password='null' "
+                        + " -Dserver0.iD='servername2' -Dserver0-username='username2' -Dserver0.password='password1' "
+                        + " -Dserver1.ID='servername3' -Dserver1_username='username3' -Dserver1.password='' "
+        ));
+        assertThat(terminal.consoleInfo(), containsString("+ Settings added [Server] id [servername1] user [username1] pass [null]"));
+        assertThat(terminal.consoleInfo(), containsString("+ Settings added [Server] id [servername2] user [username2] pass [**********]"));
+        assertThat(terminal.consoleInfo(), containsString("+ Settings added [Server] id [servername3] user [username3] pass [null]"));
     }
 
     @Test

@@ -41,9 +41,9 @@
 * [Semantic and Versioning](#semantic-and-versioning)
 * [Tagging and Committing](#tagging-and-committing)
 * [Update dependencies and plugins](#update-dependencies-and-plugins)
+* [Settings with Servers and Credentials](#settings-with-servers-and-credentials)
 * [Deployment](#deployment)
 * [Builder files (like README.builder.md)](#builder-files-like-readmebuildermd)
-* [Settings with Servers and Credentials](#settings-with-servers-and-credentials)
 * [Misc](#misc)
 * [TODO](#todo)
 
@@ -133,6 +133,47 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 | test.integration    | Boolean | false              | runs surefire integration, component, contract, smoke                      |
 | JACOCO              | Boolean | false              | runs failsafe integration test and surefire unitTest                       |
 
+### Settings with Servers and Credentials
+Adding servers additional to the settings.xml.
+Its also possible to set the properties as environment variables (same as with every property)
+### Parameters
+| Parameter           | Type    | Default            |  Description                                                               |
+|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
+| Server              | String | ''                  | server id                                                                  |
+| Username            | String | ''                  | username                                                                   |
+| Password            | String | ''                  | password                                                                   |
+| PrivateKey          | String | ''                  | e.g. ${user.home}/.ssh/id_dsa)                                             |
+| Passphrase          | String | ''                  | privateKey, passphrase                                                     |
+| FilePermissions     | String | ''                  | permissions, e.g. 664, or 775                                              |
+| DirectoryPermissions| String | ''                  | permissions, e.g. 664, or 775                                              |
+* There are three different ways to configure the maven settings 
+* Settings format one
+```bash
+settings.xml='--Server="servername1" --Username=username1 --Password=password --Server="servername2" --Username=username2'
+```
+* Settings format two
+```bash
+server='serverId1::username1::password1::privateKey1::passphrase1'
+server0='serverI2::username2::password2::privateKey2::passphrase2'
+server1='serverI3::username3::password3::privateKey3::passphrase3'
+server2='serverI4::username4::password4::privateKey4::passphrase4'
+[...]
+```
+* Settings format three
+```bash
+server1.Id='serverId1'
+server1.username='username1'
+server1.password='password1'
+server1.privateKey='privateKey1'
+server1.passphrase='passphrase1'
+server2.Id='serverId2'
+server2.username='username2'
+server2.password='password2'
+server2.privateKey='privateKey2'
+server2.passphrase='passphrase2'
+[...]
+```
+
 ### Deployment
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
@@ -175,17 +216,7 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 | java.doc            | Boolean | false              | Creates java doc (javadoc.jar) if its not a pom artifact                   |
 | java.source         | Boolean | false              | Creates java sources (sources.jar) if its not a pom artifact               |
 | gpg.pass            | String  | ''                 | Signs artifacts (.asc) with GPG 2.1                                        |
-### Settings with Servers and Credentials
-#### UNDER CONSTRUCTION (NOT STABLE)
-| Parameter           | Type    | Default            |  Description                                                               |
-|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
-| Server              | String | ''                  | server id (multiple possible && caseInsensitive)                           |
-| Username            | String | ''                  | username (multiple possible && caseInsensitive)                            |
-| Password            | String | ''                  | password (multiple possible && caseInsensitive)                            |
-| PrivateKey          | String | ''                  | e.g. ${user.home}/.ssh/id_dsa) (multiple possible && caseInsensitive)      |
-| Passphrase          | String | ''                  | privateKey, passphrase (multiple possible && caseInsensitive)              |
-| FilePermissions     | String | ''                  | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
-| DirectoryPermissions| String | ''                  | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
+
 ### Misc
 #### UNDER CONSTRUCTION (NOT STABLE)
 | Parameter           | Type    | Default            |  Description                                                               |

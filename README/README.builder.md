@@ -15,9 +15,9 @@
 * [Semantic and Versioning](#semantic-and-versioning)
 * [Tagging and Committing](#tagging-and-committing)
 * [Update dependencies and plugins](#update-dependencies-and-plugins)
+* [Settings with Servers and Credentials](#settings-with-servers-and-credentials)
 * [Deployment](#deployment)
 * [Builder files (like README.builder.md)](#builder-files-like-readmebuildermd)
-* [Settings with Servers and Credentials](#settings-with-servers-and-credentials)
 * [Misc](#misc)
 * [TODO](#todo)
 
@@ -49,6 +49,9 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 ### Update dependencies and plugins
 [include]: # (update.include.md)
 
+### Settings with Servers and Credentials
+[include]: # (settings.include.md)
+
 ### Deployment
 [include]: # (deploy.include.md)
 
@@ -64,17 +67,7 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 | java.doc            | Boolean | false              | Creates java doc (javadoc.jar) if its not a pom artifact                   |
 | java.source         | Boolean | false              | Creates java sources (sources.jar) if its not a pom artifact               |
 | gpg.pass            | String  | ''                 | Signs artifacts (.asc) with GPG 2.1                                        |
-### Settings with Servers and Credentials
-#### UNDER CONSTRUCTION (NOT STABLE)
-| Parameter           | Type    | Default            |  Description                                                               |
-|:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
-| Server              | String | ''                  | server id (multiple possible && caseInsensitive)                           |
-| Username            | String | ''                  | username (multiple possible && caseInsensitive)                            |
-| Password            | String | ''                  | password (multiple possible && caseInsensitive)                            |
-| PrivateKey          | String | ''                  | e.g. ${user.home}/.ssh/id_dsa) (multiple possible && caseInsensitive)      |
-| Passphrase          | String | ''                  | privateKey, passphrase (multiple possible && caseInsensitive)              |
-| FilePermissions     | String | ''                  | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
-| DirectoryPermissions| String | ''                  | permissions, e.g. 664, or 775  (multiple possible && caseInsensitive)      |
+
 ### Misc
 #### UNDER CONSTRUCTION (NOT STABLE)
 | Parameter           | Type    | Default            |  Description                                                               |

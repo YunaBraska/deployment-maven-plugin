@@ -85,7 +85,9 @@ public class MojoRun extends AbstractMojo {
         before();
 
         setParameter("maven.test.skip", getParam("test.skip", false).toString());
-        addServerToSettings(new CommandLineReader(SETTINGS.toArray(new String[0])));
+        addServerToSettingsFormatOne(new CommandLineReader(SETTINGS.toArray(new String[0])));
+        addServerToSettingsFormatTwo();
+        addServerToSettingsFormatThree();
         addGpgToSettings();
 
         try {
@@ -168,7 +170,7 @@ public class MojoRun extends AbstractMojo {
                 runWhen(() -> Deploy.build(ENVIRONMENT, LOG).deploy(), hasText("altDeploymentRepository"));
 
                 //remove snapshot if only added for deployment
-                if(SNAPSHOT_DEPLOYMENT) {
+                if (SNAPSHOT_DEPLOYMENT) {
                     overwriteWhen("oldVersion", newProjectVersion, true);
                     overwriteWhen("newVersion", newProjectVersion.split("-SNAPSHOT")[0], true);
                     runWhen(() -> Versions.build(ENVIRONMENT, LOG).set(), true);
@@ -337,25 +339,94 @@ public class MojoRun extends AbstractMojo {
         }
     }
 
-    private void addServerToSettings(final CommandLineReader clr) {
+    private void addServerToSettingsFormatOne(final CommandLineReader clr) {
         final List<String> serverList = clr.getValues("SERVER");
         for (int i = 0; i < serverList.size(); i++) {
-            final Server server = new Server();
-            server.setId(serverList.get(i));
-            server.setUsername(clr.getValue(i, "Username"));
-            server.setPassword(clr.getValue(i, "Password"));
-            server.setPrivateKey(clr.getValue(i, "PrivateKey"));
-            server.setPassphrase(clr.getValue(i, "Passphrase"));
-            server.setFilePermissions(clr.getValue(i, "FilePermissions"));
-            server.setDirectoryPermissions(clr.getValue(i, "DirectoryPermissions"));
-            LOG.info(
-                    "+ Settings added [%s] id [%s] user [%s] pass [%s]",
-                    Server.class.getSimpleName(),
-                    server.getId(), server.getUsername(),
-                    server.getPassword() == null ? null : server.getPassword().replaceAll(".?", "*")
+            addServer(
+                    serverList.get(i),
+                    clr.getValue(i, "Username"),
+                    clr.getValue(i, "Password"),
+                    clr.getValue(i, "PrivateKey"),
+                    clr.getValue(i, "Passphrase"),
+                    clr.getValue(i, "FilePermissions"),
+                    clr.getValue(i, "DirectoryPermissions")
             );
-            session.getSettings().addServer(server);
         }
+    }
+
+    private void addServerToSettingsFormatTwo() {
+        int tries = 0;
+        int server = -1;
+        while (tries < 16) {
+            final String serverId = getParam("server" + (server == -1 ? "" : server), null);
+            if (!isEmpty(serverId)) {
+                final String[] values = serverId.split("::");
+                addServer(
+                        parseSettingFormatTwo(values, 0),
+                        parseSettingFormatTwo(values, 1),
+                        parseSettingFormatTwo(values, 2),
+                        parseSettingFormatTwo(values, 3),
+                        parseSettingFormatTwo(values, 4),
+                        parseSettingFormatTwo(values, 5),
+                        parseSettingFormatTwo(values, 6)
+                );
+            } else {
+                tries++;
+            }
+            server++;
+        }
+
+    }
+
+    private void addServerToSettingsFormatThree() {
+        int tries = 0;
+        int server = -1;
+        while (tries < 16) {
+            final String prefix = "server" + (server == -1 ? "" : server) + ".";
+            final String serverId = getParam(prefix + "id", null);
+            if (!isEmpty(serverId)) {
+                addServer(
+                        serverId,
+                        parseSettingFormatThree(prefix, "username"),
+                        parseSettingFormatThree(prefix, "password"),
+                        parseSettingFormatThree(prefix, "privateKey"),
+                        parseSettingFormatThree(prefix, "passphrase"),
+                        parseSettingFormatThree(prefix, "filepermissions"),
+                        parseSettingFormatThree(prefix, "directoryPermissions")
+                );
+            } else {
+                tries++;
+            }
+            server++;
+        }
+
+    }
+
+    private void addServer(
+            final String serverId,
+            final String username,
+            final String password,
+            final String privateKey,
+            final String passphrase,
+            final String filePermissions,
+            final String directoryPermissions) {
+        final Server server = new Server();
+        server.setId(serverId);
+        server.setUsername(username);
+        server.setPassword(password);
+        server.setPrivateKey(privateKey);
+        server.setPassphrase(passphrase);
+        server.setFilePermissions(filePermissions);
+        server.setDirectoryPermissions(directoryPermissions);
+        LOG.info(
+                "+ Settings added [%s] id [%s] user [%s] pass [%s]",
+                Server.class.getSimpleName(),
+                server.getId(), server.getUsername(),
+                server.getPassword() == null ? null : server.getPassword().replaceAll(".?", "*")
+        );
+        final Optional<Server> first = session.getSettings().getServers().stream().filter(s -> s.getId() != null && s.getId().equals(server.getId())).findFirst();
+        first.ifPresent(value -> session.getSettings().getServers().remove(value));
+        settings.addServer(server);
     }
 
     private void after() {
@@ -482,6 +553,15 @@ public class MojoRun extends AbstractMojo {
 
     private static String setEmptyOnNull(final String test) {
         return test == null ? "" : test;
+    }
+
+    private String parseSettingFormatTwo(final String[] values, final int i) {
+        return values.length > i && !values[i].equalsIgnoreCase("null") ? values[i] : null;
+    }
+
+    private String parseSettingFormatThree(final String prefix, final String username) {
+        final String param = getParam(prefix + username, null);
+        return isEmpty(param) || param.equalsIgnoreCase("null") ? null : param;
     }
 
 }
