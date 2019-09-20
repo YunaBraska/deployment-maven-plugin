@@ -19,6 +19,7 @@
 * [Builder files (like README.builder.md)](#builder-files-like-readmebuildermd)
 * [Settings with Servers and Credentials](#settings-with-servers-and-credentials)
 * [Misc](#misc)
+* [TODO](#todo)
 
 ### Motivation
 !{project.description}
@@ -97,5 +98,6 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 * [maven-scm-plugin](http://maven.apache.org/scm/maven-scm-plugin/plugin-info.html)
 * [upload-an-artifact-into-Nexus](https://support.sonatype.com/hc/en-us/articles/213465818-How-can-I-programmatically-upload-an-artifact-into-Nexus-2-)
 
+### TODO
 [include]: # (todo.include.md)
 ![!{project.artifactId}](src/main/resources/banner.png "!{project.artifactId}")

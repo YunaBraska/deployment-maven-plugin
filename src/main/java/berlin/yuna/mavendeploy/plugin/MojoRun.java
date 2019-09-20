@@ -174,18 +174,6 @@ public class MojoRun extends AbstractMojo {
                     runWhen(() -> Versions.build(ENVIRONMENT, LOG).set(), true);
                 }
 
-                //TODO: printEnvironmentVariables (exclude startsWith("pass"), startsWith("secret") values)
-                //TODO: git-commit-id-plugin
-                //TODO: JACOCO
-                //TODO: DUPLICATE FINDER (not test resources)
-                //TODO: GIT CREDENTIALS
-                //TODO: FAILSAFE
-                //TODO: REPORT
-                //TODO: custom run script after each task
-                //TODO: provide environment target/environment.json file before running anything
-
-                //TODO: git push everything at the end when success?
-
                 printJavaDoc();
             } catch (Exception e) {
                 throw new RuntimeException(e);

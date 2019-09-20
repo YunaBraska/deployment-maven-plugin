@@ -1,7 +1,13 @@
-### TODO
 * [ ] finish converting from bash to real mojo
-* [ ] Readme links
-* [ ] Readme pictures (GIF ?)
+* [ ] Jacoco
+* [ ] git last commit as variables
+* [ ] Git credentials
+* [ ] Git push when changes are made
+* [ ] DuplicateFinder
+* [ ] Custom run script after each task
+* [ ] Shortcuts "live circle"/"workflow"
+* [ ] provide configurations json file in target/environment.json file before running anything for additional usage
+* [ ] Report
 * [ ] test semantic versioning with characters like 'beta' 
 * [ ] tag message can contain environment properties
 * [ ] set last commit information to environment

@@ -45,13 +45,28 @@
 * [Builder files (like README.builder.md)](#builder-files-like-readmebuildermd)
 * [Settings with Servers and Credentials](#settings-with-servers-and-credentials)
 * [Misc](#misc)
+* [TODO](#todo)
 
 ### Motivation
-Writing a project is really easy until it comes to your first deployment. You would need many plugins and manual tests until you project gets deployed in the default way.
-Like: The pom file in each project will raise (duplicated), the versioning, tagging, signing, readme updates, credentials and plugin configuration feels a bit hacky.
-Its not even testable.
-This plugin will handle "everything" default for you. So that you don't need anything in your pom file.
-Auto handling semantic versioning, maven plugins, and much more while you can still use the original maven userProperties or systemProperties (ignoring ".", "_", "-") to configure the plugins
+Once upon a time i had to define the deployment in each of my applications.
+The pom.xml's and bash scripts didn't stopped growing up with build instructions which my app doesn't care about.
+I needed thousands of hacky commits for testing my CI/CD systems even if i just do defaults like tagging or semantic versioning.
+So i started this project to keep the build instructions in my environment and have the plugin already tested.
+Now i can run with auto configuration my deployments daily.
+The plugin will even take care of updating all dependencies as semantic versioning.
+And all lived happily ever after.
+
+This plugin will autoconfigure "every" default for you.
+Pom file descriptions are not need anymore.
+For example:
+* Auto configuration
+* semantic versioning
+* update dependencies and plugins
+* maven plugins,
+* Readme.md variables and placeholder,
+* Tagging,
+* [...]
+and much more while you can still use the original maven userProperties and/or systemProperties (ignoring ".", "_", "-") to configure the plugins
 
 ### Usage as plugin
 *version = \<version>java.major.minor/fixes\</version>*
@@ -196,8 +211,15 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 
 ### TODO
 * [ ] finish converting from bash to real mojo
-* [ ] Readme links
-* [ ] Readme pictures (GIF ?)
+* [ ] Jacoco
+* [ ] git last commit as variables
+* [ ] Git credentials
+* [ ] Git push when changes are made
+* [ ] DuplicateFinder
+* [ ] Custom run script after each task
+* [ ] Shortcuts "live circle"/"workflow"
+* [ ] provide configurations json file in target/environment.json file before running anything for additional usage
+* [ ] Report
 * [ ] test semantic versioning with characters like 'beta' 
 * [ ] tag message can contain environment properties
 * [ ] set last commit information to environment
