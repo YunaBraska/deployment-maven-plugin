@@ -1,22 +1,20 @@
 package berlin.yuna.mavendeploy.config;
 
-import berlin.yuna.mavendeploy.model.Logger;
-import berlin.yuna.mavendeploy.plugin.MojoExecutor;
+import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
 public class Compiler extends MojoBase {
 
-    public Compiler(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-compiler-plugin", "3.8.1", environment, log);
+    public Compiler(final PluginSession session) {
+        super("org.apache.maven.plugins", "maven-compiler-plugin", "3.8.1", session);
     }
 
-    public static Compiler build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        return new Compiler(environment, log);
+    public static Compiler build(final PluginSession session) {
+        return new Compiler(session);
     }
 
     public Compiler compiler() throws MojoExecutionException {
@@ -25,7 +23,7 @@ public class Compiler extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(log, environment,
+                session.prepareXpp3Dom(
                         prop("compilerId"),
                         prop("compilerReuseStrategy"),
                         prop("compilerVersion"),
@@ -53,7 +51,7 @@ public class Compiler extends MojoBase {
                         prop("useIncrementalCompilation"),
                         prop("verbose"),
                         prop("encoding")
-                ), environment
+                ), session.getEnvironment()
         );
         logGoal(goal, false);
         return this;
@@ -65,7 +63,7 @@ public class Compiler extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(log, environment,
+                session.prepareXpp3Dom(
                         prop("compilerId"),
                         prop("compilerReuseStrategy"),
                         prop("compilerVersion"),
@@ -93,7 +91,7 @@ public class Compiler extends MojoBase {
                         prop("useIncrementalCompilation"),
                         prop("verbose"),
                         prop("encoding")
-                ), environment
+                ), session.getEnvironment()
         );
         logGoal(goal, false);
         return this;

@@ -1,22 +1,20 @@
 package berlin.yuna.mavendeploy.config;
 
-import berlin.yuna.mavendeploy.model.Logger;
-import berlin.yuna.mavendeploy.plugin.MojoExecutor;
+import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
 public class JavaSource extends MojoBase {
 
-    public JavaSource(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-source-plugin", "3.1.0", environment, log);
+    public JavaSource(final PluginSession session) {
+        super("org.apache.maven.plugins", "maven-source-plugin", "3.1.0", session);
     }
 
-    public static JavaSource build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        return new JavaSource(environment, log);
+    public static JavaSource build(final PluginSession session) {
+        return new JavaSource(session);
     }
 
     public JavaSource jarNoFork() throws MojoExecutionException {
@@ -25,7 +23,7 @@ public class JavaSource extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(log, environment,
+                session.prepareXpp3Dom(
                         prop("maven.source.attach"),
                         prop("maven.source.classifier"),
                         prop("maven.source.excludeResources"),
@@ -34,7 +32,7 @@ public class JavaSource extends MojoBase {
                         prop("maven.source.skip"),
                         prop("maven.source.useDefaultExcludes"),
                         prop("maven.source.useDefaultManifestFile")
-                ), environment
+                ), session.getEnvironment()
         );
         logGoal(goal, false);
         return this;

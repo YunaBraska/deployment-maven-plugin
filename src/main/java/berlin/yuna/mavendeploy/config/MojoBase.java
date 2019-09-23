@@ -2,6 +2,7 @@ package berlin.yuna.mavendeploy.config;
 
 import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
+import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.model.Plugin;
 
 import java.util.Objects;
@@ -11,19 +12,19 @@ import static java.lang.String.format;
 
 public abstract class MojoBase {
 
-    protected final String groupId;
-    protected final String artifactId;
-    protected final String version;
+    private final String groupId;
+    private final String artifactId;
+    private final String version;
 
-    protected final MojoExecutor.ExecutionEnvironment environment;
-    protected final Logger log;
+    final PluginSession session;
+    final Logger log;
 
-    protected MojoBase(final String groupId, final String artifactId, final String version, final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
+    MojoBase(final String groupId, final String artifactId, final String version, final PluginSession session) {
         this.groupId = groupId;
         this.artifactId = artifactId;
         this.version = version;
-        this.environment = environment;
-        this.log = log;
+        this.session = session;
+        this.log = session.getLog();
     }
 
     public String groupId() {
@@ -38,10 +39,6 @@ public abstract class MojoBase {
         return version;
     }
 
-    public MojoExecutor.ExecutionEnvironment environment() {
-        return environment;
-    }
-
     public Logger log() {
         return log;
     }
@@ -54,7 +51,7 @@ public abstract class MojoBase {
         return plugin;
     }
 
-    protected Plugin getPlugin() {
+    Plugin getPlugin() {
         return plugin(
                 MojoExecutor.groupId(groupId),
                 MojoExecutor.artifactId(artifactId),
@@ -62,7 +59,7 @@ public abstract class MojoBase {
         );
     }
 
-    protected void logGoal(final String goal, final boolean start) {
+    void logGoal(final String goal, final boolean start) {
         log.info(format("--------------------------<=[ %s %s:%s:%s:%s ]=>--------------------------", start ? "Start" : "End", groupId, artifactId, goal, version));
     }
 

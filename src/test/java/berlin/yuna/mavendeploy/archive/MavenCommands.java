@@ -1,4 +1,4 @@
-package berlin.yuna.mavendeploy.config;
+package berlin.yuna.mavendeploy.archive;
 
 public class MavenCommands {
 

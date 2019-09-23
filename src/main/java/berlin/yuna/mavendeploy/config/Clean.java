@@ -1,23 +1,21 @@
 package berlin.yuna.mavendeploy.config;
 
-import berlin.yuna.mavendeploy.model.Logger;
-import berlin.yuna.mavendeploy.plugin.MojoExecutor;
+import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
 //TODO: import mojo-executor without any dependencies...
 public class Clean extends MojoBase {
 
-    public Clean(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-clean-plugin", "3.1.0", environment, log);
+    public Clean(final PluginSession session) {
+        super("org.apache.maven.plugins", "maven-clean-plugin", "3.1.0", session);
     }
 
-    public static Clean build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        return new Clean(environment, log);
+    public static Clean build(final PluginSession session) {
+        return new Clean(session);
     }
 
     public Clean clean() throws MojoExecutionException {
@@ -26,11 +24,11 @@ public class Clean extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(log, environment,
+                session.prepareXpp3Dom(
                         prop("failOnError"),
                         prop("followSymLinks"),
                         prop("excludeDefaultDirectories")
-                ), environment
+                ), session.getEnvironment()
         );
         logGoal(goal, false);
         return this;

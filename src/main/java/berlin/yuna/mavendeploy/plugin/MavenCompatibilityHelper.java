@@ -26,7 +26,6 @@ import org.apache.maven.plugin.PluginDescriptorParsingException;
 import org.apache.maven.plugin.PluginNotFoundException;
 import org.apache.maven.plugin.PluginResolutionException;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
-import org.apache.maven.plugin.logging.Log;
 import org.eclipse.aether.repository.RemoteRepository;
 
 import java.lang.reflect.InvocationTargetException;
@@ -38,7 +37,7 @@ import static java.lang.String.format;
 /**
  * The <tt>MavenCompatibilityHelper</tt> hides incompatibilities between Maven versions
  */
-public class MavenCompatibilityHelper {
+class MavenCompatibilityHelper {
 
     private static Logger logger;
 

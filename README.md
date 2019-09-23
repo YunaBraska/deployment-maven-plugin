@@ -123,6 +123,7 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | update.minor        | Boolean | false              | Updates parent, properties, dependencies                                   |
 | update.major        | Boolean | false              | Updates parent, properties, dependencies                                   |
+| update.plugins      | Boolean | false              | Updates plugins                                                            |
 
 # Testing
 | Parameter           | Type    | Default            |  Description                                                               |
@@ -149,7 +150,7 @@ Its also possible to set the properties as environment variables (same as with e
 * There are three different ways to configure the maven settings 
 * Settings format one
 ```bash
-settings.xml='--Server="servername1" --Username=username1 --Password=password --Server="servername2" --Username=username2'
+settings.xml='--ServerId=servername1 --Username=username1 --Password=password --ServerId="servername2" --Username=username2'
 ```
 * Settings format two
 ```bash
@@ -243,6 +244,9 @@ server2.passphrase='passphrase2'
 ### TODO
 * [ ] finish converting from bash to real mojo
 * [ ] Jacoco
+* [ ] plugin updater exclusions
+* [ ] plugin updater remove inner bash command
+* [ ] update testProject too
 * [ ] git last commit as variables
 * [ ] Git credentials
 * [ ] Git push when changes are made

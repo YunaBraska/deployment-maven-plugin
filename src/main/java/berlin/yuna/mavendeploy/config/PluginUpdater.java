@@ -2,7 +2,7 @@ package berlin.yuna.mavendeploy.config;
 
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.model.Logger;
-import berlin.yuna.mavendeploy.plugin.MojoExecutor;
+import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.Plugin;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
@@ -26,19 +26,19 @@ import static java.lang.String.format;
 public class PluginUpdater extends MojoBase {
 
     //TODO: use exclusionList
-    public PluginUpdater(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("berlin.yuna", "plugin-updater", "0.0.1", environment, log);
+    public PluginUpdater(final PluginSession session) {
+        super("berlin.yuna", "plugin-updater", "0.0.1", session);
     }
 
-    public static PluginUpdater build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        return new PluginUpdater(environment, log);
+    public static PluginUpdater build(final PluginSession session) {
+        return new PluginUpdater(session);
     }
 
     public PluginUpdater update() throws IOException, XmlPullParserException {
         final String goal = "update";
         logGoal(goal, true);
 
-        final MavenProject project = environment.getMavenProject();
+        final MavenProject project = session.getEnvironment().getMavenProject();
         final List<Plugin> plugins = project.getBuildPlugins();
         final Path tmpProjectPath = Files.createTempDirectory("plugin-updater_");
         final Path pomFile = Paths.get(tmpProjectPath.toString(), "pom.xml");
@@ -59,11 +59,11 @@ public class PluginUpdater extends MojoBase {
 
     //TODO: mojo execution
     private String mvnUpdate() {
-        final Properties prop = environment.getMavenSession().getUserProperties();
+        final Properties prop = session.getEnvironment().getMavenSession().getUserProperties();
         final boolean major = prop.containsKey("update.major");
         final boolean minor = prop.containsKey("update.minor");
         final String parameter = (major ? " -Dupdate.major" : "") + (minor ? " -Dupdate.minor" : "");
-        final String mvnCmd = "mvn berlin.yuna:deployment-maven-plugin:0.0.1:run" + parameter;
+        final String mvnCmd = "mvn berlin.yuna:deployment-maven-plugin:12.0.1:run -Dupdate.plugins=false " + parameter;
         log.info(format("Running maven command [%s]", mvnCmd));
         return mvnCmd;
     }
@@ -81,7 +81,7 @@ public class PluginUpdater extends MojoBase {
                         && dependency.getArtifactId().equalsIgnoreCase(plugin.getArtifactId())
                         && !dependency.getVersion().equalsIgnoreCase(plugin.getVersion())) {
                     newVersionAvailable.put(plugin, dependency.getVersion());
-                    log.warn(format("Update plugin [%s] [%s] -> [%s]",
+                    log.info(format("Update plugin [%s] [%s] -> [%s]",
                             plugin.getArtifactId(),
                             plugin.getVersion(),
                             dependency.getVersion()));

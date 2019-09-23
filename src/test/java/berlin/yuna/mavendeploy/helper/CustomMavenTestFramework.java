@@ -18,7 +18,7 @@ import berlin.yuna.mavendeploy.config.Versions;
 import berlin.yuna.mavendeploy.logic.GitService;
 import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.Prop;
-import berlin.yuna.mavendeploy.plugin.MojoExecutor;
+import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.eclipse.jgit.api.Git;
@@ -44,7 +44,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.isEmpty;
+import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 import static java.nio.file.Files.readAllBytes;
@@ -105,7 +105,7 @@ public class CustomMavenTestFramework {
 
     @Before
     public void setUp() throws IOException, URISyntaxException, GitAPIException {
-        final Path tmpDir = prepareTestProject("testApplication");
+        final Path tmpDir = prepareTestProject();
         PROJECT_POM = getPomFile(new File(System.getProperty("user.dir"), "pom.xml"));
         TEST_POM = getPomFile(new File(tmpDir.toFile(), "pom.xml"));
         terminal = getTerminal().dir(tmpDir);
@@ -122,6 +122,11 @@ public class CustomMavenTestFramework {
     @After
     public void tearDown() throws IOException {
         deleteDir(TEST_POM.getPomFile().getParentFile().toPath());
+    }
+
+    public static Path getPath(final Class clazz) {
+        final String classPath = clazz.getTypeName().replace(".", "/") + ".java";
+        return new File(new File(System.getProperty("user.dir"), "src/main/java"), classPath).toPath();
     }
 
     protected void mergeBranch(final String branchName) {
@@ -143,7 +148,7 @@ public class CustomMavenTestFramework {
                 + ":" + PROJECT_POM.getArtifactId()
                 + ":" + PROJECT_POM.getVersion()
                 + ":run -Dfake -X "
-                + " -Djava.version=1.8 " + parameter;
+                + parameter;
         log.debug(format("Running maven command [%s]", mvnCmd.trim()));
         return mvnCmd;
     }
@@ -219,16 +224,29 @@ public class CustomMavenTestFramework {
         return new ActiveGoal(activeMojo, activeGoal);
     }
 
-    private Path prepareTestProject(final String testSource) throws IOException, URISyntaxException, GitAPIException {
-        final Path src = Paths.get(requireNonNull(getClass().getClassLoader().getResource(testSource)).toURI());
+    protected void gitInit(final Path tempDirectory) throws GitAPIException {
+        final Git git = Git.init().setDirectory(tempDirectory.toFile()).call();
+        git.add().addFilepattern(".").call();
+        git.commit().setMessage("init").call();
+    }
+
+    private Path prepareTestProject() throws IOException, URISyntaxException, GitAPIException {
+        final Path src = Paths.get(requireNonNull(getClass().getClassLoader().getResource("testApplication")).toURI());
+        deleteDirIfExists(Paths.get(src.toString(), "target"));
+        deleteDirIfExists(Paths.get(src.toString().replace("target/test-classes", "src/test/resources"), "target"));
         assertThat(format("directory does not exists [%s]", src.toUri().toString()), Files.exists(src), is(true));
         assertThat(format("[%s] is not a directory", src.toUri().toString()), Files.isDirectory(src), is(true));
         final Path tempDirectory = Files.createTempDirectory(getClass().getSimpleName() + "_" + src.getFileName().toString() + "_");
         copyFolder(src, tempDirectory);
-        final Git git = Git.init().setDirectory(tempDirectory.toFile()).call();
-        git.add().addFilepattern(".").call();
-        git.commit().setMessage("init").call();
+        gitInit(tempDirectory);
         return tempDirectory;
+    }
+
+    private void deleteDirIfExists(final Path dir) throws IOException {
+        if (Files.exists(dir)) {
+            log.info("Deleting [%s]", dir.toString());
+            deleteDir(dir);
+        }
     }
 
     private void deleteDir(final Path dir) throws IOException {
@@ -263,9 +281,9 @@ public class CustomMavenTestFramework {
             final Path path = TEST_POM.getPomFile().toPath();
             final Charset charset = StandardCharsets.UTF_8;
 
-            String content = new String(readAllBytes(path), charset);
+            String content = Files.readString(path, charset);
             content = content.replaceAll(regex, replacement);
-            Files.write(path, content.getBytes(charset));
+            Files.writeString(path, content, charset);
         } catch (Exception e) {
             throw new RuntimeException(e);
         }
@@ -278,7 +296,7 @@ public class CustomMavenTestFramework {
             final Set<Class<? extends MojoBase>> classes = reflections.getSubTypesOf(MojoBase.class);
 
             for (Class<? extends MojoBase> mojo : classes) {
-                mojoList.add(mojo.getDeclaredConstructor(MojoExecutor.ExecutionEnvironment.class, Logger.class).newInstance(null, null));
+                mojoList.add(mojo.getDeclaredConstructor(PluginSession.class).newInstance(new PluginSession(null, log)));
             }
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             e.printStackTrace();

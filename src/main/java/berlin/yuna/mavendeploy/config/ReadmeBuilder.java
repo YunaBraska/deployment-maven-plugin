@@ -1,7 +1,6 @@
 package berlin.yuna.mavendeploy.config;
 
-import berlin.yuna.mavendeploy.model.Logger;
-import berlin.yuna.mavendeploy.plugin.MojoExecutor;
+import berlin.yuna.mavendeploy.plugin.PluginSession;
 
 import java.io.File;
 import java.io.IOException;
@@ -11,12 +10,12 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Collections.singletonList;
 
 public class ReadmeBuilder extends MojoBase {
@@ -27,23 +26,23 @@ public class ReadmeBuilder extends MojoBase {
     private static final String NAME_TEXT = "TEXT";
     private static final String NAME_ESCAPE = "ESCAPED";
     private static final String BUILDER_FILE_PATTERN = "(?<name>.*)(?<value>\\.builder\\.)(?<type>\\w*)(?<end>\\#+)";
-    private static Pattern BUILDER_VAR_PATTERN = Pattern.compile("\\[(?<type>var)\\s+(?<name>.*)\\]\\:\\s+\\#\\s+\\((?<value>.*)\\)");
-    private static Pattern BUILDER_INCLUDE_PATTERN = Pattern.compile("(?<name>.*)\\[(?<type>include)" +
+    private static final Pattern BUILDER_VAR_PATTERN = Pattern.compile("\\[(?<type>var)\\s+(?<name>.*)\\]\\:\\s+\\#\\s+\\((?<value>.*)\\)");
+    private static final Pattern BUILDER_INCLUDE_PATTERN = Pattern.compile("(?<name>.*)\\[(?<type>include)" +
             "\\]\\:\\s+\\#\\s+\\((?<value>.*)\\)");
-    private static Pattern BUILDER_PLACEHOLDER_PATTERN = Pattern.compile("\\!\\{(?<name>.*)\\}");
+    private static final Pattern BUILDER_PLACEHOLDER_PATTERN = Pattern.compile("\\!\\{(?<name>.*)\\}");
 
-    public ReadmeBuilder(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("berlin.yuna", "readme-buider", "0.0.1", environment, log);
+    public ReadmeBuilder(final PluginSession session) {
+        super("berlin.yuna", "readme-buider", "0.0.1", session);
     }
 
-    public static ReadmeBuilder build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        return new ReadmeBuilder(environment, log);
+    public static ReadmeBuilder build(final PluginSession session) {
+        return new ReadmeBuilder(session);
     }
 
     public ReadmeBuilder render() throws IOException {
         final String goal = "render";
         logGoal(goal, true);
-        final Path start = environment.getMavenProject().getBasedir().toPath();
+        final Path start = session.getEnvironment().getMavenProject().getBasedir().toPath();
         Files.walk(start, 99)
                 .filter(path -> Files.isRegularFile(path))
                 .filter(file -> (file.getFileName().toString() + "#end").split(BUILDER_FILE_PATTERN).length > 1)
@@ -60,7 +59,7 @@ public class ReadmeBuilder extends MojoBase {
         try {
             log.debug("Rendering [%s]", builderPath.getFileName());
             List<Content> content = new ArrayList<>();
-            content.add(new Content(NAME_TEXT, new String(Files.readAllBytes(builderPath), UTF_8)));
+            content.add(new Content(NAME_TEXT, Files.readString(builderPath)));
             content = splitContentAt(content, Pattern.compile("\\\\" + BUILDER_VAR_PATTERN), NAME_ESCAPE);
             content = splitContentAt(content, Pattern.compile("\\\\" + BUILDER_PLACEHOLDER_PATTERN), NAME_ESCAPE);
             content = splitContentAt(content, Pattern.compile("\\\\" + BUILDER_INCLUDE_PATTERN), NAME_ESCAPE);
@@ -86,7 +85,7 @@ public class ReadmeBuilder extends MojoBase {
 
     private HashMap<String, String> readVariables(final List<Content> content) {
         final HashMap<String, String> variables = new HashMap<>();
-        environment.getMavenSession().getUserProperties().forEach((k, v) -> variables.put(String.valueOf(k), String.valueOf(v)));
+        session.getEnvironment().getMavenSession().getUserProperties().forEach((k, v) -> variables.put(String.valueOf(k), String.valueOf(v)));
         variables.putAll(readVariables(content, variables));
         return variables;
     }
@@ -123,7 +122,7 @@ public class ReadmeBuilder extends MojoBase {
         result.stream().filter(o -> NAME_INCLUDE.equals(o.key)).forEach(variable -> {
             final Content include = readVariable(variable, BUILDER_INCLUDE_PATTERN);
             final File file = include.value.startsWith("/") ?
-                    new File(environment.getMavenProject().getBasedir(), include.value.substring(1)) :
+                    new File(session.getEnvironment().getMavenProject().getBasedir(), include.value.substring(1)) :
                     new File(builderPath.getParent().toFile(), include.value);
             variable.value = include.key + render(file.toPath(), false);
             variable.key = NAME_TEXT;
@@ -168,7 +167,7 @@ public class ReadmeBuilder extends MojoBase {
     private Path getOutputPath(final Path builderPath, final String optionalPath) throws IOException {
         final Path basePath = builderPath.getParent();
         final File outputBase = (optionalPath == null ? basePath.toFile() : new File(
-                (optionalPath.startsWith("/") ? environment.getMavenProject().getBasedir() : basePath.toFile()),
+                (optionalPath.startsWith("/") ? session.getEnvironment().getMavenProject().getBasedir() : basePath.toFile()),
                 optionalPath
         ));
 
@@ -180,12 +179,12 @@ public class ReadmeBuilder extends MojoBase {
         return new File(outputBase, fileName).toPath();
     }
 
-    public class Content {
+    class Content {
 
-        public String key;
-        public String value;
+        String key;
+        String value;
 
-        public Content(final String key, final String value) {
+        Content(final String key, final String value) {
             this.key = key;
             this.value = value;
         }
@@ -197,8 +196,8 @@ public class ReadmeBuilder extends MojoBase {
 
             final Content content = (Content) o;
 
-            if (key != null ? !key.equals(content.key) : content.key != null) return false;
-            return value != null ? value.equals(content.value) : content.value == null;
+            if (!Objects.equals(key, content.key)) return false;
+            return Objects.equals(value, content.value);
         }
 
         @Override

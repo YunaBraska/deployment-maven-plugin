@@ -1,4 +1,4 @@
-package berlin.yuna.mavendeploy.logic;
+package berlin.yuna.mavendeploy.archive;
 
 import berlin.yuna.clu.logic.Terminal;
 import org.apache.maven.plugin.logging.Log;

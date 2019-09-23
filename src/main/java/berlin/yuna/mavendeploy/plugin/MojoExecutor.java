@@ -17,7 +17,6 @@ import org.apache.maven.plugin.PluginNotFoundException;
 import org.apache.maven.plugin.PluginResolutionException;
 import org.apache.maven.plugin.descriptor.MojoDescriptor;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
-import org.apache.maven.plugin.logging.Log;
 import org.apache.maven.project.MavenProject;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomUtils;
@@ -182,7 +181,7 @@ public class MojoExecutor {
      * @return The plugin instance
      */
     public static Plugin plugin(final String groupId, final String artifactId, final String version) {
-        return plugin(groupId, artifactId, version, Collections.<Dependency>emptyList());
+        return plugin(groupId, artifactId, version, Collections.emptyList());
     }
 
     /**
@@ -194,7 +193,7 @@ public class MojoExecutor {
      * @param dependencies The plugin dependencies
      * @return The plugin instance
      */
-    public static Plugin plugin(final String groupId, final String artifactId, final String version, final List<Dependency> dependencies) {
+    private static Plugin plugin(final String groupId, final String artifactId, final String version, final List<Dependency> dependencies) {
         final Plugin plugin = new Plugin();
         plugin.setArtifactId(artifactId);
         plugin.setGroupId(groupId);
@@ -379,22 +378,22 @@ public class MojoExecutor {
         private final String text;
         private final Attributes attributes;
 
-        public Element(final String name, final Element... children) {
+        Element(final String name, final Element... children) {
             this(name, null, new Attributes(), children);
         }
 
-        public Element(final String name, final Attributes attributes, final Element... children) {
+        Element(final String name, final Attributes attributes, final Element... children) {
             this(name, null, attributes, children);
         }
 
-        public Element(final String name, final String text, final Element... children) {
+        Element(final String name, final String text, final Element... children) {
             this.name = name;
             this.text = text;
             this.children = children;
             this.attributes = new Attributes();
         }
 
-        public Element(final String name, final String text, final Attributes attributes, final Element... children) {
+        Element(final String name, final String text, final Attributes attributes, final Element... children) {
             this.name = name;
             this.text = text;
             this.children = children;
@@ -423,7 +422,7 @@ public class MojoExecutor {
     public static class Attributes {
         private final List<Attribute> attributes;
 
-        public Attributes(final Attribute ... attributes) {
+        Attributes(final Attribute... attributes) {
             this.attributes = Arrays.asList(attributes);
         }
     }
@@ -435,7 +434,7 @@ public class MojoExecutor {
         private final String name;
         private final String value;
 
-        public Attribute(final String name, final String value) {
+        Attribute(final String name, final String value) {
             this.name = name;
             this.value = value;
         }
@@ -463,8 +462,8 @@ public class MojoExecutor {
             this.pluginManager = pluginManager;
         }
 
-        public ExecutionEnvironment(final MavenSession mavenSession,
-                                    final BuildPluginManager pluginManager) {
+        ExecutionEnvironment(final MavenSession mavenSession,
+                             final BuildPluginManager pluginManager) {
             this ( null, mavenSession, pluginManager);
         }
 

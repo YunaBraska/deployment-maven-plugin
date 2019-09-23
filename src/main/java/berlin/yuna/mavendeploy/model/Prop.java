@@ -6,8 +6,8 @@ import java.util.List;
 import static java.util.Arrays.asList;
 
 public class Prop {
-    public String key;
-    public String value;
+    public final String key;
+    public final String value;
     public List<Prop> childProps = new ArrayList<>();
 
     private Prop(final String key, final String value, final List<Prop> childProps) {
