@@ -1,5 +1,8 @@
 * [ ] finish converting from bash to real mojo
 * [ ] Jacoco
+* [ ] plugin updater exclusions
+* [ ] plugin updater remove inner bash command
+* [ ] update testProject too
 * [ ] git last commit as variables
 * [ ] Git credentials
 * [ ] Git push when changes are made

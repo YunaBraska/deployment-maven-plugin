@@ -1,6 +1,5 @@
 package berlin.yuna.mavendeploy.plugin;
 
-import berlin.yuna.clu.logic.CommandLineReader;
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.Deploy;
@@ -14,11 +13,10 @@ import berlin.yuna.mavendeploy.config.Surefire;
 import berlin.yuna.mavendeploy.config.Versions;
 import berlin.yuna.mavendeploy.logic.GitService;
 import berlin.yuna.mavendeploy.logic.SemanticService;
+import berlin.yuna.mavendeploy.logic.SettingsXmlReader;
 import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.ThrowingFunction;
 import org.apache.maven.execution.MavenSession;
-import org.apache.maven.model.Developer;
-import org.apache.maven.model.License;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecution;
@@ -29,22 +27,24 @@ import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.settings.Activation;
-import org.apache.maven.settings.Profile;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 
 import java.io.File;
+import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
-import java.util.Properties;
 
+import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readDeveloperProperties;
+import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readLicenseProperties;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executionEnvironment;
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.isEmpty;
+import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
+import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
 import static java.lang.String.format;
+import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
 
 //https://stackoverflow.com/questions/53954902/custom-maven-plugin-development-getartifacts-is-empty-though-dependencies-are
@@ -54,12 +54,13 @@ import static java.util.Objects.requireNonNull;
         requiresDependencyResolution = ResolutionScope.TEST)
 public class MojoRun extends AbstractMojo {
 
+    private static final String JAVA_VERSION = "12";
     @Parameter(defaultValue = "${project.basedir}", readonly = true)
     private File basedir;
     @Component
     private BuildPluginManager pluginManager;
-    @Parameter(defaultValue = "${session}", readonly = false)
-    private MavenSession session;
+    @Parameter(defaultValue = "${session}")
+    private MavenSession maven;
     @Parameter(defaultValue = "${project}", readonly = true)
     private MavenProject project;
     @Parameter(defaultValue = "${mojoExecution}", readonly = true)
@@ -71,7 +72,7 @@ public class MojoRun extends AbstractMojo {
     @Parameter(defaultValue = "${project.build.directory}", readonly = true)
     private File target;
 
-    @Parameter(property = "settings.xml", defaultValue = "", readonly = false)
+    @Parameter(property = "settings.xml")
     private List<String> SETTINGS;
 
     private Logger LOG;
@@ -80,17 +81,20 @@ public class MojoRun extends AbstractMojo {
     private boolean HAS_GIT_CHANGES;
     private boolean SNAPSHOT_DEPLOYMENT = false;
     private MojoExecutor.ExecutionEnvironment ENVIRONMENT;
+    private PluginSession SESSION;
 
     public void execute() {
         before();
 
-        setParameter("maven.test.skip", getParam("test.skip", false).toString());
-        addServerToSettings(new CommandLineReader(SETTINGS.toArray(new String[0])));
-        addGpgToSettings();
+        setParameter("maven.test.skip", SESSION.getBoolean("test.skip").orElse(false).toString());
+        final List<Server> serverList = SettingsXmlReader.read(SESSION);
+        serverList.forEach(server -> LOG.info("+ [%s] added %s", Settings.class.getSimpleName(), SESSION.toString(server)));
+        serverList.forEach(server -> SESSION.getMavenSession().getSettings().addServer(server));
 
         try {
             LOG.info("Preparing information");
             try {
+                final boolean isLibrary = isLibrary();
                 LOG.debug("Project is library [%s]", isLibrary());
                 final String newProjectVersion = prepareProjectVersion();
                 final String newTag = prepareNewTagVersion(newProjectVersion);
@@ -103,33 +107,33 @@ public class MojoRun extends AbstractMojo {
                 }
 
                 //SET PROJECT DEVELOPER PROPERTIES
-                for (Map.Entry<Object, Object> config : readDeveloperProperties(project).entrySet()) {
+                for (Map.Entry<Object, Object> config : readDeveloperProperties(project.getDevelopers()).entrySet()) {
                     setParameter(config.getKey().toString(), config.getValue().toString());
                 }
 
                 //SET PROJECT LICENSE PROPERTIES
-                for (Map.Entry<Object, Object> config : readLicenseProperties(project).entrySet()) {
+                for (Map.Entry<Object, Object> config : readLicenseProperties(project.getLicenses()).entrySet()) {
                     setParameter(config.getKey().toString(), config.getValue().toString());
                 }
 
                 //SET PROPERTIES
+                setWhen("project.library", String.valueOf(isLibrary));
                 setWhen("newVersion", newProjectVersion, !isEmpty(newProjectVersion) && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
                 setWhen("removeSnapshot", "true", isTrue("remove.snapshot"));
                 setWhen("generateBackupPoms", "false", true);
-                setWhen("test.integration", getParam("test.int", null), hasText("test.int"));
-                setWhen("java.version", "1.8", !hasText("java.version"));
-//                FIXME: duplicated usage Compiler/Javadoc
-//                 setWhen("source", getParam("java.version", null), hasText("java.version"));
-                setParameter("source", "8");
-                setWhen("target", getParam("java.version", null), hasText("java.version"));
-                setWhen("compilerVersion", getParam("java.version", null), hasText("java.version"));
-                setWhen("javadocVersion", project.getProperties().getProperty("java.version"), !isEmpty(project.getProperties().getProperty("java.version")));
-                setWhen("project.encoding", project.getProperties().getProperty("project.encoding"), !isEmpty(project.getProperties().getProperty("project.encoding")));
-                setWhen("encoding", getParam("project.encoding", null), hasText("project.encoding"));
-                setWhen("project.build.sourceEncoding", getParam("project.encoding", null), hasText("project.encoding"));
-                setWhen("project.reporting.outputEncoding", getParam("project.encoding", null), hasText("project.encoding"));
+                setWhen("test.integration", SESSION.getParamPresent("test.int").orElse(null));
+                setWhen("java.version", JAVA_VERSION, !hasText("java.version"));
+                final Optional<String> javaVersion = SESSION.getParamPresent("java.version");
+                setWhen("source", prepareSourceVersion(javaVersion.orElse(null)));
+                setWhen("target", prepareSourceVersion(javaVersion.orElse(null)));
+                setWhen("compilerVersion", javaVersion.orElse(null));
+                setWhen("javadocVersion", javaVersion.orElse(null));
+                setWhen("project.encoding", UTF_8.toString(), SESSION.getParamPresent("project.encoding").isEmpty());
+                setWhen("encoding", SESSION.getParamPresent("project.encoding").orElse(null));
+                setWhen("project.build.sourceEncoding", SESSION.getParamPresent("project.encoding").orElse(null));
+                setWhen("project.reporting.outputEncoding", SESSION.getParamPresent("project.encoding").orElse(null));
                 setWhen("allowSnapshots", "true", isTrue("update.minor", "update.major"));
-                setWhen("allowMajorUpdates", getParam("update.major", false).toString(), isTrue("update.minor", "update.major"));
+                setWhen("allowMajorUpdates", SESSION.getBoolean("update.major").orElse(false).toString());
                 setWhen("scm.provider", "scm:git", !hasText("scm.provider"));
                 setWhen("connectionUrl", getConnectionUrl(), !hasText("connectionUrl"));
                 setWhen("project.scm.connection", getConnectionUrl(), !hasText("project.scm.connection"));
@@ -138,40 +142,40 @@ public class MojoRun extends AbstractMojo {
                 setWhen("message", prepareCommitMessage(newProjectVersion, hasNewTag, isTrue("update.minor", "update.major")), (hasNewTag && !hasText("message")));
 
                 //RUN MOJOS
-                runWhen(() -> Clean.build(ENVIRONMENT, LOG).clean(), isTrue("clean", "clean.cache"));
-                runWhen(() -> ReadmeBuilder.build(ENVIRONMENT, LOG).render(), isTrue("builder"));
-                runWhen(() -> Dependency.build(ENVIRONMENT, LOG).resolvePlugins(), isTrue("clean", "clean.cache"));
-                runWhen(() -> Dependency.build(ENVIRONMENT, LOG).purgeLocalRepository(), isTrue("clean.cache"));
-                runWhen(() -> Versions.build(ENVIRONMENT, LOG).updateParent(), isTrue("update.major", "update.minor"));
-                runWhen(() -> Versions.build(ENVIRONMENT, LOG).updateProperties(), isTrue("update.major", "update.minor"));
-                runWhen(() -> Versions.build(ENVIRONMENT, LOG).updateProperties(), isTrue("update.major", "update.minor"));
-                runWhen(() -> Versions.build(ENVIRONMENT, LOG).updateChildModules(), isTrue("update.major", "update.minor"));
-                runWhen(() -> Versions.build(ENVIRONMENT, LOG).useLatestReleases(), isTrue("update.major", "update.minor"));
-                runWhen(() -> Versions.build(ENVIRONMENT, LOG).useLatestVersions(), isTrue("update.major", "update.minor"));
-                runWhen(() -> Versions.build(ENVIRONMENT, LOG).useNextSnapshots(), isTrue("update.major", "update.minor"));
-                runWhen(() -> PluginUpdater.build(ENVIRONMENT, LOG).update(), isTrue("update.major", "update.minor"));
-                runWhen(() -> Versions.build(ENVIRONMENT, LOG).commit(), isTrue("update.major", "update.minor"));
-                runWhen(() -> Versions.build(ENVIRONMENT, LOG).set(), hasText("newVersion"), isTrue("removeSnapshot"));
-                runWhen(() -> Javadoc.build(ENVIRONMENT, LOG).jar(), (!isLibrary() && isTrue("java.doc")));
-                runWhen(() -> JavaSource.build(ENVIRONMENT, LOG).jarNoFork(), (!isLibrary() && isTrue("java.source")));
+                runWhen(() -> Clean.build(SESSION).clean(), isTrue("clean", "clean.cache"));
+                runWhen(() -> ReadmeBuilder.build(SESSION).render(), isTrue("builder"));
+                runWhen(() -> Dependency.build(SESSION).resolvePlugins(), isTrue("clean", "clean.cache"));
+                runWhen(() -> Dependency.build(SESSION).purgeLocalRepository(), isTrue("clean.cache"));
+                runWhen(() -> Versions.build(SESSION).updateParent(), isTrue("update.major", "update.minor"));
+                runWhen(() -> Versions.build(SESSION).updateProperties(), isTrue("update.major", "update.minor"));
+                runWhen(() -> Versions.build(SESSION).updateProperties(), isTrue("update.major", "update.minor"));
+                runWhen(() -> Versions.build(SESSION).updateChildModules(), isTrue("update.major", "update.minor"));
+                runWhen(() -> Versions.build(SESSION).useLatestReleases(), isTrue("update.major", "update.minor"));
+                runWhen(() -> Versions.build(SESSION).useLatestVersions(), isTrue("update.major", "update.minor"));
+                runWhen(() -> Versions.build(SESSION).useNextSnapshots(), isTrue("update.major", "update.minor"));
+                runWhen(() -> PluginUpdater.build(SESSION).update(), SESSION.getBoolean("update.plugins").orElse(false));
+                runWhen(() -> Versions.build(SESSION).commit(), isTrue("update.major", "update.minor"));
+                runWhen(() -> Versions.build(SESSION).set(), hasText("newVersion"), isTrue("removeSnapshot"));
+                runWhen(() -> Javadoc.build(SESSION).jar(), (!isLibrary() && isTrue("java.doc")));
+                runWhen(() -> JavaSource.build(SESSION).jarNoFork(), (!isLibrary() && isTrue("java.source")));
 
                 //MOJO TEST
-//                runWhen(() -> Resources.build(ENVIRONMENT, LOG).resource(), isTrue("test.run", "test.unit", "test.integration"));
-                runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(ENVIRONMENT, LOG).compiler(), isTrue("test.run", "test.unit", "test.integration"));
-//                runWhen(() -> Resources.build(ENVIRONMENT, LOG).testResource(), isTrue("test.run", "test.unit", "test.integration"));
-                runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(ENVIRONMENT, LOG).testCompiler(), isTrue("test.run", "test.unit", "test.integration"));
-                runWhen(() -> Surefire.build(ENVIRONMENT, LOG).test(), isTrue("test.run", "test.unit"));
+//                runWhen(() -> Resources.build(SESSION).resource(), isTrue("test.run", "test.unit", "test.integration"));
+                runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(SESSION).compiler(), isTrue("test.run", "test.unit", "test.integration"));
+//                runWhen(() -> Resources.build(SESSION).testResource(), isTrue("test.run", "test.unit", "test.integration"));
+                runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(SESSION).testCompiler(), isTrue("test.run", "test.unit", "test.integration"));
+                runWhen(() -> Surefire.build(SESSION).test(), isTrue("test.run", "test.unit"));
 
                 //Should stay at the end after everything is done
-                runWhen(() -> Gpg.build(ENVIRONMENT, LOG).sign(), hasText("gpg.passphrase"));
-                runWhen(() -> Scm.build(ENVIRONMENT, LOG).tag(), hasNewTag);
-                runWhen(() -> Deploy.build(ENVIRONMENT, LOG).deploy(), hasText("altDeploymentRepository"));
+                runWhen(() -> Gpg.build(SESSION).sign(), hasText("gpg.passphrase"));
+                runWhen(() -> Scm.build(SESSION).tag(), hasNewTag);
+                runWhen(() -> Deploy.build(SESSION).deploy(), hasText("altDeploymentRepository"));
 
                 //remove snapshot if only added for deployment
-                if(SNAPSHOT_DEPLOYMENT) {
+                if (SNAPSHOT_DEPLOYMENT) {
                     overwriteWhen("oldVersion", newProjectVersion, true);
                     overwriteWhen("newVersion", newProjectVersion.split("-SNAPSHOT")[0], true);
-                    runWhen(() -> Versions.build(ENVIRONMENT, LOG).set(), true);
+                    runWhen(() -> Versions.build(SESSION).set(), true);
                 }
 
                 printJavaDoc();
@@ -183,36 +187,42 @@ public class MojoRun extends AbstractMojo {
         }
     }
 
+    private String prepareSourceVersion(final String javaVersion) {
+        if (isPresent(javaVersion)) {
+            final int index = javaVersion.indexOf('.');
+            switch (index) {
+                case -1:
+                    //failed
+                    return javaVersion;
+                case 1:
+                    //old versions like 1.8
+                    return javaVersion.substring(index + 1);
+                default:
+                    //new versions like 10.11.2
+                    return javaVersion.substring(0, index);
+            }
+        }
+        return null;
+    }
+
     private String prepareDeployUrl() {
-        final String deployUrl = getParam("deploy.url", null);
-        if (!isEmpty(deployUrl)) {
+        final Optional<String> deployUrl = SESSION.getParamPresent("deploy.url");
+        if (deployUrl.isPresent()) {
             final String paramName = "deploy.id";
-            final String deployId = getParam(paramName, null);
-            LOG.debug("DeployUrl [%s]", deployUrl);
-            if (isEmpty(deployId)) {
-                final Optional<Server> server = findServerByDeployUrl(deployUrl, paramName);
+            final Optional<String> deployId = SESSION.getParamPresent(paramName);
+            LOG.debug("DeployUrl [%s]", deployUrl.get());
+            if (deployId.isEmpty()) {
+                final Optional<Server> server = findServerByDeployUrl(deployUrl.get(), paramName);
                 if (server.isPresent()) {
                     LOG.info("Fallback to deployId [%s]", server.get().getId());
-                    return server.get().getId() + "::default::" + getParam("deploy.url", null);
+                    return server.get().getId() + "::default::" + deployUrl.get();
                 }
-                LOG.error(
-                        "Cant find any credentials for deploy.id [%s] deploy.url [%s]",
-                        deployId,
-                        deployUrl
-                );
-            } else if (
-                    session.getSettings() != null
-                            && session.getSettings().getServer(deployId) != null
-                            && !isEmpty(session.getSettings().getServer(deployId).getId())
-            ) {
-                LOG.info("DeployId [%s] deployUrl [%s]", deployId, deployUrl);
-                return deployId + "::default::" + getParam("deploy.url", null);
+                LOG.error("Cant find any credentials for deploy.id [%s] deploy.url [%s]", deployId.orElse(null), deployUrl.get());
+            } else if (maven.getSettings().getServer(deployId.get()) != null && !isEmpty(maven.getSettings().getServer(deployId.get()).getId())) {
+                LOG.info("DeployId [%s] deployUrl [%s]", deployId.get(), deployUrl.get());
+                return deployId.get() + "::default::" + deployUrl.get();
             }
-            LOG.error(
-                    "Cant find any credentials for deploy.id [%s] deploy.url [%s]",
-                    deployId,
-                    deployUrl
-            );
+            LOG.error("Cant find any credentials for deploy.id [%s] deploy.url [%s]", deployId.orElse(null), deployUrl.get());
         }
         return null;
     }
@@ -227,7 +237,7 @@ public class MojoRun extends AbstractMojo {
     }
 
     private Optional<Server> getServerContains(final String... names) {
-        final List<Server> servers = session.getSettings().getServers();
+        final List<Server> servers = maven.getSettings().getServers();
         if (servers != null && !servers.isEmpty())
             for (String name : names) {
                 final Optional<Server> server = servers.stream()
@@ -245,9 +255,9 @@ public class MojoRun extends AbstractMojo {
         if (isTrue(property)) {
             return newProjectVersion;
         } else {
-            final String param = getParam(property, null);
-            if (!isEmpty(property) && !"false".equals(param)) {
-                return param;
+            final Optional<String> param = SESSION.getParamPresent(property);
+            if (param.isPresent() && !param.get().equalsIgnoreCase("false")) {
+                return param.get();
             }
         }
         return null;
@@ -261,12 +271,12 @@ public class MojoRun extends AbstractMojo {
 
     private String getConnectionUrl() {
         final String originUrl = GIT_SERVICE.getOriginUrl();
-        final String scmProvider = getParam("scm.provider", "scm:git");
+        final String scmProvider = SESSION.getParamPresent("scm.provider").orElse("scm:git");
         final String connectionUrl = isEmpty(originUrl) ? basedir.toURI().toString() : originUrl;
         return connectionUrl.startsWith(scmProvider) ? connectionUrl : scmProvider + ":" + connectionUrl;
     }
 
-    public String prepareCommitMessage(final String projectVersion, final boolean hasNewTag, final boolean update) {
+    private String prepareCommitMessage(final String projectVersion, final boolean hasNewTag, final boolean update) {
         return format("[%s]", projectVersion)
                 + format(" [%s]", getBranchName())
                 + (hasNewTag ? " [TAG]" : "")
@@ -274,9 +284,8 @@ public class MojoRun extends AbstractMojo {
                 ;
     }
 
-    private String getBranchName() {
-        final String branchName = SEMANTIC_SERVICE.getBranchName();
-        return branchName == null ? GIT_SERVICE.findOriginalBranchName() : branchName;
+    private Optional<String> getBranchName() {
+        return SEMANTIC_SERVICE.getBranchName();
     }
 
     private boolean hasNewTag(final String newTag, final String lastGitTag) {
@@ -306,57 +315,20 @@ public class MojoRun extends AbstractMojo {
     }
 
     private String prepareProjectVersion() {
-        String projectVersion = getParam("project.version", null);
-        final String semanticFormat = getParam("semantic.format", null);
-        projectVersion = isEmpty(semanticFormat) ?
-                projectVersion : SEMANTIC_SERVICE.getNextSemanticVersion(project.getVersion(), GIT_SERVICE, projectVersion);
+        final String projectVersion = SESSION.getParamPresent("project.version").orElse(null);
+        final String result = SESSION.getParamPresent("semantic.format").isEmpty() ?
+                projectVersion : SEMANTIC_SERVICE.getNextSemanticVersion(project.getVersion(), projectVersion);
         LOG.debug("Prepared project version [%s]", projectVersion);
 
         //ADD SNAPSHOT
-        final String snapshotVersion = projectVersion == null ? project.getVersion() : projectVersion;
+        final String snapshotVersion = isEmpty(projectVersion) ? project.getVersion() : projectVersion;
         if ((isTrue("project.snapshot") || isTrue("deploy.snapshot")) && !snapshotVersion.endsWith("-SNAPSHOT")) {
             SNAPSHOT_DEPLOYMENT = true;
             return snapshotVersion + "-SNAPSHOT";
         }
-        return projectVersion;
+        return result;
     }
 
-    private void addGpgToSettings() {
-        final String gpgPassphrase = getParam("gpg.pass", getParam("gpg.passphrase", null));
-        if (!isEmpty(gpgPassphrase)) {
-            LOG.info("Creating GPG settings");
-            final Profile profile = new Profile();
-            final Activation activation = new Activation();
-            final Properties properties = new Properties();
-            activation.setActiveByDefault(true);
-            properties.setProperty("gpg.executable", "gpg");
-            properties.setProperty("gpg.passphrase", gpgPassphrase);
-            profile.setActivation(activation);
-            profile.setProperties(properties);
-            session.getSettings().getProfiles().add(profile);
-        }
-    }
-
-    private void addServerToSettings(final CommandLineReader clr) {
-        final List<String> serverList = clr.getValues("SERVER");
-        for (int i = 0; i < serverList.size(); i++) {
-            final Server server = new Server();
-            server.setId(serverList.get(i));
-            server.setUsername(clr.getValue(i, "Username"));
-            server.setPassword(clr.getValue(i, "Password"));
-            server.setPrivateKey(clr.getValue(i, "PrivateKey"));
-            server.setPassphrase(clr.getValue(i, "Passphrase"));
-            server.setFilePermissions(clr.getValue(i, "FilePermissions"));
-            server.setDirectoryPermissions(clr.getValue(i, "DirectoryPermissions"));
-            LOG.info(
-                    "+ Settings added [%s] id [%s] user [%s] pass [%s]",
-                    Server.class.getSimpleName(),
-                    server.getId(), server.getUsername(),
-                    server.getPassword() == null ? null : server.getPassword().replaceAll(".?", "*")
-            );
-            session.getSettings().addServer(server);
-        }
-    }
 
     private void after() {
         if (HAS_GIT_CHANGES) {
@@ -370,16 +342,20 @@ public class MojoRun extends AbstractMojo {
         requireNonNull(pluginManager);
 
         MojoExecutor.setLogger(LOG);
-        ENVIRONMENT = executionEnvironment(project, session, pluginManager);
+        ENVIRONMENT = executionEnvironment(project, maven, pluginManager);
+        SESSION = new PluginSession(ENVIRONMENT, LOG);
 
-        GIT_SERVICE = new GitService(LOG, basedir, getParam("fake", false));
-        SEMANTIC_SERVICE = new SemanticService(getParam("semantic.format", "\\.:none"));
+        GIT_SERVICE = new GitService(LOG, basedir, SESSION.getBoolean("fake").orElse(false));
+        SEMANTIC_SERVICE = new SemanticService(GIT_SERVICE, SESSION.getParamPresent("semantic.format").orElse(null));
 
         HAS_GIT_CHANGES = GIT_SERVICE.gitHasChanges();
 
         if (HAS_GIT_CHANGES) {
             LOG.warn("Stashing uncommitted git changes");
             GIT_SERVICE.gitStash();
+        }
+        if (maven.getSettings().getServers() == null) {
+            maven.getSettings().setServers(new ArrayList<>());
         }
     }
 
@@ -389,6 +365,12 @@ public class MojoRun extends AbstractMojo {
                 consumer.run();
                 break;
             }
+        }
+    }
+
+    private void setWhen(final String key, final String value) {
+        if (isPresent(value)) {
+            setWhen(key, value, true);
         }
     }
 
@@ -405,7 +387,7 @@ public class MojoRun extends AbstractMojo {
         for (boolean trigger : when) {
             if (trigger) {
                 LOG.debug("+ Config added key [%s] value [%s]", key, value);
-                session.getUserProperties().setProperty(key, value);
+                maven.getUserProperties().setProperty(key, value);
                 break;
             }
         }
@@ -413,10 +395,10 @@ public class MojoRun extends AbstractMojo {
 
     private void setParameter(final String key, final String value) {
         requireNonNull(key, "setParameter key is null");
-        final String cmdValue = session.getUserProperties().getProperty(key);
+        final String cmdValue = maven.getUserProperties().getProperty(key);
         if (isEmpty(cmdValue)) {
             LOG.info("+ Config added key [%s] value [%s]", key, value);
-            session.getUserProperties().setProperty(key, value);
+            maven.getUserProperties().setProperty(key, value);
         } else {
             LOG.warn(format("- Config key [%s] already set with [%s] - won't take action", key, cmdValue));
         }
@@ -427,61 +409,10 @@ public class MojoRun extends AbstractMojo {
     }
 
     private boolean isTrue(final String... keys) {
-        for (String key : keys) {
-            if (MojoHelper.getBoolean(session, key, false)) {
-                return true;
-            }
-        }
-        return false;
+        return SESSION.isTrue(keys);
     }
 
     private boolean hasText(final String... keys) {
-        for (String key : keys) {
-            if (!isEmpty(MojoHelper.getString(session, key, null))) {
-                return true;
-            }
-        }
-        return false;
+        return SESSION.hasText(keys);
     }
-
-    private Boolean getParam(final String key, final boolean fallback) {
-        return MojoHelper.getBoolean(session, key, fallback);
-    }
-
-    private String getParam(final String key, final String fallback) {
-        return MojoHelper.getString(session, key, fallback);
-    }
-
-    public static Properties readDeveloperProperties(final MavenProject mavenProject) {
-        final Properties properties = new Properties();
-        final List<Developer> developer = mavenProject.getDevelopers();
-        properties.put("project.developers", developer.size());
-        for (int i = 0; i < developer.size(); i++) {
-            properties.put("project.developers[" + i + "]", developer.get(i));
-            properties.put("project.developers[" + i + "].name", setEmptyOnNull(developer.get(i).getName()));
-            properties.put("project.developers[" + i + "].url", setEmptyOnNull(developer.get(i).getUrl()));
-            properties.put("project.developers[" + i + "].email", setEmptyOnNull(developer.get(i).getEmail()));
-            properties.put("project.developers[" + i + "].organization", setEmptyOnNull(developer.get(i).getOrganization()));
-        }
-        return properties;
-    }
-
-    public static Properties readLicenseProperties(final MavenProject mavenProject) {
-        final Properties properties = new Properties();
-        final List<License> licenses = mavenProject.getLicenses();
-        properties.put("project.licenses", licenses.size());
-        for (int i = 0; i < licenses.size(); i++) {
-            properties.put("project.licenses[" + i + "]", licenses.get(i));
-            properties.put("project.licenses[" + i + "].name", setEmptyOnNull(licenses.get(i).getName()));
-            properties.put("project.licenses[" + i + "].url", setEmptyOnNull(licenses.get(i).getUrl()));
-            properties.put("project.licenses[" + i + "].distribution", setEmptyOnNull(licenses.get(i).getDistribution()));
-            properties.put("project.licenses[" + i + "].comments", setEmptyOnNull(licenses.get(i).getComments()));
-        }
-        return properties;
-    }
-
-    private static String setEmptyOnNull(final String test) {
-        return test == null ? "" : test;
-    }
-
 }

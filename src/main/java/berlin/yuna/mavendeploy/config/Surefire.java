@@ -1,22 +1,20 @@
 package berlin.yuna.mavendeploy.config;
 
-import berlin.yuna.mavendeploy.model.Logger;
-import berlin.yuna.mavendeploy.plugin.MojoExecutor;
+import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
 public class Surefire extends MojoBase {
 
-    public Surefire(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-surefire-plugin", "3.0.0-M3", environment, log);
+    public Surefire(final PluginSession session) {
+        super("org.apache.maven.plugins", "maven-surefire-plugin", "3.0.0-M3", session);
     }
 
-    public static Surefire build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        return new Surefire(environment, log);
+    public static Surefire build(final PluginSession session) {
+        return new Surefire(session);
     }
 
     public Surefire test() throws MojoExecutionException {
@@ -25,7 +23,7 @@ public class Surefire extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(log, environment,
+                session.prepareXpp3Dom(
                         prop("maven.test.additionalClasspath"),
 //                        prop("argLine", "-Xmx1024m -XX:MaxPermSize=256m"),
                         prop("childDelegation"),
@@ -93,7 +91,7 @@ public class Surefire extends MojoBase {
                         prop("useSystemClassLoader", "false"),
                         prop("useUnlimitedThreads"),
                         prop("basedir")
-                ), environment
+                ), session.getEnvironment()
         );
         logGoal(goal, false);
         return this;

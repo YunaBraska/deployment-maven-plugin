@@ -3,6 +3,7 @@ package berlin.yuna.mavendeploy.helper;
 import berlin.yuna.mavendeploy.config.MojoBase;
 import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor;
+import berlin.yuna.mavendeploy.plugin.PluginSession;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.Objects;
@@ -50,7 +51,7 @@ public class ActiveGoal {
 
     private MojoBase getDummyMojo() {
         try {
-            return activeMojo.getDeclaredConstructor(MojoExecutor.ExecutionEnvironment.class, Logger.class).newInstance(null, null);
+            return activeMojo.getDeclaredConstructor(PluginSession.class).newInstance(new PluginSession(null, null));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }

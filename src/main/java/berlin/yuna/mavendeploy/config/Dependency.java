@@ -1,23 +1,20 @@
 package berlin.yuna.mavendeploy.config;
 
-import berlin.yuna.mavendeploy.model.Logger;
-import berlin.yuna.mavendeploy.plugin.MojoExecutor;
+import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.getBoolean;
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
 public class Dependency extends MojoBase {
 
-    public Dependency(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-dependency-plugin", "3.1.1", environment, log);
+    public Dependency(final PluginSession session) {
+        super("org.apache.maven.plugins", "maven-dependency-plugin", "3.1.1", session);
     }
 
-    public static Dependency build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        return new Dependency(environment, log);
+    public static Dependency build(final PluginSession session) {
+        return new Dependency(session);
     }
 
     public Dependency resolvePlugins() throws MojoExecutionException {
@@ -26,7 +23,7 @@ public class Dependency extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(log, environment,
+                session.prepareXpp3Dom(
                         prop("appendOutput"),
                         prop("excludeClassifiers"),
                         prop("excludeReactor"),
@@ -45,8 +42,8 @@ public class Dependency extends MojoBase {
                         prop("overWriteSnapshots"),
                         prop("prependGroupId"),
                         prop("silent"),
-                        prop("skip", getBoolean(environment.getMavenSession(), "fake", false).toString())
-                ), environment
+                        prop("skip", session.getBoolean("fake").orElse(false).toString())
+                ), session.getEnvironment()
         );
         logGoal(goal, false);
         return this;
@@ -58,13 +55,13 @@ public class Dependency extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(log, environment,
+                session.prepareXpp3Dom(
                         prop("actTransitively"),
                         prop("reResolve"),
                         prop("resolutionFuzziness"),
                         prop("snapshotsOnly"),
-                        prop("skip", getBoolean(environment.getMavenSession(), "fake", false).toString())
-                ), environment
+                        prop("skip", session.getBoolean("fake").orElse(false).toString())
+                ), session.getEnvironment()
         );
         logGoal(goal, false);
         return this;

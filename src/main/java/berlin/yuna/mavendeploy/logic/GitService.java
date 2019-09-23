@@ -6,13 +6,13 @@ import org.eclipse.jgit.api.Git;
 import org.eclipse.jgit.api.errors.GitAPIException;
 import org.eclipse.jgit.lib.Ref;
 import org.eclipse.jgit.lib.ReflogEntry;
-import org.eclipse.jgit.revwalk.RevCommit;
 
 import java.io.File;
 import java.io.IOException;
 import java.io.StringReader;
 import java.util.Collection;
 import java.util.List;
+import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -25,17 +25,21 @@ public class GitService {
     private final Logger log;
     private final boolean fake;
     private final File workDir;
+    private final boolean active;
     private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME = Pattern.compile("(?<prefix>.*?\\:\\s)(?<branchName>.*)");
-    private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME_COMMAND_LINE = Pattern.compile("(?<prefix>.*refs\\/.*?\\/)(?<branchName>.*?)(?<suffix>@.*?)");
 
     public GitService(final Logger log, final File workDir, final boolean fake) {
+        final boolean hasGit = hasGit(log, workDir);
         this.workDir = workDir;
         this.log = log;
-        this.fake = fake;
+        this.fake = fake && !hasGit;
+        this.active = hasGit;
         logFakeMessage(log);
     }
 
     public String getLastGitTag() {
+        if (!active)
+            return null;
         final String tag;
         try {
             getString("git fetch --tags --force");
@@ -46,7 +50,10 @@ public class GitService {
         return tag;
     }
 
+    @SuppressWarnings("Annotator")
     public Properties getConfig() {
+        if (!active)
+            return new Properties();
         final Properties properties = new Properties();
         final String config = getString("git config -l | cat");
         if (config != null) {
@@ -59,7 +66,9 @@ public class GitService {
         return properties;
     }
 
-    public Collection<ReflogEntry> getRefLog() {
+    private Collection<ReflogEntry> getRefLog() {
+        if (!active)
+            return null;
         try {
             return Git.open(workDir).reflog().call();
         } catch (GitAPIException | IOException e) {
@@ -72,12 +81,12 @@ public class GitService {
     //TODO: test last git tag
     //TODO: get origin url
     public String getOriginUrl() {
-        return getString("git config --get remote.origin.url");
+        return active ? getString("git config --get remote.origin.url") : null;
     }
 
     public boolean gitHasChanges() {
         try {
-            return Git.open(workDir).status().call().isClean();
+            return active && Git.open(workDir).status().call().isClean();
         } catch (GitAPIException | IOException e) {
             log.error("Could not read git directory due " + e);
             return false;
@@ -89,8 +98,7 @@ public class GitService {
             log.warn("fake stash");
         }
         try {
-            final RevCommit stash = Git.open(workDir).stashCreate().call();
-            return stash != null;
+            return active && Git.open(workDir).stashCreate().call() != null;
         } catch (GitAPIException | IOException e) {
             log.error("Failed to stash " + e);
             return false;
@@ -104,38 +112,42 @@ public class GitService {
         }
 
         try {
-            return Git.open(workDir).stashApply().call().toObjectId().getName();
+            return active ? Git.open(workDir).stashApply().call().toObjectId().getName() : null;
         } catch (GitAPIException | IOException e) {
             log.error("Failed to load stash " + e);
             return "failed";
         }
     }
 
-    public String findOriginalBranchName() {
+    public Optional<String> findOriginalBranchName() {
+        if (!active)
+            return Optional.empty();
         final Collection<ReflogEntry> refLog = getRefLog().stream().filter(log -> !log.getComment().startsWith("merge")).collect(Collectors.toList());
         for (ReflogEntry reflogEntry : refLog) {
             final Matcher matcher = PATTERN_ORIGINAL_BRANCH_NAME.matcher(reflogEntry.getComment() == null ? "" : reflogEntry.getComment());
             if (matcher.find()) {
-                return matcher.group("branchName");
+                return Optional.ofNullable(matcher.group("branchName"));
             }
         }
         return getBranchName();
     }
 
-    private String getBranchName() {
+    private Optional<String> getBranchName() {
+        if (!active)
+            return Optional.empty();
         //        return getString("git rev-parse --abbrev-ref HEAD");
         try {
             final ReflogEntry reflogEntry = getRefLog().iterator().next();
             final List<Ref> branches = Git.open(workDir).branchList().call();
             for (Ref branch : branches) {
                 if (branch.getObjectId().equals(reflogEntry.getNewId())) {
-                    return branch.getName();
+                    return Optional.ofNullable(branch.getName());
                 }
             }
-            return branches.get(0).getName();
+            return Optional.ofNullable(branches.get(0).getName());
         } catch (GitAPIException | IOException e) {
             log.error("Could not read git directory due " + e);
-            return null;
+            return Optional.empty();
         }
     }
 
@@ -153,5 +165,16 @@ public class GitService {
 //        workaround as terminal cannot handle empty strings yet
         final String result = getTerminal().execute("tmp=$(" + command + "); if [ -z \"${tmp}\" ]; then echo null; else echo ${tmp}; fi").consoleInfo();
         return result.equalsIgnoreCase("null") ? null : result.trim();
+    }
+
+    private boolean hasGit(final Logger log, final File workDir) {
+        boolean hasGit;
+        try {
+            hasGit = Optional.ofNullable(Git.open(workDir).status().call()).isPresent();
+        } catch (Exception e) {
+            log.info("Project is not a git repository [%s]", workDir);
+            hasGit = false;
+        }
+        return hasGit;
     }
 }

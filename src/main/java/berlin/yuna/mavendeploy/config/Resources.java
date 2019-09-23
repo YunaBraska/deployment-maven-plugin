@@ -1,22 +1,20 @@
 package berlin.yuna.mavendeploy.config;
 
-import berlin.yuna.mavendeploy.model.Logger;
-import berlin.yuna.mavendeploy.plugin.MojoExecutor;
+import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
 public class Resources extends MojoBase {
 
-    public Resources(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-resources-plugin", "3.1.0", environment, log);
+    public Resources(final PluginSession session) {
+        super("org.apache.maven.plugins", "maven-resources-plugin", "3.1.0", session);
     }
 
-    public static Resources build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        return new Resources(environment, log);
+    public static Resources build(final PluginSession session) {
+        return new Resources(session);
     }
 
     public Resources resource() throws MojoExecutionException {
@@ -25,9 +23,9 @@ public class Resources extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(log, environment,
+                session.prepareXpp3Dom(
                         prop("encoding")
-                ), environment
+                ), session.getEnvironment()
         );
         logGoal(goal, false);
         return this;
@@ -39,9 +37,9 @@ public class Resources extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(log, environment,
+                session.prepareXpp3Dom(
                         prop("encoding")
-                ), environment
+                ), session.getEnvironment()
         );
         logGoal(goal, false);
         return this;

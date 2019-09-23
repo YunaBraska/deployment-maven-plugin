@@ -1,4 +1,4 @@
-package berlin.yuna.mavendeploy.logic;
+package berlin.yuna.mavendeploy.helper;
 
 
 import org.jdom2.Document;

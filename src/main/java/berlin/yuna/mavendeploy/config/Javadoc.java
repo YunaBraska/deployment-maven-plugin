@@ -1,22 +1,20 @@
 package berlin.yuna.mavendeploy.config;
 
-import berlin.yuna.mavendeploy.model.Logger;
-import berlin.yuna.mavendeploy.plugin.MojoExecutor;
+import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 
 public class Javadoc extends MojoBase {
 
-    public Javadoc(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-javadoc-plugin", "3.1.1", environment, log);
+    public Javadoc(final PluginSession session) {
+        super("org.apache.maven.plugins", "maven-javadoc-plugin", "3.1.0", session);
     }
 
-    public static Javadoc build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        return new Javadoc(environment, log);
+    public static Javadoc build(final PluginSession session) {
+        return new Javadoc(session);
     }
 
     public Javadoc jar() throws MojoExecutionException {
@@ -25,9 +23,9 @@ public class Javadoc extends MojoBase {
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(log, environment,
+                session.prepareXpp3Dom(
 //                        prop("additionalparam", "-Xdoclint:none"),
-                        prop("doclint", "none"),
+                        prop("doclint"),
                         prop("maven.javadoc.classifier"),
                         prop("destDir"),
                         prop("additionalJOption"),
@@ -90,7 +88,7 @@ public class Javadoc extends MojoBase {
                         prop("serialwarn"),
                         prop("show"),
                         prop("maven.javadoc.skip"),
-//                        prop("source", getString(environment.getMavenSession(), "javadoc-source", "222222")),
+                        prop("source", "!8"),
                         prop("sourcepath"),
                         prop("sourcetab"),
                         prop("linksourcetab"),
@@ -110,7 +108,7 @@ public class Javadoc extends MojoBase {
                         prop("verbose"),
                         prop("version"),
                         prop("windowtitle")
-                ), environment
+                ), session.getEnvironment()
         );
         logGoal(goal, false);
         return this;

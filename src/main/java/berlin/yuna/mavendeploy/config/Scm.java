@@ -1,33 +1,31 @@
 package berlin.yuna.mavendeploy.config;
 
-import berlin.yuna.mavendeploy.model.Logger;
-import berlin.yuna.mavendeploy.plugin.MojoExecutor;
+import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.getBoolean;
-import static berlin.yuna.mavendeploy.plugin.MojoHelper.prepareXpp3Dom;
 import static java.lang.String.format;
 
 public class Scm extends MojoBase {
 
-    protected String pushChanges = null;
-    protected String remoteTagging = null;
+    private String pushChanges = null;
+    private String remoteTagging = null;
 
-    public Scm(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        super("org.apache.maven.plugins", "maven-scm-plugin", "1.11.2", environment, log);
+    public Scm(final PluginSession session) {
+        super("org.apache.maven.plugins", "maven-scm-plugin", "1.11.2", session);
     }
 
-    public static Scm build(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
-        final Scm scm = new Scm(environment, log);
-        final Boolean fake = getBoolean(environment.getMavenSession(), "fake", false);
+    public static Scm build(final PluginSession session) {
+        final Scm scm = new Scm(session);
+        //TODO: replace with original PluginSession
+        final Boolean fake = session.getBoolean("fake").orElse(false);
         if (fake) {
             scm.pushChanges = "false";
             scm.remoteTagging = "false";
-            log.info(format("+ [%s] default key [pushChanges] value [%s]", scm.getClass().getSimpleName(), scm.pushChanges));
-            log.info(format("+ [%s] default key [remoteTagging] value [%s]", scm.getClass().getSimpleName(), scm.remoteTagging));
+            session.getLog().info(format("+ [%s] default key [pushChanges] value [%s]", scm.getClass().getSimpleName(), scm.pushChanges));
+            session.getLog().info(format("+ [%s] default key [remoteTagging] value [%s]", scm.getClass().getSimpleName(), scm.remoteTagging));
         }
         return scm;
     }
@@ -35,12 +33,10 @@ public class Scm extends MojoBase {
     public Scm tag() throws MojoExecutionException {
         final String goal = "tag";
         logGoal(goal, true);
-
-
         executeMojo(
                 getPlugin(),
                 goal(goal),
-                prepareXpp3Dom(log, environment,
+                session.prepareXpp3Dom(
                         prop("basedir"),
                         prop("tag"),
                         prop("addTimestamp"),
@@ -64,8 +60,7 @@ public class Scm extends MojoBase {
                         prop("workItem"),
                         prop("workingDirectory"),
                         prop("remoteTagging", remoteTagging)
-                )
-                , environment
+                ), session.getEnvironment()
         );
         logGoal(goal, false);
         return this;

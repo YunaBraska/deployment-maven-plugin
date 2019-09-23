@@ -1,33 +1,40 @@
 package berlin.yuna.mavendeploy.logic;
 
+import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+
+import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 
 public class SemanticService {
 
     private final String[] SEMANTIC_FORMAT;
+    private final GitService gitService;
     private String branchName;
 
-    public String getBranchName() {
-        return branchName;
+    public Optional<String> getBranchName() {
+        if (isEmpty(branchName) && gitService != null) {
+            branchName = gitService.findOriginalBranchName().orElse(null);
+        }
+        return Optional.ofNullable(branchName);
     }
 
-    public SemanticService(final String semanticFormat) {
-        SEMANTIC_FORMAT = semanticFormat.split("::");
+    public SemanticService(final GitService gitService, final String semanticFormat) {
+        SEMANTIC_FORMAT = (isEmpty(semanticFormat) ? "\\.:none" : semanticFormat).split("::");
+        this.gitService = gitService;
     }
 
-    public String getNextSemanticVersion(final String currentVersion, final GitService gitService, final String fallback) {
-        final String branchName = gitService.findOriginalBranchName();
-        final int semanticPosition = getSemanticPosition(branchName);
-        if (branchName != null && !branchName.trim().isEmpty() && semanticPosition != -1) {
-            this.branchName = branchName;
+    public String getNextSemanticVersion(final String currentVersion, final String fallback) {
+        final Optional<String> branchName = getBranchName();
+        final int semanticPosition = getSemanticPosition(branchName.orElse(null));
+        if (branchName.isPresent() && semanticPosition != -1) {
             return getNextSemanticVersion(currentVersion, semanticPosition);
         }
         return fallback;
     }
 
     //FIXME: separator bug, multiple separators will be replaced by the first one (e.g. 1.2-3 will be replaced by 1.2.3)
-    String getNextSemanticVersion(final String versionOrg, final int semanticPosition) {
+    private String getNextSemanticVersion(final String versionOrg, final int semanticPosition) {
         final String separator = getSemanticSeparator(versionOrg);
         final StringBuilder nextVersion = new StringBuilder();
         for (String digit : prepareNextSemanticVersion(versionOrg, semanticPosition)) {

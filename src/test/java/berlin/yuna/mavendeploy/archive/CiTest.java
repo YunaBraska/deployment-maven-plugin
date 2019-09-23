@@ -1,29 +1,28 @@
-package berlin.yuna.mavendeploy;
+package berlin.yuna.mavendeploy.archive;
 
-import berlin.yuna.mavendeploy.logic.Ci;
 import org.apache.maven.plugin.logging.SystemStreamLog;
 import org.junit.Ignore;
 import org.junit.Test;
 
 import java.io.File;
 
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_CLEAN;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_CLEAN_CACHE;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_FAILSAFE_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_GPG_SIGN_ALT_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_GPG_SIGN_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_JAVADOC;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_REPORT;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SOURCE_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SURFIRE_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_TAG_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_UPDATE_MAJOR;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_UPDATE_MINOR;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_VERSION_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.NEXUS_DEPLOY_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_SNAPSHOT;
-import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_TAG_MSG;
-import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_VERSION;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_CLEAN;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_CLEAN_CACHE;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_FAILSAFE_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_GPG_SIGN_ALT_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_GPG_SIGN_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_JAVADOC;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_REPORT;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_SOURCE_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_SURFIRE_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_TAG_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_UPDATE_MAJOR;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_UPDATE_MINOR;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_VERSION_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.NEXUS_DEPLOY_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.XX_CMD_MVN_SNAPSHOT;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.XX_CMD_MVN_TAG_MSG;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.XX_CMD_MVN_VERSION;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;

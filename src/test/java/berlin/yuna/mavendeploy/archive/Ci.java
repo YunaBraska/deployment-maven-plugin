@@ -1,7 +1,10 @@
-package berlin.yuna.mavendeploy.logic;
+package berlin.yuna.mavendeploy.archive;
 
 import berlin.yuna.clu.logic.CommandLineReader;
 import berlin.yuna.clu.logic.Terminal;
+import berlin.yuna.mavendeploy.logic.GitService;
+import berlin.yuna.mavendeploy.logic.SemanticService;
+import berlin.yuna.mavendeploy.helper.SettingsXmlBuilder;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.plugin.logging.Log;
@@ -13,28 +16,28 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_CLEAN;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_CLEAN_CACHE;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_FAILSAFE_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_GPG_SIGN_ALT_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_GPG_SIGN_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_JAVADOC;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_REPORT;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SETTINGS_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SKIP_TEST;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SOURCE_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_SURFIRE_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_TAG_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_UPDATE_MAJOR;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_UPDATE_MINOR;
-import static berlin.yuna.mavendeploy.config.MavenCommands.CMD_MVN_VERSION_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.FILE_MVN_FAILSAFE;
-import static berlin.yuna.mavendeploy.config.MavenCommands.FILE_MVN_SURFIRE;
-import static berlin.yuna.mavendeploy.config.MavenCommands.MVN_DEPLOY_LAYOUT;
-import static berlin.yuna.mavendeploy.config.MavenCommands.NEXUS_DEPLOY_XX;
-import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_SNAPSHOT;
-import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_TAG_MSG;
-import static berlin.yuna.mavendeploy.config.MavenCommands.XX_CMD_MVN_VERSION;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_CLEAN;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_CLEAN_CACHE;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_FAILSAFE_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_GPG_SIGN_ALT_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_GPG_SIGN_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_JAVADOC;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_REPORT;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_SETTINGS_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_SKIP_TEST;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_SOURCE_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_SURFIRE_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_TAG_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_UPDATE_MAJOR;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_UPDATE_MINOR;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.CMD_MVN_VERSION_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.FILE_MVN_FAILSAFE;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.FILE_MVN_SURFIRE;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.MVN_DEPLOY_LAYOUT;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.NEXUS_DEPLOY_XX;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.XX_CMD_MVN_SNAPSHOT;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.XX_CMD_MVN_TAG_MSG;
+import static berlin.yuna.mavendeploy.archive.MavenCommands.XX_CMD_MVN_VERSION;
 import static java.lang.String.format;
 
 public class Ci {
@@ -117,12 +120,12 @@ public class Ci {
         pom = parsePomFile(PROJECT_DIR);
         IS_POM = isPomArtifact(pom);
 
-        semanticService = new SemanticService(isEmpty(SEMANTIC_FORMAT) ? "\\.:none" : SEMANTIC_FORMAT);
         gitService = null;
+        semanticService = new SemanticService(gitService, isEmpty(SEMANTIC_FORMAT) ? "\\.:none" : SEMANTIC_FORMAT);
 //        gitService = new GitService(LOG, PROJECT_DIR, false);
 
         PROJECT_VERSION = isEmpty(SEMANTIC_FORMAT) ?
-                PROJECT_VERSION : semanticService.getNextSemanticVersion(pom.getVersion(), gitService, PROJECT_VERSION);
+                PROJECT_VERSION : semanticService.getNextSemanticVersion(pom.getVersion(), PROJECT_VERSION);
     }
 
     public String getProjectVersion() {
@@ -130,8 +133,7 @@ public class Ci {
     }
 
     public String getBranchName() {
-        final String branchName = semanticService.getBranchName();
-        return branchName == null ? gitService.findOriginalBranchName() : branchName;
+        return semanticService.getBranchName().orElse(null);
     }
 
     public boolean allowCommitMessage() {

@@ -3,6 +3,7 @@ package berlin.yuna.mavendeploy.config;
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.helper.CustomMavenTestFramework;
 import berlin.yuna.mavendeploy.model.Logger;
+import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.model.Plugin;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
 import org.junit.Test;
@@ -13,33 +14,43 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.Collectors;
 
 import static berlin.yuna.mavendeploy.config.PluginUpdater.createPomFile;
 import static berlin.yuna.mavendeploy.config.PluginUpdater.reportPluginUpdates;
 import static java.lang.String.format;
-import static java.nio.charset.StandardCharsets.UTF_8;
 
 public class PluginUpdateGeneratorTest extends CustomMavenTestFramework {
 
+    final HashMap<String, String> fixedVersions = new HashMap<>();
+
     @Test
     public void displayPluginUpdates() throws IOException, XmlPullParserException {
+        fixedVersions.put("maven-javadoc-plugin", "3.1.0");
+
         final File pomFile = TEST_POM.getPomFile();
-        final List<Plugin> mojoList = getAllMojos().stream()
-                        .filter(mojo -> !mojo.equals(new PluginUpdater(null, null)))
-                        .filter(mojo -> !mojo.equals(new ReadmeBuilder(null, null)))
+        final List<MojoBase> mojoBases = getAllMojos();
+        final List<Plugin> mojoList = mojoBases.stream()
+                .filter(mojo -> !mojo.equals(new PluginUpdater(new PluginSession(null, log))))
+                .filter(mojo -> !mojo.equals(new ReadmeBuilder(new PluginSession(null, log))))
                 .map(MojoBase::toPlugin)
-                        .collect(Collectors.toList());
+                .collect(Collectors.toList());
         createPomFile(pomFile.toPath(), mojoList);
 
-        updatePluginUpdater();
+        updatePluginUpdaterClass();
         getTerminal().execute(mvnCmd("-Dupdate.major"));
-        final HashMap<Plugin, String> availableVersions = reportPluginUpdates(new Logger(), mojoList, pomFile);
+        final HashMap<Plugin, String> availableVersions = reportPluginUpdates(log, mojoList, pomFile);
 
         availableVersions.forEach((mojo, newVersion) -> {
             try {
-                updateInCodePluginVersions(mojo, newVersion, getPath(mojo.getClass()));
-                getPath(mojo.getClass());
+                if (fixedVersions.containsKey(mojo.getArtifactId())) {
+                    final String fixedVersion = fixedVersions.get(mojo.getArtifactId());
+                    log.error("Update block for [%s] fall back to [%s]", mojo.getArtifactId(), fixedVersion);
+                    updateInCodePluginVersions(mojo, fixedVersion, getPath(mojoBases, mojo));
+                } else {
+                    updateInCodePluginVersions(mojo, newVersion, getPath(mojoBases, mojo));
+                }
             } catch (IOException e) {
                 throw new RuntimeException(e);
             }
@@ -47,16 +58,15 @@ public class PluginUpdateGeneratorTest extends CustomMavenTestFramework {
     }
 
     private void updateInCodePluginVersions(final Plugin mojo, final String newVersion, final Path path) throws IOException {
-        final String content = new String(Files.readAllBytes(path), UTF_8);
-        Files.write(path,
-                content.replace(format("\"%s\",", mojo.getVersion()), format("\"%s\",", newVersion)).getBytes(UTF_8));
+        final String content = Files.readString(path);
+        Files.writeString(path,
+                content.replace(format("\"%s\",", mojo.getVersion()), format("\"%s\",", newVersion)));
     }
 
     //TODO: move target to MojoHelper and use it as environment variable
-    private void updatePluginUpdater() throws IOException {
+    private void updatePluginUpdaterClass() throws IOException {
         final Path path = getPath(PluginUpdater.class);
-        final String content = new String(Files.readAllBytes(path), UTF_8);
-        PROJECT_POM.getVersion();
+        final String content = Files.readString(path);
         //final String mvnCmd
         Files.write(path, content.replaceFirst(
                 "final String mvnCmd.*;",
@@ -66,7 +76,7 @@ public class PluginUpdateGeneratorTest extends CustomMavenTestFramework {
                         + PROJECT_POM.getArtifactId()
                         + ":"
                         + PROJECT_POM.getVersion()
-                        + ":run\" + parameter;"
+                        + ":run -Dupdate.plugins=false \" + parameter;"
         ).getBytes());
     }
 
@@ -74,8 +84,15 @@ public class PluginUpdateGeneratorTest extends CustomMavenTestFramework {
         return new Terminal().dir(TEST_POM.getPomFile().getParentFile()).consumerError(log::error).consumerInfo(log::info);
     }
 
-    private Path getPath(final Class clazz) {
-        final String classPath = clazz.getTypeName().replace(".", "/") + ".java";
-        return new File(new File(System.getProperty("user.dir"), "src/main/java"), classPath).toPath();
+    private Path getPath(final List<MojoBase> mojoBases, final Plugin plugin) {
+        final Optional<MojoBase> mojoBase = mojoBases.stream()
+                .filter(m -> m.groupId().equalsIgnoreCase(plugin.getGroupId()))
+                .filter(m -> m.artifactId().equalsIgnoreCase(plugin.getArtifactId()))
+                .findFirst();
+        if (mojoBase.isPresent()) {
+            return getPath(mojoBase.get().getClass());
+        } else {
+            throw new RuntimeException("Mojo not found [" + plugin + "]");
+        }
     }
 }

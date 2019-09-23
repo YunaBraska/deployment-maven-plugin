@@ -3,7 +3,7 @@ package berlin.yuna.mavendeploy.plugin;
 import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
-public class PlexusConfigurationUtils {
+class PlexusConfigurationUtils {
     private PlexusConfigurationUtils() {
         throw new AssertionError("non-instantiable");
     }

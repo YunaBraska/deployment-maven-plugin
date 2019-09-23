@@ -2,6 +2,7 @@
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | update.minor        | Boolean | false              | Updates parent, properties, dependencies                                   |
 | update.major        | Boolean | false              | Updates parent, properties, dependencies                                   |
+| update.plugins      | Boolean | false              | Updates plugins                                                            |
 
 # Testing
 | Parameter           | Type    | Default            |  Description                                                               |

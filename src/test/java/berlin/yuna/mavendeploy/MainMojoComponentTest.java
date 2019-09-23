@@ -11,7 +11,7 @@ import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Surefire;
 import berlin.yuna.mavendeploy.config.Versions;
 import berlin.yuna.mavendeploy.helper.CustomMavenTestFramework;
-import berlin.yuna.mavendeploy.logic.SettingsXmlBuilder;
+import berlin.yuna.mavendeploy.helper.SettingsXmlBuilder;
 import org.junit.Test;
 
 import java.io.File;
@@ -61,7 +61,6 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         );
 
         expectMojoRun(
-                g(PluginUpdater.class, "update"),
                 g(Versions.class, "update-parent"),
                 g(Versions.class, "update-properties"),
                 g(Versions.class, "update-child-modules"),
@@ -82,7 +81,6 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         );
 
         expectMojoRun(
-                g(PluginUpdater.class, "update"),
                 g(Versions.class, "update-parent"),
                 g(Versions.class, "update-properties"),
                 g(Versions.class, "update-child-modules"),
@@ -94,10 +92,41 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     }
 
     @Test
-    public void settingsSession_withServer_shouldAddServerToSession() {
-        terminal.execute(mvnCmd("-Dsettings.xml='--Server=\"Server1\" --Username=User1 --Password=Pass1 --Server=\"Server2\" --Username=User2'"));
-        assertThat(terminal.consoleInfo(), containsString("+ Settings added [Server] id [Server1] user [User1] pass [******]"));
-        assertThat(terminal.consoleInfo(), containsString("+ Settings added [Server] id [Server2] user [User2] pass [null]"));
+    public void updatePlugins_shouldExecutePluginUpdater() {
+        terminal.execute(mvnCmd("-Dupdate.plugins"));
+
+        expectMojoRun(g(PluginUpdater.class, "update"));
+    }
+
+    @Test
+    public void settingsSession_withServerFormatOne_shouldAddServerToSession() {
+        terminal.execute(mvnCmd("-Dsettings.xml=\"--ServerId=Server1 --Username=User1 --Password=Pass1 --ServerId=Server2 --Username=User2\""));
+        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [Server1] user [User1] pass [*****]"));
+        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [Server2] user [User2] pass [null]"));
+    }
+
+    @Test
+    public void settingsSession_withServerFormatTwo_shouldAddServerToSession() {
+        terminal.execute(mvnCmd(
+                " -Dserver='servername1::username1::null::privateKey1::passphrase1' "
+                        + " -DSeRvEr0='servername2::username2::password2::::passphrase2' "
+                        + " -Dserver1='servername3::username3::::' "
+        ));
+        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername1] user [username1] pass [null]"));
+        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername2] user [username2] pass [*********]"));
+        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername3] user [username3] pass [null]"));
+    }
+
+    @Test
+    public void settingsSession_withServerFormatThree_shouldAddServerToSession() {
+        terminal.execute(mvnCmd(
+                " -Dserver.Id='servername1' -Dserver.username='username1' -Dserver.password='null' "
+                        + " -Dserver0.iD='servername2' -Dserver0-username='username2' -Dserver0.password='password1' "
+                        + " -Dserver1.ID='servername3' -Dserver1_username='username3' -Dserver1.password='' "
+        ));
+        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername1] user [username1] pass [null]"));
+        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername2] user [username2] pass [*********]"));
+        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername3] user [username3] pass [null]"));
     }
 
     @Test
@@ -212,7 +241,6 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     public void createJavaDoc_shouldBeSuccessful() {
         terminal.execute(mvnCmd("-Djava.doc"));
 
-        expectMojoRun(g(Javadoc.class, "jar"));
         final File indexHtml = new File(TEST_POM.getPomFile().getParent(), "target/apidocs/index.html");
         final File javaDoc = new File(TEST_POM.getPomFile().getParent(), "target/" + TEST_POM.getArtifactId() + "-" + TEST_POM.getVersion() + "-javadoc.jar");
         assertThat(format("Cant find [%s]", indexHtml), indexHtml.exists(), is(true));
