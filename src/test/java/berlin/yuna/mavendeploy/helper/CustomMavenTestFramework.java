@@ -67,11 +67,12 @@ public class CustomMavenTestFramework {
     protected static Model PROJECT_POM;
     protected Terminal terminal;
     protected Terminal terminalNoLog;
-    protected static Logger log = new Logger(null, "HH:mm:ss");
-    protected static GitService gitService;
 
     private static final String DEBUG_ENV = System.getenv("DEBUG");
-    protected static final boolean DEBUG = isEmpty(DEBUG_ENV) || parseBoolean(DEBUG_ENV);
+    public static final boolean DEBUG = isEmpty(DEBUG_ENV) || parseBoolean(DEBUG_ENV);
+
+    protected static GitService gitService;
+    protected static Logger log = new Logger(null, "HH:mm:ss").enableDebug(DEBUG);
 
     private final List<ActiveGoal> definedMojoList = asList(
             g(Clean.class, "clean"),
