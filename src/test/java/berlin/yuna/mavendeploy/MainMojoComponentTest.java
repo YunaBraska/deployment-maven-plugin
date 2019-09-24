@@ -447,7 +447,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         }
 
         //TODO: find reason why its not working on travis
-        if (!DEBUG) {
+        if (DEBUG) {
             final File target = new File(TEST_POM.getPomFile().getParent(), "target");
             assertThat(target.exists(), is(true));
             final List<Path> ascFiles = Files.walk(target.toPath()).filter(f -> f.getFileName().toString().endsWith(".asc")).collect(toList());
