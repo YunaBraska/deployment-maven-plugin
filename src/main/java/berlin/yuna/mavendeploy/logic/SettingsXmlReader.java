@@ -50,15 +50,16 @@ public class SettingsXmlReader {
         return new SettingsXmlReader(session).read();
     }
 
-    public static String getGpgPath(final PluginSession session) {
-        final Terminal terminal = new Terminal().consumerError(session.getLog()::debug);
+    public static String getGpgPath(final Logger log) {
         final String result;
+        //TODO: implement copy terminal
+        final Terminal t = new Terminal().consumerError(log::error).timeoutMs(5000).breakOnError(false);
         if (SystemUtil.isWindows()) {
             //FIXME: test on windows if installed, gpg || gpg2, same as with unix
-            result = terminal.execute("where gpg").consoleInfo();
+            result = t.execute("where gpg").consoleInfo();
         } else {
-            result = terminal.execute("if which gpg2 &> /dev/null; then which gpg2; "
-                    + "elif which gpg &> /dev/null; then which gpg; else echo \"gpg\"; fi"
+            result = t.execute("if which gpg2 >/dev/null 2>&1; then which gpg2; "
+                    + "elif which gpg >/dev/null 2>&1; then which gpg; else echo \"gpg\"; fi"
             ).consoleInfo();
             return result;
         }

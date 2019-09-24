@@ -22,7 +22,6 @@ import java.util.List;
 import java.util.Properties;
 
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
-import static java.lang.String.format;
 
 public class PluginUpdater extends MojoBase {
 
@@ -65,7 +64,7 @@ public class PluginUpdater extends MojoBase {
         final boolean minor = prop.containsKey("update.minor");
         final String parameter = (major ? " -Dupdate.major" : "") + (minor ? " -Dupdate.minor" : "");
         final String mvnCmd = "mvn berlin.yuna:deployment-maven-plugin:12.0.1:run -Dupdate.plugins=false " + parameter;
-        log.debug(format("Running maven command [%s]", mvnCmd));
+        log.debug("Running maven command [%s]", mvnCmd);
         return mvnCmd;
     }
 

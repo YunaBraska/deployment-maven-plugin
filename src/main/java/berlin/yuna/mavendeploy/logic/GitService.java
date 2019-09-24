@@ -19,7 +19,6 @@ import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
-import static java.lang.String.format;
 
 //TODO can be replaced by SCM Plugin?
 public class GitService {
@@ -156,7 +155,7 @@ public class GitService {
 
     private void logFakeMessage(final Logger log) {
         if (fake) {
-            log.warn(format("%s Faked [%s]", unicode(0x26A0), getClass().getSimpleName()));
+            log.warn("%s Faked [%s]", unicode(0x26A0), getClass().getSimpleName());
         }
     }
 

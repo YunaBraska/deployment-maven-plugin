@@ -8,7 +8,6 @@ import org.apache.maven.model.Plugin;
 import java.util.Objects;
 
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.plugin;
-import static java.lang.String.format;
 
 public abstract class MojoBase {
 
@@ -60,7 +59,7 @@ public abstract class MojoBase {
     }
 
     void logGoal(final String goal, final boolean start) {
-        log.info(format("--------------------------<=[ %s %s:%s:%s:%s ]=>--------------------------", start ? "Start" : "End", groupId, artifactId, goal, version));
+        log.info("--------------------------<=[ %s %s:%s:%s:%s ]=>--------------------------", start ? "Start" : "End", groupId, artifactId, goal, version);
     }
 
 

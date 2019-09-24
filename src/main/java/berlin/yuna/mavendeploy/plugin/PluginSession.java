@@ -98,10 +98,10 @@ public class PluginSession {
         final boolean overwrite = isPresent(value) && value.startsWith("!");
         final String resultValue = overwrite ? value.substring(1) : properties.getProperty(key, value);
         if (childElements.isEmpty()) {
-            log.debug(format("Config property [%s] + [%s] = [%s]",
+            log.debug("Config property [%s] + [%s] = [%s]",
                     key,
                     toSecret(key, value),
-                    toSecret(key, resultValue)));
+                    toSecret(key, resultValue));
             return element(name(key), resultValue);
         }
         return element(name(key), childElements.toArray(new MojoExecutor.Element[0]));

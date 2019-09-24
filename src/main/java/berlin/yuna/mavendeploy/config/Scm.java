@@ -6,7 +6,7 @@ import org.apache.maven.plugin.MojoExecutionException;
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
-import static java.lang.String.format;
+import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 
 public class Scm extends MojoBase {
 
@@ -24,8 +24,8 @@ public class Scm extends MojoBase {
         if (fake) {
             scm.pushChanges = "false";
             scm.remoteTagging = "false";
-            session.getLog().info(format("+ [%s] default key [pushChanges] value [%s]", scm.getClass().getSimpleName(), scm.pushChanges));
-            session.getLog().info(format("+ [%s] default key [remoteTagging] value [%s]", scm.getClass().getSimpleName(), scm.remoteTagging));
+            session.getLog().info("%s [%s] default key [pushChanges] value [%s]", unicode(0x271A), scm.getClass().getSimpleName(), scm.pushChanges);
+            session.getLog().info("%s [%s] default key [remoteTagging] value [%s]", unicode(0x271A), scm.getClass().getSimpleName(), scm.remoteTagging);
         }
         return scm;
     }

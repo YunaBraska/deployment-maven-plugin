@@ -1,5 +1,6 @@
 package berlin.yuna.mavendeploy.plugin;
 
+import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.Deploy;
@@ -142,7 +143,7 @@ public class MojoRun extends AbstractMojo {
             setWhen("altDeploymentRepository", deployUrl, !isEmpty(deployUrl));
             setWhen("gpg.passphrase", SESSION.getParamPresent("gpg.pass", "gpg.passphrase").orElse(null));
             setWhen("passphraseServerId", SESSION.getParamPresent("gpg.passphrase").orElse(null));
-            setWhen("gpg.executable", getGpgPath(SESSION), hasText("gpg.passphrase"));
+            setWhen("gpg.executable", getGpgPath(LOG), hasText("gpg.passphrase"));
 
             LOG.info("%s STEP [2/6] RUN PLUGINS WITH SETUP", unicode(0x2699));
             runWhen(() -> Clean.build(SESSION).clean(), isTrue("clean", "clean.cache"));

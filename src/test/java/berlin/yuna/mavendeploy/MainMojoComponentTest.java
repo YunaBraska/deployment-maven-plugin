@@ -250,8 +250,8 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     public void createJavaDoc_shouldBeSuccessful() {
         terminal.execute(mvnCmd("-Djava.doc"));
 
-        final File indexHtml = new File(TEST_POM.getPomFile().getParent(), "target/apidocs/index.html");
-        final File javaDoc = new File(TEST_POM.getPomFile().getParent(), "target/" + TEST_POM.getArtifactId() + "-" + TEST_POM.getVersion() + "-javadoc.jar");
+        final File indexHtml = new File(TEST_DIR.toFile(), "target/apidocs/index.html");
+        final File javaDoc = new File(TEST_DIR.toFile(), "target/" + TEST_POM.getArtifactId() + "-" + TEST_POM.getVersion() + "-javadoc.jar");
         assertThat(format("Cant find [%s]", indexHtml), indexHtml.exists(), is(true));
         assertThat(format("Cant find [%s]", javaDoc), javaDoc.exists(), is(true));
 
@@ -263,7 +263,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         terminal.execute(mvnCmd("-Djava.source"));
 
         expectMojoRun(g(JavaSource.class, "jar-no-fork"));
-        final File javaSource = new File(TEST_POM.getPomFile().getParent(), "target/" + TEST_POM.getArtifactId() + "-" + TEST_POM.getVersion() + "-sources.jar");
+        final File javaSource = new File(TEST_DIR.toFile(), "target/" + TEST_POM.getArtifactId() + "-" + TEST_POM.getVersion() + "-sources.jar");
         assertThat(format("Cant find [%s]", javaSource), javaSource.exists(), is(true));
     }
 
@@ -438,17 +438,17 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     @Test
     public void gpgTest() throws IOException {
         try {
-            setupGpgTest(terminal);
-            terminal.execute(mvnCmd("-Djava.doc -Djava.source -Dgpg.pass=mySecret"));
+            setupGpgTestKey(terminal, log);
+            this.terminal.execute(mvnCmd("-Djava.doc -Djava.source -Dgpg.pass=mySecret"));
         } catch (Exception e) {
             log.error("%s GPG test failed cause [%s]", unicode(0x1F940), e);
         } finally {
-            teardownGpgTest(terminal);
+            teardownGpgTestKey(terminal, log);
         }
 
-        //TODO: find reason why its not working on travis
+        //FIXME: Travis has different GPG version, this test wont work
         if (DEBUG) {
-            final File target = new File(TEST_POM.getPomFile().getParent(), "target");
+            final File target = new File(TEST_DIR.toFile(), "target");
             assertThat(target.exists(), is(true));
             final List<Path> ascFiles = Files.walk(target.toPath()).filter(f -> f.getFileName().toString().endsWith(".asc")).collect(toList());
             assertThat(ascFiles, hasSize(3));
@@ -460,13 +460,13 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     public void writeAllProperties_withBoolean_ShouldBeSuccessful() throws IOException {
         terminal.execute(mvnCmd("-Dproperties.print -Dsomepassword=berlin -Dsomesecret=iAmAHero"));
 
-        final File allProps = new File(TEST_POM.getPomFile().getParent(), "target/all.properties");
+        final File allProps = new File(TEST_DIR.toFile(), "target/all.properties");
         expectPropertyFile(allProps);
     }
 
     @Test
     public void writeAllProperties_withFileString_ShouldBeSuccessful() throws IOException {
-        final File allProps = new File(TEST_POM.getPomFile().getParent(), "myFolder/my.properties");
+        final File allProps = new File(TEST_DIR.toFile(), "myFolder/my.properties");
         terminal.execute(mvnCmd("-Dproperties.print=" + allProps + " -Dsomepassword=berlin -Dsomesecret=iAmAHero"));
 
         expectPropertyFile(allProps);
