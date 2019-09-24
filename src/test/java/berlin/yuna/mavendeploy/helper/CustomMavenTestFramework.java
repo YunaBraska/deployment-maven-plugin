@@ -151,8 +151,7 @@ public class CustomMavenTestFramework {
                 + " " + PROJECT_POM.getGroupId()
                 + ":" + PROJECT_POM.getArtifactId()
                 + ":" + PROJECT_POM.getVersion()
-                + ":run -Dfake -X"
-                + (DEBUG? "-X " : " ")
+                + ":run -Dfake -X "
                 + parameter;
         log.debug(format("Running maven command [%s]", mvnCmd.trim()));
         return mvnCmd;
