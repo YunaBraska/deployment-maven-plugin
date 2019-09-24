@@ -7,6 +7,7 @@ import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.PluginUpdater;
+import berlin.yuna.mavendeploy.config.PropertyWriter;
 import berlin.yuna.mavendeploy.config.ReadmeBuilder;
 import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Surefire;
@@ -40,9 +41,12 @@ import java.util.Optional;
 
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readDeveloperProperties;
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readLicenseProperties;
+import static berlin.yuna.mavendeploy.logic.SettingsXmlReader.getGpgPath;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executionEnvironment;
+import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
+import static berlin.yuna.mavendeploy.util.MojoUtil.toSecret;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
@@ -78,7 +82,6 @@ public class MojoRun extends AbstractMojo {
     private Logger LOG;
     private GitService GIT_SERVICE;
     private SemanticService SEMANTIC_SERVICE;
-    private boolean HAS_GIT_CHANGES;
     private boolean SNAPSHOT_DEPLOYMENT = false;
     private MojoExecutor.ExecutionEnvironment ENVIRONMENT;
     private PluginSession SESSION;
@@ -91,99 +94,105 @@ public class MojoRun extends AbstractMojo {
         serverList.forEach(server -> LOG.info("+ [%s] added %s", Settings.class.getSimpleName(), SESSION.toString(server)));
         serverList.forEach(server -> SESSION.getMavenSession().getSettings().addServer(server));
 
+        LOG.info("%s Preparing information", unicode(0x1F453));
         try {
-            LOG.info("Preparing information");
-            try {
-                final boolean isLibrary = isLibrary();
-                LOG.debug("Project is library [%s]", isLibrary());
-                final String newProjectVersion = prepareProjectVersion();
-                final String newTag = prepareNewTagVersion(newProjectVersion);
-                final boolean hasNewTag = hasNewTag(newTag, GIT_SERVICE.getLastGitTag());
-                final String deployUrl = isTrue("deploy", "deploy.snapshot") ? prepareDeployUrl() : null;
+            final boolean isLibrary = isLibrary();
+            final String newProjectVersion = prepareProjectVersion();
+            final String newTag = prepareNewTagVersion(newProjectVersion);
+            final boolean hasNewTag = hasNewTag(newTag, GIT_SERVICE.getLastGitTag());
+            final String deployUrl = isTrue("deploy", "deploy.snapshot") ? prepareDeployUrl() : null;
 
-                //SET GIT PROPERTIES
-                for (Map.Entry<Object, Object> config : GIT_SERVICE.getConfig().entrySet()) {
-                    setParameter("git." + config.getKey().toString(), config.getValue().toString());
-                }
-
-                //SET PROJECT DEVELOPER PROPERTIES
-                for (Map.Entry<Object, Object> config : readDeveloperProperties(project.getDevelopers()).entrySet()) {
-                    setParameter(config.getKey().toString(), config.getValue().toString());
-                }
-
-                //SET PROJECT LICENSE PROPERTIES
-                for (Map.Entry<Object, Object> config : readLicenseProperties(project.getLicenses()).entrySet()) {
-                    setParameter(config.getKey().toString(), config.getValue().toString());
-                }
-
-                //SET PROPERTIES
-                setWhen("project.library", String.valueOf(isLibrary));
-                setWhen("newVersion", newProjectVersion, !isEmpty(newProjectVersion) && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
-                setWhen("removeSnapshot", "true", isTrue("remove.snapshot"));
-                setWhen("generateBackupPoms", "false", true);
-                setWhen("test.integration", SESSION.getParamPresent("test.int").orElse(null));
-                setWhen("java.version", JAVA_VERSION, !hasText("java.version"));
-                final Optional<String> javaVersion = SESSION.getParamPresent("java.version");
-                setWhen("source", prepareSourceVersion(javaVersion.orElse(null)));
-                setWhen("target", prepareSourceVersion(javaVersion.orElse(null)));
-                setWhen("compilerVersion", javaVersion.orElse(null));
-                setWhen("javadocVersion", javaVersion.orElse(null));
-                setWhen("project.encoding", UTF_8.toString(), SESSION.getParamPresent("project.encoding").isEmpty());
-                setWhen("encoding", SESSION.getParamPresent("project.encoding").orElse(null));
-                setWhen("project.build.sourceEncoding", SESSION.getParamPresent("project.encoding").orElse(null));
-                setWhen("project.reporting.outputEncoding", SESSION.getParamPresent("project.encoding").orElse(null));
-                setWhen("allowSnapshots", "true", isTrue("update.minor", "update.major"));
-                setWhen("allowMajorUpdates", SESSION.getBoolean("update.major").orElse(false).toString());
-                setWhen("scm.provider", "scm:git", !hasText("scm.provider"));
-                setWhen("connectionUrl", getConnectionUrl(), !hasText("connectionUrl"));
-                setWhen("project.scm.connection", getConnectionUrl(), !hasText("project.scm.connection"));
-                overwriteWhen("tag", newTag, !isEmpty(newTag));
-                setWhen("altDeploymentRepository", deployUrl, !isEmpty(deployUrl));
-                setWhen("message", prepareCommitMessage(newProjectVersion, hasNewTag, isTrue("update.minor", "update.major")), (hasNewTag && !hasText("message")));
-
-                //RUN MOJOS
-                runWhen(() -> Clean.build(SESSION).clean(), isTrue("clean", "clean.cache"));
-                runWhen(() -> ReadmeBuilder.build(SESSION).render(), isTrue("builder"));
-                runWhen(() -> Dependency.build(SESSION).resolvePlugins(), isTrue("clean", "clean.cache"));
-                runWhen(() -> Dependency.build(SESSION).purgeLocalRepository(), isTrue("clean.cache"));
-                runWhen(() -> Versions.build(SESSION).updateParent(), isTrue("update.major", "update.minor"));
-                runWhen(() -> Versions.build(SESSION).updateProperties(), isTrue("update.major", "update.minor"));
-                runWhen(() -> Versions.build(SESSION).updateProperties(), isTrue("update.major", "update.minor"));
-                runWhen(() -> Versions.build(SESSION).updateChildModules(), isTrue("update.major", "update.minor"));
-                runWhen(() -> Versions.build(SESSION).useLatestReleases(), isTrue("update.major", "update.minor"));
-                runWhen(() -> Versions.build(SESSION).useLatestVersions(), isTrue("update.major", "update.minor"));
-                runWhen(() -> Versions.build(SESSION).useNextSnapshots(), isTrue("update.major", "update.minor"));
-                runWhen(() -> PluginUpdater.build(SESSION).update(), SESSION.getBoolean("update.plugins").orElse(false));
-                runWhen(() -> Versions.build(SESSION).commit(), isTrue("update.major", "update.minor"));
-                runWhen(() -> Versions.build(SESSION).set(), hasText("newVersion"), isTrue("removeSnapshot"));
-                runWhen(() -> Javadoc.build(SESSION).jar(), (!isLibrary() && isTrue("java.doc")));
-                runWhen(() -> JavaSource.build(SESSION).jarNoFork(), (!isLibrary() && isTrue("java.source")));
-
-                //MOJO TEST
-//                runWhen(() -> Resources.build(SESSION).resource(), isTrue("test.run", "test.unit", "test.integration"));
-                runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(SESSION).compiler(), isTrue("test.run", "test.unit", "test.integration"));
-//                runWhen(() -> Resources.build(SESSION).testResource(), isTrue("test.run", "test.unit", "test.integration"));
-                runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(SESSION).testCompiler(), isTrue("test.run", "test.unit", "test.integration"));
-                runWhen(() -> Surefire.build(SESSION).test(), isTrue("test.run", "test.unit"));
-
-                //Should stay at the end after everything is done
-                runWhen(() -> Gpg.build(SESSION).sign(), hasText("gpg.passphrase"));
-                runWhen(() -> Scm.build(SESSION).tag(), hasNewTag);
-                runWhen(() -> Deploy.build(SESSION).deploy(), hasText("altDeploymentRepository"));
-
-                //remove snapshot if only added for deployment
-                if (SNAPSHOT_DEPLOYMENT) {
-                    overwriteWhen("oldVersion", newProjectVersion, true);
-                    overwriteWhen("newVersion", newProjectVersion.split("-SNAPSHOT")[0], true);
-                    runWhen(() -> Versions.build(SESSION).set(), true);
-                }
-
-                printJavaDoc();
-            } catch (Exception e) {
-                throw new RuntimeException(e);
+            //SET GIT PROPERTIES
+            for (Map.Entry<Object, Object> config : GIT_SERVICE.getConfig().entrySet()) {
+                setParameter("git." + config.getKey().toString(), config.getValue().toString());
             }
-        } finally {
-            after();
+
+            //SET PROJECT DEVELOPER PROPERTIES
+            for (Map.Entry<Object, Object> config : readDeveloperProperties(project.getDevelopers()).entrySet()) {
+                setParameter(config.getKey().toString(), config.getValue().toString());
+            }
+
+            //SET PROJECT LICENSE PROPERTIES
+            for (Map.Entry<Object, Object> config : readLicenseProperties(project.getLicenses()).entrySet()) {
+                setParameter(config.getKey().toString(), config.getValue().toString());
+            }
+
+            LOG.info("%s STEP [1/6] SETUP MOJO PROPERTIES", unicode(0x1F4DD));
+            setWhen("project.library", String.valueOf(isLibrary));
+            setWhen("newVersion", newProjectVersion, !isEmpty(newProjectVersion) && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
+            setWhen("removeSnapshot", "true", isTrue("remove.snapshot"));
+            setWhen("generateBackupPoms", "false", true);
+            setWhen("test.integration", SESSION.getParamPresent("test.int").orElse(null));
+            setWhen("java.version", JAVA_VERSION, !hasText("java.version"));
+            final Optional<String> javaVersion = SESSION.getParamPresent("java.version");
+            setWhen("source", prepareSourceVersion(javaVersion.orElse(null)));
+            setWhen("target", prepareSourceVersion(javaVersion.orElse(null)));
+            setWhen("compilerVersion", javaVersion.orElse(null));
+            setWhen("javadocVersion", javaVersion.orElse(null));
+            setWhen("project.encoding", UTF_8.toString(), SESSION.getParamPresent("project.encoding").isEmpty());
+            setWhen("encoding", SESSION.getParamPresent("project.encoding").orElse(null));
+            setWhen("project.build.sourceEncoding", SESSION.getParamPresent("project.encoding").orElse(null));
+            setWhen("project.reporting.outputEncoding", SESSION.getParamPresent("project.encoding").orElse(null));
+            setWhen("allowSnapshots", "true", isTrue("update.minor", "update.major"));
+            setWhen("allowMajorUpdates", SESSION.getBoolean("update.major").orElse(false).toString());
+            setWhen("scm.provider", "scm:git", !hasText("scm.provider"));
+            setWhen("connectionUrl", getConnectionUrl(), !hasText("connectionUrl"));
+            setWhen("project.scm.connection", getConnectionUrl(), !hasText("project.scm.connection"));
+            overwriteWhen("tag", newTag, !isEmpty(newTag));
+            setWhen("altDeploymentRepository", deployUrl, !isEmpty(deployUrl));
+            setWhen("gpg.passphrase", SESSION.getParamPresent("gpg.pass", "gpg.passphrase").orElse(null));
+            setWhen("passphraseServerId", SESSION.getParamPresent("gpg.passphrase").orElse(null));
+            setWhen("gpg.executable", getGpgPath(SESSION), hasText("gpg.passphrase"));
+
+            LOG.info("%s STEP [2/6] RUN PLUGINS WITH SETUP", unicode(0x2699));
+            runWhen(() -> Clean.build(SESSION).clean(), isTrue("clean", "clean.cache"));
+            runWhen(() -> Dependency.build(SESSION).resolvePlugins(), isTrue("clean", "clean.cache"));
+            runWhen(() -> Dependency.build(SESSION).purgeLocalRepository(), isTrue("clean.cache"));
+
+            LOG.info("%s STEP [3/6] RUN PLUGINS WITH MODIFIERS", unicode(0x1F3D7));
+            runWhen(() -> ReadmeBuilder.build(SESSION).render(), isTrue("builder"));
+            runWhen(() -> Versions.build(SESSION).updateParent(), isTrue("update.major", "update.minor"));
+            runWhen(() -> Versions.build(SESSION).updateProperties(), isTrue("update.major", "update.minor"));
+            runWhen(() -> Versions.build(SESSION).updateProperties(), isTrue("update.major", "update.minor"));
+            runWhen(() -> Versions.build(SESSION).updateChildModules(), isTrue("update.major", "update.minor"));
+            runWhen(() -> Versions.build(SESSION).useLatestReleases(), isTrue("update.major", "update.minor"));
+            runWhen(() -> Versions.build(SESSION).useLatestVersions(), isTrue("update.major", "update.minor"));
+            runWhen(() -> Versions.build(SESSION).useNextSnapshots(), isTrue("update.major", "update.minor"));
+            runWhen(() -> PluginUpdater.build(SESSION).update(), SESSION.getBoolean("update.plugins").orElse(false));
+            runWhen(() -> Versions.build(SESSION).commit(), isTrue("update.major", "update.minor"));
+            runWhen(() -> Versions.build(SESSION).set(), hasText("newVersion"), isTrue("removeSnapshot"));
+
+            LOG.info("%s STEP [4/6] RUN PLUGINS WITH VERIFIERS", unicode(0x1F50E));
+            runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(SESSION).compiler(), isTrue("test.run", "test.unit", "test.integration"));
+            runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(SESSION).testCompiler(), isTrue("test.run", "test.unit", "test.integration"));
+            runWhen(() -> Surefire.build(SESSION).test(), isTrue("test.run", "test.unit"));
+
+            LOG.info("%s STEP [5/6] RUN PLUGINS WITH ACTIONS", unicode(0x1F3AC));
+            runWhen(() -> PropertyWriter.build(SESSION).write(), hasText("properties.print"));
+            runWhen(() -> Javadoc.build(SESSION).jar(), (!isLibrary() && isTrue("java.doc")));
+            runWhen(() -> JavaSource.build(SESSION).jarNoFork(), (!isLibrary() && isTrue("java.source")));
+            runWhen(() -> Gpg.build(SESSION).sign(), hasText("gpg.passphrase"));
+            runWhen(() -> Scm.build(SESSION).tag(), hasNewTag);
+            runWhen(() -> Deploy.build(SESSION).deploy(), hasText("altDeploymentRepository"));
+
+            //TODO: implement to push on changes && new parameter change version only on changes version.onchange && tag.onchange
+//                if (GIT_SERVICE.gitHasChanges() && SESSION.getBoolean("changes.push").orElse(false)) {
+//                    final String message = SESSION.getParamPresent("message").orElse(prepareCommitMessage(newProjectVersion, hasNewTag, isTrue("update.plugins", "update.minor", "update.major")));
+//                    setWhen("message", message);
+//                    GIT_SERVICE.push();
+//                }
+
+            LOG.info("%s STEP [5/6] RUN PLUGINS WITH CLEANUPS", unicode(0x1F9E7));
+            //remove snapshot if only added for deployment
+            if (SNAPSHOT_DEPLOYMENT) {
+                overwriteWhen("oldVersion", newProjectVersion, true);
+                overwriteWhen("newVersion", newProjectVersion.split("-SNAPSHOT")[0], true);
+                runWhen(() -> Versions.build(SESSION).set(), true);
+            }
+            printJavaDoc();
+
+        } catch (Exception e) {
+            throw new RuntimeException(e);
         }
     }
 
@@ -214,15 +223,15 @@ public class MojoRun extends AbstractMojo {
             if (deployId.isEmpty()) {
                 final Optional<Server> server = findServerByDeployUrl(deployUrl.get(), paramName);
                 if (server.isPresent()) {
-                    LOG.info("Fallback to deployId [%s]", server.get().getId());
+                    LOG.info("%s Fallback to deployId [%s]", unicode(0x1F511), server.get().getId());
                     return server.get().getId() + "::default::" + deployUrl.get();
                 }
-                LOG.error("Cant find any credentials for deploy.id [%s] deploy.url [%s]", deployId.orElse(null), deployUrl.get());
+                LOG.error("%s Cant find any credentials for deploy.id [%s] deploy.url [%s]", unicode(0x1F940), deployId.orElse(null), deployUrl.get());
             } else if (maven.getSettings().getServer(deployId.get()) != null && !isEmpty(maven.getSettings().getServer(deployId.get()).getId())) {
-                LOG.info("DeployId [%s] deployUrl [%s]", deployId.get(), deployUrl.get());
+                LOG.info("%s DeployId [%s] deployUrl [%s]", unicode(0x1F511), deployId.get(), deployUrl.get());
                 return deployId.get() + "::default::" + deployUrl.get();
             }
-            LOG.error("Cant find any credentials for deploy.id [%s] deploy.url [%s]", deployId.orElse(null), deployUrl.get());
+            LOG.error("%s Cant find any credentials for deploy.id [%s] deploy.url [%s]", unicode(0x1F940), deployId.orElse(null), deployUrl.get());
         }
         return null;
     }
@@ -232,7 +241,7 @@ public class MojoRun extends AbstractMojo {
                 .stream(new String[]{"nexus", "artifact", "archiva", "repository", "snapshot"})
                 .sorted(Comparator.comparingInt(o -> (deployUrl.toLowerCase().contains(o.toLowerCase()) ? -1 : 1)))
                 .toArray(String[]::new);
-        LOG.warn("[%s] not set", paramName);
+        LOG.warn("%s [%s] not set", unicode(0x26A0), paramName);
         return getServerContains(artifactRepositories);
     }
 
@@ -301,16 +310,16 @@ public class MojoRun extends AbstractMojo {
         if (tagBreak && newProjectVersion.equalsIgnoreCase(lastGitTag)) {
             throw new RuntimeException(format("Git tag [%s] already exists", newProjectVersion));
         } else if (newProjectVersion.equalsIgnoreCase(lastGitTag)) {
-            LOG.info("Git tag [%s] already exists", newProjectVersion);
+            LOG.info("%s Git tag [%s] already exists", unicode(0x1F3F7), newProjectVersion);
         } else {
-            LOG.info("New git tag [%s]", newProjectVersion);
+            LOG.info("%s New git tag [%s]", unicode(0x1F3F7), newProjectVersion);
         }
     }
 
     private void printJavaDoc() {
         final File javaDocFile = new File(basedir, "target/apidocs/index.html");
         if (javaDocFile.exists()) {
-            LOG.info("JavaDoc [file://%s]", javaDocFile.toURI().getRawPath());
+            LOG.info("%s JavaDoc [file://%s]", unicode(0x1F516), javaDocFile.toURI().getRawPath());
         }
     }
 
@@ -329,14 +338,6 @@ public class MojoRun extends AbstractMojo {
         return result;
     }
 
-
-    private void after() {
-        if (HAS_GIT_CHANGES) {
-            LOG.warn("Load uncommitted git changes");
-            GIT_SERVICE.gitLoadStash();
-        }
-    }
-
     private void before() {
         LOG = new Logger(getLog());
         requireNonNull(pluginManager);
@@ -348,15 +349,10 @@ public class MojoRun extends AbstractMojo {
         GIT_SERVICE = new GitService(LOG, basedir, SESSION.getBoolean("fake").orElse(false));
         SEMANTIC_SERVICE = new SemanticService(GIT_SERVICE, SESSION.getParamPresent("semantic.format").orElse(null));
 
-        HAS_GIT_CHANGES = GIT_SERVICE.gitHasChanges();
-
-        if (HAS_GIT_CHANGES) {
-            LOG.warn("Stashing uncommitted git changes");
-            GIT_SERVICE.gitStash();
-        }
         if (maven.getSettings().getServers() == null) {
             maven.getSettings().setServers(new ArrayList<>());
         }
+        setWhen("base.dir", basedir.toString(), !hasText("base.dir"));
     }
 
     private void runWhen(final ThrowingFunction consumer, final boolean... when) throws Exception {
@@ -386,7 +382,7 @@ public class MojoRun extends AbstractMojo {
     private void overwriteWhen(final String key, final String value, final boolean... when) {
         for (boolean trigger : when) {
             if (trigger) {
-                LOG.debug("+ Config added key [%s] value [%s]", key, value);
+                LOG.debug("%s Config added key [%s] value [%s]", unicode(0x271A), key, toSecret(key, value));
                 maven.getUserProperties().setProperty(key, value);
                 break;
             }
@@ -397,10 +393,10 @@ public class MojoRun extends AbstractMojo {
         requireNonNull(key, "setParameter key is null");
         final String cmdValue = maven.getUserProperties().getProperty(key);
         if (isEmpty(cmdValue)) {
-            LOG.info("+ Config added key [%s] value [%s]", key, value);
+            LOG.info("%s Config added key [%s] value [%s]", unicode(0x271A), key, toSecret(key, value));
             maven.getUserProperties().setProperty(key, value);
         } else {
-            LOG.warn(format("- Config key [%s] already set with [%s] - won't take action", key, cmdValue));
+            LOG.warn("%s Config key [%s] already set with [%s] - won't take action", unicode(0x2796), key, toSecret(key, cmdValue));
         }
     }
 

@@ -21,6 +21,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Properties;
 
+import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static java.lang.String.format;
 
 public class PluginUpdater extends MojoBase {
@@ -64,7 +65,7 @@ public class PluginUpdater extends MojoBase {
         final boolean minor = prop.containsKey("update.minor");
         final String parameter = (major ? " -Dupdate.major" : "") + (minor ? " -Dupdate.minor" : "");
         final String mvnCmd = "mvn berlin.yuna:deployment-maven-plugin:12.0.1:run -Dupdate.plugins=false " + parameter;
-        log.info(format("Running maven command [%s]", mvnCmd));
+        log.debug(format("Running maven command [%s]", mvnCmd));
         return mvnCmd;
     }
 
@@ -81,10 +82,11 @@ public class PluginUpdater extends MojoBase {
                         && dependency.getArtifactId().equalsIgnoreCase(plugin.getArtifactId())
                         && !dependency.getVersion().equalsIgnoreCase(plugin.getVersion())) {
                     newVersionAvailable.put(plugin, dependency.getVersion());
-                    log.info(format("Update plugin [%s] [%s] -> [%s]",
+                    log.info("%s Update plugin [%s] [%s] -> [%s]",
+                            unicode(0x1F4C8),
                             plugin.getArtifactId(),
                             plugin.getVersion(),
-                            dependency.getVersion()));
+                            dependency.getVersion());
                 }
             }
         });

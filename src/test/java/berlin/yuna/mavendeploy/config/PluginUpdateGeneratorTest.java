@@ -19,6 +19,7 @@ import java.util.stream.Collectors;
 
 import static berlin.yuna.mavendeploy.config.PluginUpdater.createPomFile;
 import static berlin.yuna.mavendeploy.config.PluginUpdater.reportPluginUpdates;
+import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static java.lang.String.format;
 
 public class PluginUpdateGeneratorTest extends CustomMavenTestFramework {
@@ -34,6 +35,7 @@ public class PluginUpdateGeneratorTest extends CustomMavenTestFramework {
         final List<Plugin> mojoList = mojoBases.stream()
                 .filter(mojo -> !mojo.equals(new PluginUpdater(new PluginSession(null, log))))
                 .filter(mojo -> !mojo.equals(new ReadmeBuilder(new PluginSession(null, log))))
+                .filter(mojo -> !mojo.equals(new PropertyWriter(new PluginSession(null, log))))
                 .map(MojoBase::toPlugin)
                 .collect(Collectors.toList());
         createPomFile(pomFile.toPath(), mojoList);
@@ -46,7 +48,7 @@ public class PluginUpdateGeneratorTest extends CustomMavenTestFramework {
             try {
                 if (fixedVersions.containsKey(mojo.getArtifactId())) {
                     final String fixedVersion = fixedVersions.get(mojo.getArtifactId());
-                    log.error("Update block for [%s] fall back to [%s]", mojo.getArtifactId(), fixedVersion);
+                    log.error("%s Update block for [%s] fall back to [%s]", unicode(0x1F940), mojo.getArtifactId(), fixedVersion);
                     updateInCodePluginVersions(mojo, fixedVersion, getPath(mojoBases, mojo));
                 } else {
                     updateInCodePluginVersions(mojo, newVersion, getPath(mojoBases, mojo));

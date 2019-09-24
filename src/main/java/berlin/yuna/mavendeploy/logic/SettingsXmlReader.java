@@ -1,5 +1,7 @@
 package berlin.yuna.mavendeploy.logic;
 
+import berlin.yuna.clu.logic.SystemUtil;
+import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import berlin.yuna.mavendeploy.util.MojoUtil;
@@ -14,18 +16,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
-import java.util.regex.Pattern;
 
+import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
 import static java.util.Arrays.stream;
 import static java.util.Comparator.comparing;
 import static java.util.stream.Collectors.toList;
 
-//TODO: test Environment && User properties
 public class SettingsXmlReader {
 
-    private static final Pattern SERVER_PATTERN = Pattern.compile("(?i)((?<server>--server.*)(--Server)|\\S)?");
     private final PluginSession session;
     private final Logger log;
     private final MavenSession maven;
@@ -50,16 +50,32 @@ public class SettingsXmlReader {
         return new SettingsXmlReader(session).read();
     }
 
+    public static String getGpgPath(final PluginSession session) {
+        final Terminal terminal = new Terminal().consumerError(session.getLog()::debug);
+        final String result;
+        if (SystemUtil.isWindows()) {
+            //FIXME: test on windows if installed, gpg || gpg2, same as with unix
+            result = terminal.execute("where gpg").consoleInfo();
+        } else {
+            result = terminal.execute("if which gpg2 &> /dev/null; then which gpg2; "
+                    + "elif which gpg &> /dev/null; then which gpg; else echo \"gpg\"; fi"
+            ).consoleInfo();
+            return result;
+        }
+        return isPresent(result) ? result : "gpg";
+    }
+
     private void addGpgToSettings() {
         session.getParamPresent("gpg.pass", "gpg.passphrase").ifPresent(gpgPassphrase -> {
-            log.info("Creating GPG settings");
+            log.info("%s Creating GPG profile", unicode(0x1F4D1));
             final Profile profile = new Profile();
             final Activation activation = new Activation();
             final Properties properties = new Properties();
             activation.setActiveByDefault(true);
-            properties.setProperty("gpg.executable", "gpg");
-            properties.setProperty("gpg.passphrase", gpgPassphrase);
+            profile.setId("gpg");
             profile.setActivation(activation);
+            properties.setProperty("gpg.executable", session.getParamFallback("gpg.executable", "gpg"));
+            properties.setProperty("gpg.passphrase", gpgPassphrase);
             profile.setProperties(properties);
             maven.getSettings().getProfiles().add(profile);
         });

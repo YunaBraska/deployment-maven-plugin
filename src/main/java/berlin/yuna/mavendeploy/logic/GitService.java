@@ -18,8 +18,10 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static java.lang.String.format;
 
+//TODO can be replaced by SCM Plugin?
 public class GitService {
 
     private final Logger log;
@@ -60,7 +62,7 @@ public class GitService {
             try {
                 properties.load(new StringReader(config.replaceAll("[\\n|\\r|\\s|$|]", "\n")));
             } catch (IOException e) {
-                log.error("Could not read git config due [%s]" + e, config);
+                log.error("%s Could not read git config due [%s] %s", unicode(0x1F940), config, e);
             }
         }
         return properties;
@@ -72,7 +74,7 @@ public class GitService {
         try {
             return Git.open(workDir).reflog().call();
         } catch (GitAPIException | IOException e) {
-            log.error("Could not read git directory due " + e);
+            log.error("%s Could not read git directory due %s", unicode(0x1F940), e);
             return null;
         }
     }
@@ -88,19 +90,19 @@ public class GitService {
         try {
             return active && Git.open(workDir).status().call().isClean();
         } catch (GitAPIException | IOException e) {
-            log.error("Could not read git directory due " + e);
+            log.error("%s Could not read git directory due %s", unicode(0x1F940), e);
             return false;
         }
     }
 
     public boolean gitStash() {
         if (fake) {
-            log.warn("fake stash");
+            log.warn("%s Fake stash", unicode(0x26A0));
         }
         try {
             return active && Git.open(workDir).stashCreate().call() != null;
         } catch (GitAPIException | IOException e) {
-            log.error("Failed to stash " + e);
+            log.error("%s Failed to stash %s", unicode(0x1F940), e);
             return false;
         }
 //        return fake ? "fake stash" : getTerminal().execute("git stash clear; git stash").consoleInfo().trim();
@@ -108,13 +110,14 @@ public class GitService {
 
     public String gitLoadStash() {
         if (fake) {
-            log.warn("fake load stash");
+            log.warn("%s Fake load stash", unicode(0x26A0));
         }
 
         try {
             return active ? Git.open(workDir).stashApply().call().toObjectId().getName() : null;
         } catch (GitAPIException | IOException e) {
-            log.error("Failed to load stash " + e);
+            log.debug("Failed to load stash " + e);
+            getTerminal().breakOnError(false).execute("git stash pop");
             return "failed";
         }
     }
@@ -146,14 +149,14 @@ public class GitService {
             }
             return Optional.ofNullable(branches.get(0).getName());
         } catch (GitAPIException | IOException e) {
-            log.error("Could not read git directory due " + e);
+            log.error("%s Could not read git directory due %e", unicode(0x1F940), e);
             return Optional.empty();
         }
     }
 
     private void logFakeMessage(final Logger log) {
         if (fake) {
-            log.warn(format("Faked [%s]", getClass().getSimpleName()));
+            log.warn(format("%s Faked [%s]", unicode(0x26A0), getClass().getSimpleName()));
         }
     }
 
@@ -172,7 +175,7 @@ public class GitService {
         try {
             hasGit = Optional.ofNullable(Git.open(workDir).status().call()).isPresent();
         } catch (Exception e) {
-            log.info("Project is not a git repository [%s]", workDir);
+            log.info("%s Project is not a git repository [%s]", unicode(0x1F4CD), workDir);
             hasGit = false;
         }
         return hasGit;

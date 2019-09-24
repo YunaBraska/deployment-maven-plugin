@@ -226,6 +226,7 @@ server2.passphrase='passphrase2'
 | test.skip           | Boolean | false              | same as "maven.test.skip"                                                  |
 | project.encoding    | Boolean | false              | sets default encoding to every encoding parameter definition               |
 | java.version        | Boolean | false              | sets default java version to every java version parameter definition       |
+| properties.print    | Boolean/String | ''          | writes all properties to (given fileValue or "all.properties") file        |
 
 ### Requirements
 * \[JAVA\] for maven 

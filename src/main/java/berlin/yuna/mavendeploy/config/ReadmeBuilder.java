@@ -15,6 +15,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 import java.util.stream.Collectors;
 
+import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static java.lang.String.format;
 import static java.util.Collections.singletonList;
 
@@ -78,7 +79,7 @@ public class ReadmeBuilder extends MojoBase {
             }
             return result;
         } catch (IOException e) {
-            log.error(e);
+            log.error("%s %s", unicode(0x1F940), e);
         }
         return "";
     }
@@ -161,7 +162,7 @@ public class ReadmeBuilder extends MojoBase {
     private void writeFile(final Path builderPath, final String content, final String optionalPath) throws IOException {
         final Path outputPath = getOutputPath(builderPath, optionalPath);
         Files.write(outputPath, content.getBytes());
-        log.info("Generated [%s]", outputPath);
+        log.info("%s Generated [%s]", unicode(0x1F4D1), outputPath);
     }
 
     private Path getOutputPath(final Path builderPath, final String optionalPath) throws IOException {

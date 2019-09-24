@@ -3,9 +3,11 @@ package berlin.yuna.mavendeploy;
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Compiler;
 import berlin.yuna.mavendeploy.config.Dependency;
+import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.PluginUpdater;
+import berlin.yuna.mavendeploy.config.PropertyWriter;
 import berlin.yuna.mavendeploy.config.ReadmeBuilder;
 import berlin.yuna.mavendeploy.config.Scm;
 import berlin.yuna.mavendeploy.config.Surefire;
@@ -15,13 +17,20 @@ import berlin.yuna.mavendeploy.helper.SettingsXmlBuilder;
 import org.junit.Test;
 
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.List;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
+import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static java.lang.String.format;
+import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
+import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.IsNot.not;
 
 //FIXME: how to do a GPG test? ¯\_(ツ)_/¯
@@ -134,7 +143,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         terminal.execute(mvnCmd("-Dproject.version=definedVersion -DnewVersion=manualSetVersion"));
 
         expectPropertiesOverwrite(prop("newVersion", "manualSetVersion"));
-        assertThat(getPomFile(TEST_POM.getPomFile()).getVersion(), is(equalTo("manualSetVersion")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("manualSetVersion")));
     }
 
     @Test
@@ -142,16 +151,16 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         terminal.execute(mvnCmd("-Dproject.version=definedVersion"));
 
         expectProperties(prop("newVersion", "definedVersion"));
-        assertThat(getPomFile(TEST_POM.getPomFile()).getVersion(), is(equalTo("definedVersion")));
+        assertThat(getCurrentProjectVersion(), is(equalTo("definedVersion")));
     }
 
     @Test
     public void setProjectVersion_manually_shouldSetNewVersion() {
-        final String prevPomVersion = getPomFile(TEST_POM.getPomFile()).getVersion();
+        final String prevPomVersion = getCurrentProjectVersion();
         terminal.execute(mvnCmd("-Dproject.version=definedVersion"));
 
         expectProperties(prop("newVersion", "definedVersion"));
-        final String newPomVersion = getPomFile(TEST_POM.getPomFile()).getVersion();
+        final String newPomVersion = getCurrentProjectVersion();
 
         expectMojoRun(g(Versions.class, "set"));
         assertThat(newPomVersion, is(not(equalTo(prevPomVersion))));
@@ -262,11 +271,11 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     public void detectLibrary_shouldBeSuccessful() {
         setPackaging("pom");
         terminal.execute(mvnCmd(""));
-        assertThat(terminal.consoleInfo(), is(containsString("Project is library [true]")));
+        expectProperties(prop("project.library", "true"));
 
         setPackaging("jar");
         terminal.execute(mvnCmd(""));
-        assertThat(terminal.consoleInfo(), is(containsString("Project is library [false]")));
+        expectProperties(prop("project.library", "false"));
     }
 
     @Test
@@ -344,12 +353,12 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
     @Test
     public void deploySnapshot_shouldAddSnapshotToProjectVersion() {
-        final String oldPomVersion = getPomFile(TEST_POM.getPomFile()).getVersion();
+        final String oldPomVersion = getCurrentProjectVersion();
         terminal.execute(mvnCmd("-Ddeploy.snapshot"));
 
         expectProperties(prop("newVersion", oldPomVersion + "-SNAPSHOT"));
         expectProperties(prop("newVersion", oldPomVersion));
-        assertThat(getPomFile(TEST_POM.getPomFile()).getVersion(), is(equalTo(oldPomVersion)));
+        assertThat(getCurrentProjectVersion(), is(equalTo(oldPomVersion)));
         expectMojoRun(g(Versions.class, "set"));
     }
 
@@ -379,7 +388,6 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         expectMojoRun(g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"));
     }
 
-    //TODO: test settings as parameter
     @Test
     public void deploy_withDeployIdAndDeployUrlAndSettings_shouldStartDeployment() {
         final SettingsXmlBuilder sxb = new SettingsXmlBuilder();
@@ -425,6 +433,49 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
             assertThat(terminal.consoleInfo(), containsString(" The packaging for this project did not assign a file to the build artifact"));
             terminal.clearConsole();
         }
+    }
+
+    @Test
+    public void gpgTest() throws IOException {
+        try {
+            setupGpgTest(terminal);
+            terminal.execute(mvnCmd("-Djava.doc -Djava.source -Dgpg.pass=mySecret"));
+        } catch (Exception e) {
+            log.error("%s GPG test failed cause [%s]", unicode(0x1F940), e);
+        } finally {
+            teardownGpgTest(terminal);
+        }
+
+        final File target = new File(TEST_POM.getPomFile().getParent(), "target");
+        assertThat(target.exists(), is(true));
+        final List<Path> ascFiles = Files.walk(target.toPath()).filter(f -> f.getFileName().toString().endsWith(".asc")).collect(toList());
+        assertThat(ascFiles, hasSize(3));
+        expectMojoRun(g(Javadoc.class, "jar"), g(JavaSource.class, "jar-no-fork"), g(Gpg.class, "sign"));
+    }
+
+    @Test
+    public void writeAllProperties_withBoolean_ShouldBeSuccessful() throws IOException {
+        terminal.execute(mvnCmd("-Dproperties.print -Dsomepassword=berlin -Dsomesecret=iAmAHero"));
+
+        final File allProps = new File(TEST_POM.getPomFile().getParent(), "target/all.properties");
+        expectPropertyFile(allProps);
+    }
+
+    @Test
+    public void writeAllProperties_withFileString_ShouldBeSuccessful() throws IOException {
+        final File allProps = new File(TEST_POM.getPomFile().getParent(), "myFolder/my.properties");
+        terminal.execute(mvnCmd("-Dproperties.print=" + allProps + " -Dsomepassword=berlin -Dsomesecret=iAmAHero"));
+
+        expectPropertyFile(allProps);
+    }
+
+    private void expectPropertyFile(final File allPropsFile) throws IOException {
+        assertThat(allPropsFile.exists(), is(true));
+        final String content = Files.readString(allPropsFile.toPath());
+        assertThat(content, containsString("somepassword = ******"));
+        assertThat(content, containsString("somesecret = ********"));
+        assertThat(content, not(containsString("iAmAHero")));
+        expectMojoRun(g(PropertyWriter.class, "write"));
     }
 
     private String[] getServerVariants() {

@@ -10,6 +10,7 @@ import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.MojoBase;
 import berlin.yuna.mavendeploy.config.PluginUpdater;
+import berlin.yuna.mavendeploy.config.PropertyWriter;
 import berlin.yuna.mavendeploy.config.ReadmeBuilder;
 import berlin.yuna.mavendeploy.config.Resources;
 import berlin.yuna.mavendeploy.config.Scm;
@@ -44,6 +45,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
+import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
@@ -60,6 +62,7 @@ import static org.hamcrest.core.IsNot.not;
 
 public class CustomMavenTestFramework {
 
+    private static final String name = CustomMavenTestFramework.class.getSimpleName();
     protected static Model TEST_POM;
     protected static Model PROJECT_POM;
     protected Terminal terminal;
@@ -76,6 +79,7 @@ public class CustomMavenTestFramework {
             g(Dependency.class, "purge-local-repository"),
             g(PluginUpdater.class, "update"),
             g(ReadmeBuilder.class, "render"),
+            g(PropertyWriter.class, "write"),
             g(Versions.class, "update-parent"),
             g(Versions.class, "update-properties"),
             g(Versions.class, "update-child-modules"),
@@ -98,9 +102,9 @@ public class CustomMavenTestFramework {
 
     @BeforeClass
     public static void setUpClass() {
-        log.debug(format("Start preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
-        getTerminal().execute("mvn -Dmaven.test.skip=true install");
-        log.debug(format("End preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
+        log.debug(format("Start preparing [%s]", name));
+        getTerminal().execute("mvn -Dmaven.test.skip=true install --quiet");
+        log.debug(format("End preparing [%s]", name));
     }
 
     @Before
@@ -205,9 +209,9 @@ public class CustomMavenTestFramework {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
             log.debug(format("[INFO] Config expected key [%s] value [%s] ", config.key, config.value));
-            assertThat(format("Config [%s] is dropped", config.key), consoleInfo, not(containsString(format("- Config key [%s] already set", config.key))));
-            assertThat(format("Config [%s] is not set", config.key), consoleInfo, containsString(format("+ Config added key [%s]", config.key)));
-            assertThat(format("Config [%s] has wrong value", config.key), consoleInfo, containsString(format("+ Config added key [%s] value [%s]", config.key, config.value)));
+            assertThat(format("Config [%s] is dropped", config.key), consoleInfo, not(containsString(format("Config key [%s] already set", config.key))));
+            assertThat(format("Config [%s] is not set", config.key), consoleInfo, containsString(format("Config added key [%s]", config.key)));
+            assertThat(format("Config [%s] has wrong value", config.key), consoleInfo, containsString(format("Config added key [%s] value [%s]", config.key, config.value)));
         }
     }
 
@@ -215,8 +219,8 @@ public class CustomMavenTestFramework {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
             log.debug("[INFO] Config not expected: " + config.key);
-            assertThat(format("Config [%s] is set but not overwritten", config.key), consoleInfo, not(containsString(format("+ Config added key [%s]", config.key))));
-            assertThat(format("Config [%s] was not set at all", config.key), consoleInfo, containsString(format("- Config key [%s] already set with [%s]", config.key, config.value)));
+            assertThat(format("Config [%s] is set but not overwritten", config.key), consoleInfo, not(containsString(format("Config added key [%s]", config.key))));
+            assertThat(format("Config [%s] was not set at all", config.key), consoleInfo, containsString(format("Config key [%s] already set with [%s]", config.key, config.value)));
         }
     }
 
@@ -244,7 +248,7 @@ public class CustomMavenTestFramework {
 
     private void deleteDirIfExists(final Path dir) throws IOException {
         if (Files.exists(dir)) {
-            log.info("Deleting [%s]", dir.toString());
+            log.info("%s Deleting [%s]", unicode(0x1F4CD), dir.toString());
             deleteDir(dir);
         }
     }
@@ -302,5 +306,35 @@ public class CustomMavenTestFramework {
             e.printStackTrace();
         }
         return mojoList;
+    }
+
+    protected static void setupGpgTest(final Terminal terminal) {
+        terminal.execute(
+                "cat >keyfile <<EOF\n" +
+                        "     %echo Generating a basic OpenPGP key\n" +
+                        "     Key-Type: RSA\n" +
+                        "     Key-Length: 2048\n" +
+                        "     Subkey-Type: ELG-E\n" +
+                        "     Subkey-Length: 1024\n" +
+                        "     Name-Real: gpgTestName\n" +
+                        "     Name-Comment: keep it simple\n" +
+                        "     Name-Email: mail@example.com\n" +
+                        "     Expire-Date: 0\n" +
+                        "     Passphrase: mySecret\n" +
+                        "     %pubring gpg.pub\n" +
+                        "     %secring gpg.sec\n" +
+                        "     %key created\n" +
+                        "     %echo done\n" +
+                        "EOF"
+        );
+        terminal.execute("gpg --batch --gen-key keyfile");
+        terminal.execute("gpg --import gpg.pub");
+        terminal.execute("rm -rf foo");
+    }
+
+    protected static void teardownGpgTest(final Terminal terminal) {
+        terminal.execute("gpg --batch --yes --delete-secret-keys $(gpg --no-default-keyring --secret-keyring ./gpg.sec --keyring ./gpg.pub --list-secret-keys | grep \"      \" | head -n1 | xargs)");
+        terminal.execute("gpg --batch --yes --delete-keys $(gpg --no-default-keyring --secret-keyring ./gpg.sec --keyring ./gpg.pub --list-keys | grep \"      \" | head -n1 | xargs)");
+        terminal.execute("rm -rf gpg.pub keyfile");
     }
 }
