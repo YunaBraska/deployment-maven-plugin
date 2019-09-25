@@ -10,6 +10,7 @@ import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.MojoBase;
 import berlin.yuna.mavendeploy.config.PluginUpdater;
+import berlin.yuna.mavendeploy.config.PropertyWriter;
 import berlin.yuna.mavendeploy.config.ReadmeBuilder;
 import berlin.yuna.mavendeploy.config.Resources;
 import berlin.yuna.mavendeploy.config.Scm;
@@ -44,6 +45,8 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
+import static berlin.yuna.mavendeploy.logic.SettingsXmlReader.getGpgPath;
+import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
@@ -60,15 +63,22 @@ import static org.hamcrest.core.IsNot.not;
 
 public class CustomMavenTestFramework {
 
+    private static final String name = CustomMavenTestFramework.class.getSimpleName();
     protected static Model TEST_POM;
     protected static Model PROJECT_POM;
+    protected static Path TEST_DIR;
     protected Terminal terminal;
     protected Terminal terminalNoLog;
-    protected static Logger log = new Logger(null, "HH:mm:ss");
-    protected static GitService gitService;
 
+    private static String TMP_DIR = System.getProperty("java.io.tmpdir");
+    public static final String GPG_KEY_FILE = TMP_DIR + "/gpg.keyfile";
+    public static final String GPG_SEC = TMP_DIR + "/gpg.sec";
+    public static final String GPG_PUB = TMP_DIR + "/gpg.pub";
     private static final String DEBUG_ENV = System.getenv("DEBUG");
-    protected static final boolean DEBUG = isEmpty(DEBUG_ENV) || parseBoolean(DEBUG_ENV);
+    public static final boolean DEBUG = isEmpty(DEBUG_ENV) || parseBoolean(DEBUG_ENV);
+
+    protected static GitService gitService;
+    protected static Logger log = new Logger(null, "HH:mm:ss").enableDebug(DEBUG);
 
     private final List<ActiveGoal> definedMojoList = asList(
             g(Clean.class, "clean"),
@@ -76,6 +86,7 @@ public class CustomMavenTestFramework {
             g(Dependency.class, "purge-local-repository"),
             g(PluginUpdater.class, "update"),
             g(ReadmeBuilder.class, "render"),
+            g(PropertyWriter.class, "write"),
             g(Versions.class, "update-parent"),
             g(Versions.class, "update-properties"),
             g(Versions.class, "update-child-modules"),
@@ -98,30 +109,30 @@ public class CustomMavenTestFramework {
 
     @BeforeClass
     public static void setUpClass() {
-        log.debug(format("Start preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
-        getTerminal().execute("mvn -Dmaven.test.skip=true install");
-        log.debug(format("End preparing [%s]", CustomMavenTestFramework.class.getSimpleName()));
+        log.debug("Start preparing [%s]", name);
+        getTerminal().execute("mvn -Dmaven.test.skip=true install --quiet");
+        log.debug("End preparing [%s]", name);
     }
 
     @Before
     public void setUp() throws IOException, URISyntaxException, GitAPIException {
-        final Path tmpDir = prepareTestProject();
+        TEST_DIR = prepareTestProject();
         PROJECT_POM = getPomFile(new File(System.getProperty("user.dir"), "pom.xml"));
-        TEST_POM = getPomFile(new File(tmpDir.toFile(), "pom.xml"));
-        terminal = getTerminal().dir(tmpDir);
-        terminalNoLog = getTerminalNoLog().dir(tmpDir);
-        gitService = new GitService(log, tmpDir.toFile(), true);
+        TEST_POM = getPomFile(new File(TEST_DIR.toFile(), "pom.xml"));
+        terminal = getTerminal().dir(TEST_DIR);
+        terminalNoLog = getTerminalNoLog().dir(TEST_DIR);
+        gitService = new GitService(log, TEST_DIR.toFile(), true);
         assertThat(
                 format("Terminal does not point to test project [%s]", terminal.dir()),
                 terminal.dir().getAbsolutePath().startsWith(System.getProperty("user.dir")),
                 is(false)
         );
-        log.debug(format("Work dir [%s]", tmpDir));
+        log.debug("Work dir [%s]", TEST_DIR);
     }
 
     @After
     public void tearDown() throws IOException {
-        deleteDir(TEST_POM.getPomFile().getParentFile().toPath());
+        deleteDir(TEST_DIR);
     }
 
     public static Path getPath(final Class clazz) {
@@ -131,7 +142,7 @@ public class CustomMavenTestFramework {
 
     protected void mergeBranch(final String branchName) {
         try {
-            final Path filePath = Paths.get(TEST_POM.getPomFile().getParentFile().toString(), new File(branchName).getName());
+            final Path filePath = Paths.get(TEST_DIR.toString(), new File(branchName).getName());
             terminal.execute("git checkout -b " + branchName);
             Files.write(filePath, singletonList(branchName), StandardCharsets.UTF_8, StandardOpenOption.CREATE, APPEND);
             terminal.execute(format("git add .; git commit -a -m '%s'; git checkout master; git merge %s", branchName, branchName));
@@ -149,7 +160,7 @@ public class CustomMavenTestFramework {
                 + ":" + PROJECT_POM.getVersion()
                 + ":run -Dfake -X "
                 + parameter;
-        log.debug(format("Running maven command [%s]", mvnCmd.trim()));
+        log.debug("Running maven command [%s]", mvnCmd.trim());
         return mvnCmd;
     }
 
@@ -204,10 +215,10 @@ public class CustomMavenTestFramework {
     protected void expectProperties(final Prop... configs) {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
-            log.debug(format("[INFO] Config expected key [%s] value [%s] ", config.key, config.value));
-            assertThat(format("Config [%s] is dropped", config.key), consoleInfo, not(containsString(format("- Config key [%s] already set", config.key))));
-            assertThat(format("Config [%s] is not set", config.key), consoleInfo, containsString(format("+ Config added key [%s]", config.key)));
-            assertThat(format("Config [%s] has wrong value", config.key), consoleInfo, containsString(format("+ Config added key [%s] value [%s]", config.key, config.value)));
+            log.debug("[INFO] Config expected key [%s] value [%s] ", config.key, config.value);
+            assertThat(format("Config [%s] is dropped", config.key), consoleInfo, not(containsString(format("Config key [%s] already set", config.key))));
+            assertThat(format("Config [%s] is not set", config.key), consoleInfo, containsString(format("Config added key [%s]", config.key)));
+            assertThat(format("Config [%s] has wrong value", config.key), consoleInfo, containsString(format("Config added key [%s] value [%s]", config.key, config.value)));
         }
     }
 
@@ -215,8 +226,8 @@ public class CustomMavenTestFramework {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
             log.debug("[INFO] Config not expected: " + config.key);
-            assertThat(format("Config [%s] is set but not overwritten", config.key), consoleInfo, not(containsString(format("+ Config added key [%s]", config.key))));
-            assertThat(format("Config [%s] was not set at all", config.key), consoleInfo, containsString(format("- Config key [%s] already set with [%s]", config.key, config.value)));
+            assertThat(format("Config [%s] is set but not overwritten", config.key), consoleInfo, not(containsString(format("Config added key [%s]", config.key))));
+            assertThat(format("Config [%s] was not set at all", config.key), consoleInfo, containsString(format("Config key [%s] already set with [%s]", config.key, config.value)));
         }
     }
 
@@ -244,7 +255,7 @@ public class CustomMavenTestFramework {
 
     private void deleteDirIfExists(final Path dir) throws IOException {
         if (Files.exists(dir)) {
-            log.info("Deleting [%s]", dir.toString());
+            log.info("%s Deleting [%s]", unicode(0x1F4CD), dir.toString());
             deleteDir(dir);
         }
     }
@@ -302,5 +313,52 @@ public class CustomMavenTestFramework {
             e.printStackTrace();
         }
         return mojoList;
+    }
+
+    protected static void setupGpgTestKey(final Terminal terminal, final Logger log) {
+        final String gpgCmd = getGpgPath(log);
+        terminal.execute(gpgCmd + " --version");
+        terminal.execute(
+                "cat > " + GPG_KEY_FILE + " <<EOF\n"
+                        + "     %echo Generating a basic OpenPGP key\n"
+                        + "     Key-Type: RSA\n"
+                        + "     Key-Length: 2048\n"
+                        + "     Subkey-Type: ELG-E\n"
+                        + "     Subkey-Length: 1024\n"
+                        + "     Name-Real: gpgTestName\n"
+                        + "     Name-Comment: keep it simple\n"
+                        + "     Name-Email: mail@example.com\n"
+                        + "     Expire-Date: 0\n"
+                        + "     Passphrase: mySecret\n"
+                        + "     %pubring "
+                        + GPG_PUB + "\n"
+                        + "     %secring "
+                        + GPG_SEC + "\n"
+                        + "     %key created\n"
+                        + "     %echo done\n"
+                        + "EOF"
+        );
+        sleep();
+        terminal.execute(gpgCmd + " --batch --gen-key " + GPG_KEY_FILE);
+        sleep();
+        terminal.execute(gpgCmd + " --import " + GPG_PUB);
+        sleep();
+        terminal.execute(gpgCmd + " --list-keys");
+    }
+
+    protected static void teardownGpgTestKey(final Terminal terminal, final Logger log) {
+        final String gpgCmd = getGpgPath(log);
+        terminal.execute(gpgCmd + " --batch --yes --delete-secret-keys $(" + gpgCmd + " --no-default-keyring --secret-keyring " + GPG_SEC + " --keyring " + GPG_PUB + " --list-secret-keys | grep \"      \" | head -n1 | xargs)");
+        terminal.execute(gpgCmd + " --batch --yes --delete-keys $(" + gpgCmd + " --no-default-keyring --secret-keyring " + GPG_SEC + " --keyring " + GPG_PUB + " --list-keys | grep \"      \" | head -n1 | xargs)");
+        terminal.execute(gpgCmd + " --list-keys");
+        terminal.execute("rm -rf " + GPG_PUB + " " + GPG_SEC + " " + GPG_KEY_FILE);
+    }
+
+    private static void sleep() {
+        try {
+            Thread.sleep(1000);
+        } catch (InterruptedException e) {
+            e.printStackTrace();
+        }
     }
 }

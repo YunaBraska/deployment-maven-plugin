@@ -26,7 +26,6 @@ import java.util.Collections;
 import java.util.List;
 
 import static berlin.yuna.mavendeploy.plugin.PlexusConfigurationUtils.toXpp3Dom;
-import static java.lang.String.format;
 
 /**
  * Executes an arbitrary mojo using a fluent interface.  This is meant to be executed within the context of a Maven mojo. Here is an
@@ -64,7 +63,7 @@ public class MojoExecutor {
      * @throws MojoExecutionException If there are any exceptions locating or executing the mojo
      */
     public static void executeMojo(final Plugin plugin, String goal, final Xpp3Dom configuration, final ExecutionEnvironment env) throws MojoExecutionException {
-        logger.debug(format("Running executeMojo for [%s]", plugin));
+        logger.debug("Running executeMojo for [%s]", plugin);
         if (configuration == null) {
             throw new NullPointerException("configuration may not be null");
         }
@@ -304,9 +303,9 @@ public class MojoExecutor {
     /**
      * Constructs the element with a textual body and only attribute
      *
-     * @param name       The element name
-     * @param value      The element text value
-     * @param attribute  The element attribute
+     * @param name      The element name
+     * @param value     The element text value
+     * @param attribute The element attribute
      * @return The element object
      */
     public static Element element(final String name, final String value, final Attribute attribute) {
@@ -339,9 +338,9 @@ public class MojoExecutor {
     /**
      * Constructs the element containing child elements and only attribute
      *
-     * @param name       The element name
-     * @param attribute  The element attribute
-     * @param elements   The child elements
+     * @param name      The element name
+     * @param attribute The element attribute
+     * @param elements  The child elements
      * @return The Element object
      */
     public static Element element(final String name, final Attribute attribute, final Element... elements) {
@@ -354,7 +353,7 @@ public class MojoExecutor {
      * @param attributes The attributes
      * @return The Attributes object
      */
-    public static Attributes attributes(final Attribute ... attributes) {
+    public static Attributes attributes(final Attribute... attributes) {
         return new Attributes(attributes);
     }
 
@@ -408,7 +407,7 @@ public class MojoExecutor {
             for (Element e : children) {
                 dom.addChild(e.toDom());
             }
-            for(Attribute attribute : attributes.attributes) {
+            for (Attribute attribute : attributes.attributes) {
                 dom.setAttribute(attribute.name, attribute.value);
             }
 
@@ -464,7 +463,7 @@ public class MojoExecutor {
 
         ExecutionEnvironment(final MavenSession mavenSession,
                              final BuildPluginManager pluginManager) {
-            this ( null, mavenSession, pluginManager);
+            this(null, mavenSession, pluginManager);
         }
 
         public MavenProject getMavenProject() {

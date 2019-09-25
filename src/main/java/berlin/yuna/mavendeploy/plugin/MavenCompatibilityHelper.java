@@ -32,8 +32,6 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 
-import static java.lang.String.format;
-
 /**
  * The <tt>MavenCompatibilityHelper</tt> hides incompatibilities between Maven versions
  */
@@ -83,7 +81,7 @@ class MavenCompatibilityHelper {
             if (session.getCurrentProject() != null) {
                 repositories = session.getCurrentProject().getRemotePluginRepositories();
             }
-            logger.debug(format("Attempting to load plugin [%s] using pluginManager [%s] and repositories [%s]", plugin, pluginManager, repositories));
+            logger.debug("Attempting to load plugin [%s] using pluginManager [%s] and repositories [%s]", plugin, pluginManager, repositories);
             return (PluginDescriptor) loadPlugin.invoke(pluginManager, plugin, repositories, repositorySession);
         } catch (IllegalAccessException e) {
             throw new MojoExecutionException("Unable to access plugin", e);

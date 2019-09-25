@@ -14,6 +14,7 @@ public class Logger {
     private final Log LOG;
     private final DateTimeFormatter formatter;
     private LocalDateTime lastLog = LocalDateTime.now();
+    boolean debugEnabled = false;
 
     public Logger() {
         this(null);
@@ -28,14 +29,18 @@ public class Logger {
         LOG = log;
         if (LOG == null) {
             warn("Maven logger is not set - fall back to console");
+        } else {
+            debugEnabled = log.isDebugEnabled();
         }
     }
 
     public void debug(final Object... format) {
-        if (LOG == null) {
-            System.out.println("[DEBUG]   " + formatMsg(format));
-        } else {
-            LOG.debug("   " + formatMsg(format));
+        if (debugEnabled) {
+            if (LOG == null) {
+                System.out.println("[DEBUG]   " + formatMsg(format));
+            } else {
+                LOG.debug("   " + formatMsg(format));
+            }
         }
     }
 
@@ -67,6 +72,11 @@ public class Logger {
         return LOG;
     }
 
+    public Logger enableDebug(final boolean enable) {
+        debugEnabled = enable;
+        return this;
+    }
+
     private String formatMsg(final Object[] format) {
         final LocalDateTime now = LocalDateTime.now();
         final long diff = lastLog.until(now, SECONDS);
@@ -74,7 +84,7 @@ public class Logger {
         lastLog = now;
         return format(
                 "[%s]%s %s", now.format(formatter),
-                ((LOG != null && LOG.isDebugEnabled()) ? " [" + diff + "s]" : ""),
+                ((debugEnabled) ? " [" + diff + "s]" : ""),
                 msg
         );
     }

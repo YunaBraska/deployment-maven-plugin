@@ -76,6 +76,8 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 | test.skip           | Boolean | false              | same as "maven.test.skip"                                                  |
 | project.encoding    | Boolean | false              | sets default encoding to every encoding parameter definition               |
 | java.version        | Boolean | false              | sets default java version to every java version parameter definition       |
+| properties.print    | Boolean/String | ''          | writes all properties to (given fileValue or "all.properties") file        |
+| changes.push        | String  | ''                 | push changes to specific branch                                            |
 
 ### Requirements
 * \[JAVA\] for maven 

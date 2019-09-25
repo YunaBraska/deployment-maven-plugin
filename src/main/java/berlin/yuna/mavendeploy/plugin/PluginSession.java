@@ -4,7 +4,6 @@ import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.Prop;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.settings.Server;
-import org.apache.maven.settings.Settings;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
 import java.util.ArrayList;
@@ -23,13 +22,12 @@ import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
 
-//TODO: test Environment && User properties
 public class PluginSession {
 
     private final MojoExecutor.ExecutionEnvironment environment;
     private final Logger log;
 
-    public PluginSession (final  MojoExecutor.ExecutionEnvironment environment, final Logger log) {
+    public PluginSession(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
         this.environment = environment;
         this.log = log;
     }
@@ -43,11 +41,6 @@ public class PluginSession {
     }
 
     private Optional<Boolean> getBoolean(final String... keys) {
-//        final Optional<String> value = getString(key);
-//        if (value.isEmpty()) {
-//            return Optional.empty();
-//        }
-//        return Optional.of(parseBoolean(value.get()));
         return stream(keys).map(this::getBoolean).filter(Optional::isPresent).findFirst().orElseGet(Optional::empty);
     }
 
@@ -59,23 +52,15 @@ public class PluginSession {
         return Optional.of(parseBoolean(value.get()));
     }
 
+    public String getParamFallback(final String key, final String fallback) {
+        return getParamPresent(key).orElse(fallback);
+    }
+
     private Optional<String> getParam(final String... keys) {
-//        for (String key : keys) {
-//            final Optional<String> result = getString(key);
-//            if (result.isPresent()) {
-//                return result;
-//            }
-//        }
         return stream(keys).map(this::getString).filter(Optional::isPresent).findFirst().orElseGet(Optional::empty);
     }
 
     public Optional<String> getParamPresent(final String... keys) {
-//        for (String key : keys) {
-//            final Optional<String> result = getString(key);
-//            if (result.isPresent()) {
-//                return result;
-//            }
-//        }
         return stream(keys).map(this::getString).filter(Optional::isPresent)
                 .filter(s -> isPresent(s.get())).findFirst().orElseGet(Optional::empty);
     }
@@ -113,10 +98,10 @@ public class PluginSession {
         final boolean overwrite = isPresent(value) && value.startsWith("!");
         final String resultValue = overwrite ? value.substring(1) : properties.getProperty(key, value);
         if (childElements.isEmpty()) {
-            log.debug(format("Config property [%s] + [%s] = [%s]",
+            log.debug("Config property [%s] + [%s] = [%s]",
                     key,
                     toSecret(key, value),
-                    toSecret(key, resultValue)));
+                    toSecret(key, resultValue));
             return element(name(key), resultValue);
         }
         return element(name(key), childElements.toArray(new MojoExecutor.Element[0]));
@@ -134,18 +119,22 @@ public class PluginSession {
         return environment.getMavenSession();
     }
 
-    private boolean matchKey(final String key1, final String key2) {
-        return key1.replace(".", "_").replace("-", "_").equalsIgnoreCase(
-                key2.replace(".", "_").replace("-", "_")
-        );
-
-    }
-
     public String toString(final Server server) {
         return format("[%s] id [%s] user [%s] pass [%s]",
                 Server.class.getSimpleName(),
                 server.getId(),
                 server.getUsername(),
                 toSecret(server.getPassword()));
+    }
+
+    public static String unicode(final int unicode) {
+        return String.valueOf(Character.toChars(unicode));
+    }
+
+    private boolean matchKey(final String key1, final String key2) {
+        return key1.replace(".", "_").replace("-", "_").equalsIgnoreCase(
+                key2.replace(".", "_").replace("-", "_")
+        );
+
     }
 }
