@@ -24,6 +24,7 @@ public class JavaSource extends MojoBase {
                 getPlugin(),
                 goal(goal),
                 session.prepareXpp3Dom(
+                        prop("finalName"),
                         prop("maven.source.attach"),
                         prop("maven.source.classifier"),
                         prop("maven.source.excludeResources"),

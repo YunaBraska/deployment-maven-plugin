@@ -3,6 +3,7 @@ package berlin.yuna.mavendeploy.plugin;
 import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.Prop;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Server;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
@@ -21,6 +22,7 @@ import static berlin.yuna.mavendeploy.util.MojoUtil.toSecret;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
+import static java.util.Objects.requireNonNull;
 
 public class PluginSession {
 
@@ -40,7 +42,7 @@ public class PluginSession {
         return isPresent(getParam(keys).orElse(null));
     }
 
-    private Optional<Boolean> getBoolean(final String... keys) {
+    public Optional<Boolean> getBoolean(final String... keys) {
         return stream(keys).map(this::getBoolean).filter(Optional::isPresent).findFirst().orElseGet(Optional::empty);
     }
 
@@ -67,6 +69,7 @@ public class PluginSession {
 
     private Optional<String> getString(final String key) {
         final Properties props = new Properties();
+        props.putAll(environment.getMavenProject().getProperties());
         props.putAll(environment.getMavenSession().getSystemProperties());
         props.putAll(environment.getMavenSession().getUserProperties());
         for (Map.Entry<Object, Object> entry : props.entrySet()) {
@@ -75,6 +78,27 @@ public class PluginSession {
             }
         }
         return Optional.empty();
+    }
+
+    public void overwriteWhen(final String key, final String value, final boolean... when) {
+        for (boolean trigger : when) {
+            if (trigger) {
+                log.debug("%s Config added key [%s] value [%s]", unicode(0x271A), key, toSecret(key, value));
+                getMavenSession().getUserProperties().setProperty(key, value);
+                break;
+            }
+        }
+    }
+
+    public void setParameter(final String key, final String value) {
+        requireNonNull(key, "setParameter key is null");
+        final String cmdValue = getMavenSession().getUserProperties().getProperty(key);
+        if (isEmpty(cmdValue)) {
+            log.info("%s Config added key [%s] value [%s]", unicode(0x271A), key, toSecret(key, value));
+            getMavenSession().getUserProperties().setProperty(key, value);
+        } else {
+            log.warn("%s Config key [%s] already set with [%s] - won't take action", unicode(0x2796), key, toSecret(key, cmdValue));
+        }
     }
 
     public Xpp3Dom prepareXpp3Dom(final Prop... prop) {
@@ -109,6 +133,10 @@ public class PluginSession {
 
     public MojoExecutor.ExecutionEnvironment getEnvironment() {
         return environment;
+    }
+
+    public MavenProject getProject() {
+        return environment.getMavenProject();
     }
 
     public Logger getLog() {

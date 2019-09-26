@@ -50,7 +50,8 @@
 ### Motivation
 Once upon a time i had to define the deployment in each of my applications.
 The pom.xml's and bash scripts didn't stop growing with build instructions which my app doesn't care about.
-I needed thousands commits for hacky testing of my CI/CD systems even if i just want to do defaults like tagging or semantic versioning.
+I needed thousands commits for hacky testing of my CI/CD systems even if i just want to do defaults like tagging
+or semantic versioning.
 So i started this project to keep the build instructions in my environment and have the plugin already tested.
 Now i can run with auto configuration my deployments daily.
 The plugin will even take care of updating all dependencies as semantic versioning.
@@ -66,15 +67,16 @@ For example:
 * Readme.md variables and placeholder,
 * Tagging,
 * [...]
-and much more while you can still use the original maven userProperties and/or systemProperties (ignoring ".", "_", "-") to configure the plugins
+and much more while you can still use the original maven userProperties and/or systemProperties (ignoring ".",
+"_", "-") to configure the plugins
 
 ### Usage as plugin
-*version = \<version>java.major.minor/fixes\</version>*
+*version = \<version>java.major/release.minor/features/fixes\</version>*
 ````xml
 <plugin>
     <groupId>berlin.yuna</groupId>
     <artifactId>deployment-maven-plugin</artifactId>
-    <version>12.0.1</version>
+    <version>12.0.3</version>
 </plugin>
 ````
 
@@ -227,6 +229,7 @@ server2.passphrase='passphrase2'
 | project.encoding    | Boolean | false              | sets default encoding to every encoding parameter definition               |
 | java.version        | Boolean | false              | sets default java version to every java version parameter definition       |
 | properties.print    | Boolean/String | ''          | writes all properties to (given fileValue or "all.properties") file        |
+| changes.push        | String  | ''                 | push changes to specific branch                                            |
 
 ### Requirements
 * \[JAVA\] for maven 

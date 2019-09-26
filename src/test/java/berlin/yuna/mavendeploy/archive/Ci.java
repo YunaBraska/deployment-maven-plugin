@@ -121,7 +121,7 @@ public class Ci {
         IS_POM = isPomArtifact(pom);
 
         gitService = null;
-        semanticService = new SemanticService(gitService, isEmpty(SEMANTIC_FORMAT) ? "\\.:none" : SEMANTIC_FORMAT);
+        semanticService = new SemanticService(null, gitService, isEmpty(SEMANTIC_FORMAT) ? "\\.:none" : SEMANTIC_FORMAT);
 //        gitService = new GitService(LOG, PROJECT_DIR, false);
 
         PROJECT_VERSION = isEmpty(SEMANTIC_FORMAT) ?
@@ -133,7 +133,7 @@ public class Ci {
     }
 
     public String getBranchName() {
-        return semanticService.getBranchName().orElse(null);
+        return semanticService.getBranchNameRefLog().orElse(null);
     }
 
     public boolean allowCommitMessage() {

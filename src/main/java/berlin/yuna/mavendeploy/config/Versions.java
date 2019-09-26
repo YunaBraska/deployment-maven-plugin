@@ -2,11 +2,13 @@ package berlin.yuna.mavendeploy.config;
 
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.project.MavenProject;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.configuration;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
+import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
 
 public class Versions extends MojoBase {
 
@@ -166,6 +168,9 @@ public class Versions extends MojoBase {
 //                        prop( "maven.version.rules"),
                 ), session.getEnvironment()
         );
+        session.getParamPresent("newVersion").ifPresent(newVersion -> {
+            modifySessionVersion(newVersion);
+        });
         logGoal(goal, false);
         return this;
     }
@@ -181,5 +186,25 @@ public class Versions extends MojoBase {
         );
         logGoal(goal, false);
         return this;
+    }
+
+    private void modifySessionVersion(final String newVersion) {
+        final MavenProject project = session.getProject();
+        final String oldVersion = project.getVersion();
+        final String finalName = session.getParamPresent("project.build.finalName")
+                .orElse(session.getParamPresent("finalName")
+                        .orElse((project.getBuild() != null && isPresent(project.getBuild().getFinalName())) ?
+                                project.getBuild().getFinalName() : project.getArtifactId() + "-" + oldVersion
+                        )).replace(oldVersion, newVersion);
+        session.setParameter("finalName", finalName);
+        session.setParameter("project.build.finalName", finalName);
+        session.getParamPresent("projectArtifact").ifPresent(pa ->
+                session.setParameter("projectArtifact", pa.replace(oldVersion, newVersion))
+        );
+        session.setParameter("oldVersion", oldVersion);
+        project.setVersion(newVersion);
+        if (project.getBuild() != null) {
+            project.getBuild().setFinalName(finalName);
+        }
     }
 }

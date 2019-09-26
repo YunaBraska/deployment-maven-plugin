@@ -5,6 +5,7 @@ import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.MojoExecutor.ExecutionEnvironment;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 import org.junit.Before;
@@ -55,6 +56,7 @@ public class SettingsXmlReaderTest {
                 })
         );
         systemProperties.put("settings.xml", "--ServerId=servername0 --Username=username0 --Password=password0");
+        when(pluginSession.getProject()).thenReturn(new MavenProject());
         when(mavenSession.getUserProperties()).thenReturn(userProperties);
         when(mavenSession.getSystemProperties()).thenReturn(systemProperties);
 
@@ -72,6 +74,7 @@ public class SettingsXmlReaderTest {
         final Properties userProperties = new Properties();
         userProperties.put("gpg.passphrase", "12345");
         final Settings settings = new Settings();
+        when(pluginSession.getProject()).thenReturn(new MavenProject());
         when(mavenSession.getUserProperties()).thenReturn(userProperties);
         when(mavenSession.getSystemProperties()).thenReturn(new Properties());
         when(mavenSession.getSettings()).thenReturn(settings);

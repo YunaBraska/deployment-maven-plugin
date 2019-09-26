@@ -6,6 +6,7 @@ import org.apache.maven.execution.MavenSession;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Map;
+import java.util.Properties;
 import java.util.function.Predicate;
 
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
@@ -39,8 +40,11 @@ public class PropertyWriter extends MojoBase {
         try {
             final StringBuilder stringBuilder = new StringBuilder();
             final MavenSession maven = session.getMavenSession();
-            maven.getUserProperties().entrySet().stream().filter(excludeProps()).map(this::entryToString).forEach(r -> stringBuilder.append(r).append(lineSeparator()));
-            maven.getSystemProperties().entrySet().stream().filter(excludeProps()).map(this::entryToString).forEach(r -> stringBuilder.append(r).append(lineSeparator()));
+            final Properties result = new Properties();
+            result.putAll(session.getProject().getProperties());
+            result.putAll(maven.getSystemProperties());
+            result.putAll(maven.getUserProperties());
+            result.entrySet().stream().filter(excludeProps()).map(this::entryToString).sorted().forEach(r -> stringBuilder.append(r).append(lineSeparator()));
             log.info("%s Writing properties to file [%s]", unicode(0x1F4D1), output.getAbsolutePath());
             if (!output.getParentFile().exists()) {
                 Files.createDirectories(output.getParentFile().toPath());

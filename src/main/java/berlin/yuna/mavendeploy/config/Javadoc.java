@@ -55,7 +55,7 @@ public class Javadoc extends MojoBase {
                         prop("extdirs"),
                         prop("maven.javadoc.failOnError"),
                         prop("maven.javadoc.failOnWarnings"),
-                        prop("project.build.finalName"),
+                        prop("finalName"),
                         prop("header"),
                         prop("footer"),
                         prop("helpfile"),

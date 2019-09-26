@@ -92,7 +92,8 @@ public class ReadmeBuilderTest {
     }
 
     private Properties prepareProperties(final MavenProject mavenProject) {
-        final Properties properties = new GitService(log, mavenProject.getBasedir(), true).getConfig();
+        final Properties properties = new Properties();
+        properties.putAll(new GitService(log, mavenProject.getBasedir(), true).getConfig());
         properties.putAll(mavenProject.getProperties());
         properties.put("project.basedir", mavenProject.getBasedir());
         properties.put("project.baseUri", mavenProject.getBasedir());
