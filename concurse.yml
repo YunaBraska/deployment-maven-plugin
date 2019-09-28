@@ -1,0 +1,21 @@
+---
+platform: linux
+image_resource:
+  type: docker-image
+  source:
+    repository: ((docker-url))/maven3.6
+    username: ((docker-user))
+    password: ((docker-password))
+inputs:
+  - name: git_gpg
+  - name: github_maven-deployment
+  - name: github_command-line-util
+run:
+  path: sh
+  user: root
+  args:
+    - -exc
+    - |
+      ./install-dependencies.sh
+      maven clean install -DskipTests
+      mvn berlin.yuna:deployment-maven-plugin:12.0.2:run -Dclean -Dfake -Dupdate.major -Dupdate.plugins -Dbuilder -Dtest.run -Djava.doc -Djava.source -Dgpg.pass=7576Simba -Dtag -Dproperties.print -Ddeploy -Ddeploy.url="https://purpl3f1r3:7576Simba@artifactory.yuna.berlin:443/libs-release-local" -Dserver1.id=artifactserver -Dserver1.username=purpl3f1r3 -Dserver1.password=7576Simba -Dtest.skip -X

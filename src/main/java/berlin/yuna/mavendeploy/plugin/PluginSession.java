@@ -168,9 +168,11 @@ public class PluginSession {
     }
 
     private boolean matchKey(final String key1, final String key2) {
-        return key1.replace(".", "_").replace("-", "_").equalsIgnoreCase(
-                key2.replace(".", "_").replace("-", "_")
-        );
+        return removeSeparator(key1).equals(removeSeparator(key2));
+    }
 
+    private String removeSeparator(final String propertyKey) {
+        final String result = propertyKey.startsWith("env.") ? propertyKey.substring("env.".length()) : propertyKey;
+        return result.replace(".", "_").replace("-", "_").toLowerCase().trim();
     }
 }
