@@ -82,21 +82,7 @@ public class Application extends AbstractMojo {
 
             LOG.info("%s STEP [1/6] SETUP MOJO PROPERTIES", unicode(0x1F4DD));
             //SET GIT PROPERTIES
-            GIT_SERVICE.getConfig().forEach((key, value) -> setWhen("git." + key, value));
-            readModuleProperties(project.getModules()).forEach(this::setWhen);
-            readDeveloperProperties(project.getDevelopers()).forEach(this::setWhen);
-            readLicenseProperties(project.getLicenses()).forEach(this::setWhen);
             setWhen("project.library", String.valueOf(isLibrary));
-            setWhen("project.name", project.getName());
-            setWhen("project.groupId", project.getGroupId());
-            setWhen("project.artifactId", project.getArtifactId());
-            setWhen("project.packaging", project.getPackaging());
-            setWhen("project.description", project.getDescription());
-            setWhen("project.url", project.getUrl());
-            setWhen("project.id", project.getId());
-            setWhen("project.defaultGoal", project.getDefaultGoal());
-            setWhen("project.inceptionYear", project.getInceptionYear());
-            setWhen("project.modelVersion", project.getModelVersion());
             setWhen("newVersion", newProjectVersion, !isEmpty(newProjectVersion) && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
             setWhen("removeSnapshot", "true", isTrue("remove.snapshot"));
             setWhen("generateBackupPoms", "false", true);
@@ -300,7 +286,25 @@ public class Application extends AbstractMojo {
             maven.getSettings().setServers(new ArrayList<>());
         }
 
-        SESSION.getMavenSession().getUserProperties().putAll(SESSION.getProperties());
+        final MavenSession mavenSession = SESSION.getMavenSession();
+        mavenSession.getUserProperties().putAll(SESSION.getProperties());
+        mavenSession.getUserProperties().putAll(readModuleProperties(project.getModules()));
+        mavenSession.getUserProperties().putAll(readLicenseProperties(project.getLicenses()));
+        mavenSession.getUserProperties().putAll(readDeveloperProperties(project.getDevelopers()));
+        mavenSession.getUserProperties().put("project.name", project.getName());
+        mavenSession.getUserProperties().put("project.groupId", project.getGroupId());
+        mavenSession.getUserProperties().put("project.artifactId", project.getArtifactId());
+        mavenSession.getUserProperties().put("project.packaging", project.getPackaging());
+        mavenSession.getUserProperties().put("project.description", project.getDescription());
+        mavenSession.getUserProperties().put("project.url", project.getUrl());
+        mavenSession.getUserProperties().put("project.id", project.getId());
+        mavenSession.getUserProperties().put("project.defaultGoal", project.getDefaultGoal());
+        mavenSession.getUserProperties().put("project.inceptionYear", project.getInceptionYear());
+        mavenSession.getUserProperties().put("project.modelVersion", project.getModelVersion());
+        GIT_SERVICE.getConfig().forEach((key, value) -> setWhen("git." + key, value));
+
+
+
         setWhen("base.dir", basedir.toString(), !hasText("base.dir"));
     }
 
