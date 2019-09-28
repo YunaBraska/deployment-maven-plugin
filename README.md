@@ -49,26 +49,26 @@
 
 ### Motivation
 Once upon a time i had to define the deployment in each of my applications.
-        The pom.xml's and bash scripts didn't stop growing with build instructions which my app doesn't care about.
-        I needed thousands commits for hacky testing of my CI/CD systems even if i just want to do defaults like tagging
-        or semantic versioning.
-        So i started this project to keep the build instructions in my environment and have the plugin already tested.
-        Now i can run with auto configuration my deployments daily.
-        The plugin will even take care of updating all dependencies as semantic versioning.
-        And all lived happily ever after.
+The pom.xml's and bash scripts didn't stop growing with build instructions which my app doesn't care about.
+I needed thousands commits for hacky testing of my CI/CD systems even if i just want to do defaults like tagging
+or semantic versioning.
+So i started this project to keep the build instructions in my environment and have the plugin already tested.
+Now i can run with auto configuration my deployments daily.
+The plugin will even take care of updating all dependencies as semantic versioning.
+And all lived happily ever after.
 
-        This plugin will autoconfigure "every" default for you.
-        Pom file descriptions are not need anymore.
-        For example:
-        * Auto configuration
-        * semantic versioning
-        * update dependencies and plugins
-        * maven plugins,
-        * Readme.md variables and placeholder,
-        * Tagging,
-        * [...]
-        and much more while you can still use the original maven userProperties and/or systemProperties (ignoring ".",
-        "_", "-") to configure the plugins
+This plugin will autoconfigure "every" default for you.
+Pom file descriptions are not need anymore.
+For example:
+* Auto configuration
+* semantic versioning
+* update dependencies and plugins
+* maven plugins,
+* Readme.md variables and placeholder,
+* Tagging,
+* [...]
+and much more while you can still use the original maven userProperties and/or systemProperties (ignoring ".",
+"_", "-") to configure the plugins
 
 ### Usage as plugin
 *version = \<version>java.major/release.minor/features/fixes\</version>*
@@ -76,7 +76,7 @@ Once upon a time i had to define the deployment in each of my applications.
 <plugin>
     <groupId>berlin.yuna</groupId>
     <artifactId>deployment-maven-plugin</artifactId>
-    <version>!{project.version}</version>
+    <version>12.0.2</version>
 </plugin>
 ````
 

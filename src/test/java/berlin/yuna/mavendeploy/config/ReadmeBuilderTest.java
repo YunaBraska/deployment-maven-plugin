@@ -23,7 +23,7 @@ import static berlin.yuna.mavendeploy.helper.CustomMavenTestFramework.getPath;
 import static berlin.yuna.mavendeploy.helper.CustomMavenTestFramework.getPomFile;
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readDeveloperProperties;
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readLicenseProperties;
-import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readModules;
+import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readModuleProperties;
 import static java.lang.String.format;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -108,7 +108,7 @@ public class ReadmeBuilderTest {
         properties.put("project.description", project.getDescription().replaceAll(" +", " ").replaceAll("\n ", "\n"));
         properties.putAll(readDeveloperProperties(project.getDevelopers()));
         properties.putAll(readLicenseProperties(project.getLicenses()));
-        properties.putAll(readModules(project.getModules()));
+        properties.putAll(readModuleProperties(project.getModules()));
         return properties;
     }
 }

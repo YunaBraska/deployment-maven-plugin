@@ -7,10 +7,11 @@ import org.junit.Test;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readDeveloperProperties;
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readLicenseProperties;
+import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readModuleProperties;
+import static java.util.Arrays.asList;
 import static org.hamcrest.CoreMatchers.equalTo;
 import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.CoreMatchers.notNullValue;
@@ -56,5 +57,17 @@ public class AdditionalPropertyReaderTest {
         assertThat(result.get("project.licenses[0].name"), is(equalTo("David Envelop")));
         assertThat(result.get("project.licenses[0].comments"), is(equalTo("d.envelop@er")));
         assertThat(result.get("project.licenses[0].distribution"), is(equalTo("Enveloper Solutions")));
+    }
+
+    @Test
+    public void readModuleProperties_shouldBeSuccessful() {
+        final List<String> inputs = asList("module1", "module2", "module3");
+
+        final Map<String, String> result = readModuleProperties(inputs);
+        assertThat(result, is(notNullValue()));
+        assertThat(result.get("project.modules"), is(equalTo("3")));
+        assertThat(result.get("project.module[0]"), is(equalTo("module1")));
+        assertThat(result.get("project.module[1]"), is(equalTo("module2")));
+        assertThat(result.get("project.module[2]"), is(equalTo("module3")));
     }
 }

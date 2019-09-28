@@ -13,7 +13,7 @@ public class AdditionalPropertyReader {
 
     //TODO: setWhen("project.modules", project.getModules());
 
-    public static Map<String, String> readModules(final List<String> modules) {
+    public static Map<String, String> readModuleProperties(final List<String> modules) {
         final HashMap<String, String> properties = new HashMap<>();
         properties.put("project.modules", String.valueOf(modules.size()));
         for (int i = 0; i < modules.size(); i++) {

@@ -34,7 +34,7 @@ import java.util.Optional;
 
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readDeveloperProperties;
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readLicenseProperties;
-import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readModules;
+import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readModuleProperties;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executionEnvironment;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
@@ -83,7 +83,7 @@ public class Application extends AbstractMojo {
             LOG.info("%s STEP [1/6] SETUP MOJO PROPERTIES", unicode(0x1F4DD));
             //SET GIT PROPERTIES
             GIT_SERVICE.getConfig().forEach((key, value) -> setWhen("git." + key, value));
-            readModules(project.getModules()).forEach(this::setWhen);
+            readModuleProperties(project.getModules()).forEach(this::setWhen);
             readDeveloperProperties(project.getDevelopers()).forEach(this::setWhen);
             readLicenseProperties(project.getLicenses()).forEach(this::setWhen);
             setWhen("project.library", String.valueOf(isLibrary));
