@@ -23,6 +23,7 @@ import static berlin.yuna.mavendeploy.helper.CustomMavenTestFramework.getPath;
 import static berlin.yuna.mavendeploy.helper.CustomMavenTestFramework.getPomFile;
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readDeveloperProperties;
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readLicenseProperties;
+import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readModules;
 import static java.lang.String.format;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
@@ -92,21 +93,22 @@ public class ReadmeBuilderTest {
         return Files.readString(file.toPath());
     }
 
-    private Properties prepareProperties(final MavenProject mavenProject) {
+    private Properties prepareProperties(final MavenProject project) {
         final Properties properties = new Properties();
-        properties.putAll(new GitService(log, mavenProject.getBasedir(), true).getConfig());
-        properties.putAll(mavenProject.getProperties());
-        properties.put("project.basedir", mavenProject.getBasedir());
-        properties.put("project.baseUri", mavenProject.getBasedir());
-        properties.put("project.build.directory", new File(mavenProject.getBasedir(), "target"));
-        properties.put("project.name", mavenProject.getArtifactId());
-        properties.put("project.version", mavenProject.getVersion());
-        properties.put("project.artifactId", mavenProject.getArtifactId());
-        properties.put("project.groupId", mavenProject.getGroupId());
-        properties.put("project.packaging", mavenProject.getPackaging());
-        properties.put("project.description", mavenProject.getDescription().replaceAll(" +", " ").replaceAll("\n ", "\n"));
-        properties.putAll(readDeveloperProperties(mavenProject.getDevelopers()));
-        properties.putAll(readLicenseProperties(mavenProject.getLicenses()));
+        properties.putAll(new GitService(log, project.getBasedir(), true).getConfig());
+        properties.putAll(project.getProperties());
+        properties.put("project.basedir", project.getBasedir());
+        properties.put("project.baseUri", project.getBasedir());
+        properties.put("project.build.directory", new File(project.getBasedir(), "target"));
+        properties.put("project.name", project.getArtifactId());
+        properties.put("project.version", project.getVersion());
+        properties.put("project.artifactId", project.getArtifactId());
+        properties.put("project.groupId", project.getGroupId());
+        properties.put("project.packaging", project.getPackaging());
+        properties.put("project.description", project.getDescription().replaceAll(" +", " ").replaceAll("\n ", "\n"));
+        properties.putAll(readDeveloperProperties(project.getDevelopers()));
+        properties.putAll(readLicenseProperties(project.getLicenses()));
+        properties.putAll(readModules(project.getModules()));
         return properties;
     }
 }

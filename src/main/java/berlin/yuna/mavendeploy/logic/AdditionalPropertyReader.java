@@ -11,6 +11,17 @@ import static com.google.common.base.Strings.nullToEmpty;
 
 public class AdditionalPropertyReader {
 
+    //TODO: setWhen("project.modules", project.getModules());
+
+    public static Map<String, String> readModules(final List<String> modules) {
+        final HashMap<String, String> properties = new HashMap<>();
+        properties.put("project.modules", String.valueOf(modules.size()));
+        for (int i = 0; i < modules.size(); i++) {
+            properties.put("project.module[" + i + "]", nullToEmpty(modules.get(i)));
+        }
+        return properties;
+    }
+
     public static Map<String, String> readDeveloperProperties(final List<Developer> developer) {
         final HashMap<String, String> properties = new HashMap<>();
         properties.put("project.developers", String.valueOf(developer.size()));
