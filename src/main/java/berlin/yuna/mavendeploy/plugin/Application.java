@@ -4,6 +4,7 @@ import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.Deploy;
 import berlin.yuna.mavendeploy.config.Gpg;
+import berlin.yuna.mavendeploy.config.Jar;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.PluginUpdater;
@@ -14,34 +15,26 @@ import berlin.yuna.mavendeploy.config.Surefire;
 import berlin.yuna.mavendeploy.config.Versions;
 import berlin.yuna.mavendeploy.logic.GitService;
 import berlin.yuna.mavendeploy.logic.SemanticService;
-import berlin.yuna.mavendeploy.logic.SettingsXmlReader;
 import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.model.ThrowingFunction;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.plugin.AbstractMojo;
 import org.apache.maven.plugin.BuildPluginManager;
 import org.apache.maven.plugin.MojoExecution;
-import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.plugins.annotations.Component;
 import org.apache.maven.plugins.annotations.LifecyclePhase;
 import org.apache.maven.plugins.annotations.Mojo;
 import org.apache.maven.plugins.annotations.Parameter;
 import org.apache.maven.plugins.annotations.ResolutionScope;
 import org.apache.maven.project.MavenProject;
-import org.apache.maven.settings.Server;
-import org.apache.maven.settings.Settings;
 
 import java.io.File;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
 import java.util.Optional;
 
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readDeveloperProperties;
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readLicenseProperties;
-import static berlin.yuna.mavendeploy.logic.SettingsXmlReader.getGpgPath;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executionEnvironment;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executionEnvironment;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
@@ -54,7 +47,7 @@ import static java.util.Objects.requireNonNull;
         threadSafe = true,
         defaultPhase = LifecyclePhase.PACKAGE,
         requiresDependencyResolution = ResolutionScope.TEST)
-public class MojoRun extends AbstractMojo {
+public class Application extends AbstractMojo {
 
     private static final String JAVA_VERSION = "12";
     @Parameter(defaultValue = "${project.basedir}")
@@ -71,25 +64,20 @@ public class MojoRun extends AbstractMojo {
     private Logger LOG;
     private GitService GIT_SERVICE;
     private SemanticService SEMANTIC_SERVICE;
-    private MojoExecutor.ExecutionEnvironment ENVIRONMENT;
+    private PluginExecutor.ExecutionEnvironment ENVIRONMENT;
     private PluginSession SESSION;
 
-    public MojoRun() {}
+    public Application() {}
 
     public void execute() {
         before();
-        SESSION.setParameter("maven.test.skip", SESSION.getBoolean("test.skip").orElse(false).toString());
-        final List<Server> serverList = SettingsXmlReader.read(SESSION);
-        serverList.forEach(server -> LOG.info("+ [%s] added %s", Settings.class.getSimpleName(), SESSION.toString(server)));
-        serverList.forEach(server -> SESSION.getMavenSession().getSettings().addServer(server));
-
-        LOG.info("%s Preparing information", unicode(0x1F453));
+        LOG.info("%s Preparing information [%s:%s]", unicode(0x1F453), plugin.getArtifactId(), plugin.getVersion());
+        SESSION.setNewParam("maven.test.skip", SESSION.getBoolean("test.skip").orElse(false).toString());
+        final String newProjectVersion = prepareProjectVersion();
         try {
             final boolean isLibrary = isLibrary();
-            final String newProjectVersion = prepareProjectVersion();
             final String newTag = prepareNewTagVersion(newProjectVersion);
             final boolean hasNewTag = hasNewTag(newTag, GIT_SERVICE.getLastGitTag());
-            final String deployUrl = isTrue("deploy", "deploy.snapshot") ? prepareDeployUrl() : null;
 
             LOG.info("%s STEP [1/6] SETUP MOJO PROPERTIES", unicode(0x1F4DD));
             //SET GIT PROPERTIES
@@ -116,11 +104,9 @@ public class MojoRun extends AbstractMojo {
             setWhen("scm.provider", "scm:git", !hasText("scm.provider"));
             setWhen("connectionUrl", getConnectionUrl(), !hasText("connectionUrl"));
             setWhen("project.scm.connection", getConnectionUrl(), !hasText("project.scm.connection"));
-            SESSION.overwriteWhen("tag", newTag, !isEmpty(newTag));
-            setWhen("altDeploymentRepository", deployUrl, !isEmpty(deployUrl));
+            SESSION.setParameter("tag", newTag, !isEmpty(newTag));
             setWhen("gpg.passphrase", SESSION.getParamPresent("gpg.pass", "gpg.passphrase").orElse(null));
             setWhen("passphraseServerId", SESSION.getParamPresent("gpg.passphrase").orElse(null));
-            setWhen("gpg.executable", getGpgPath(LOG), hasText("gpg.passphrase"));
 
             LOG.info("%s STEP [2/6] RUN PLUGINS WITH SETUP", unicode(0x2699));
             runWhen(() -> Clean.build(SESSION).clean(), isTrue("clean", "clean.cache"));
@@ -146,12 +132,12 @@ public class MojoRun extends AbstractMojo {
             runWhen(() -> Surefire.build(SESSION).test(), isTrue("test.run", "test.unit"));
 
             LOG.info("%s STEP [5/6] RUN PLUGINS WITH ACTIONS", unicode(0x1F3AC));
-            runWhen(() -> PropertyWriter.build(SESSION).write(), hasText("properties.print"));
             runWhen(() -> Javadoc.build(SESSION).jar(), (!isLibrary() && isTrue("java.doc")));
             runWhen(() -> JavaSource.build(SESSION).jarNoFork(), (!isLibrary() && isTrue("java.source")));
+            runWhen(() -> Jar.build(SESSION).jar(), hasText("package") || isTrue("deploy", "deploy.snapshot"));
             runWhen(() -> Gpg.build(SESSION).sign(), hasText("gpg.passphrase"));
             runWhen(() -> Scm.build(SESSION).tag(), hasNewTag);
-            runWhen(() -> Deploy.build(SESSION).deploy(), hasText("altDeploymentRepository"));
+            runWhen(() -> Deploy.build(SESSION).deploy(), isTrue("deploy", "deploy.snapshot"));
 
             //TODO: implement to push on changes && new parameter change version only on changes version.onchange && tag.onchange
 //                if (GIT_SERVICE.gitHasChanges() && SESSION.getBoolean("changes.push").orElse(false)) {
@@ -160,18 +146,31 @@ public class MojoRun extends AbstractMojo {
 //                    GIT_SERVICE.push();
 //                }
 
-            LOG.info("%s STEP [5/6] RUN PLUGINS WITH CLEANUPS", unicode(0x1F9E7));
-            //remove snapshot if only added for deployment
-            if (SESSION.getBoolean("snapshot.deployment").orElse(false)) {
-                SESSION.overwriteWhen("oldVersion", newProjectVersion, true);
-                SESSION.overwriteWhen("newVersion", newProjectVersion.split("-SNAPSHOT")[0], true);
-                runWhen(() -> Versions.build(SESSION).set(), true);
-            }
-            printJavaDoc();
 
-        } catch (Exception e) {
+        } catch (
+                Exception e) {
             throw new RuntimeException(e);
+        } finally {
+            cleanUps(newProjectVersion);
         }
+
+    }
+
+    private void cleanUps(final String newProjectVersion) {
+        LOG.info("%s STEP [6/6] RUN PLUGINS WITH CLEANUPS", unicode(0x1F9E7));
+        //remove snapshot if only added for deployment
+        final boolean removeSnapshot = SESSION.getBoolean("snapshot.deployment").orElse(false);
+        if (removeSnapshot) {
+            SESSION.setParameter("oldVersion", newProjectVersion, true);
+            SESSION.setParameter("newVersion", newProjectVersion.split("-SNAPSHOT")[0], true);
+        }
+        try {
+            runWhen(() -> Versions.build(SESSION).set(), removeSnapshot);
+            runWhen(() -> PropertyWriter.build(SESSION).write(), isTrue("properties.print") || hasText("properties.print"));
+        } catch (Exception e) {
+            LOG.error(e);
+        }
+        printJavaDoc();
     }
 
     private String prepareSourceVersion(final String javaVersion) {
@@ -190,52 +189,6 @@ public class MojoRun extends AbstractMojo {
             }
         }
         return null;
-    }
-
-    private String prepareDeployUrl() {
-        final Optional<String> deployUrl = SESSION.getParamPresent("deploy.url");
-        if (deployUrl.isPresent()) {
-            final String paramName = "deploy.id";
-            final Optional<String> deployId = SESSION.getParamPresent(paramName);
-            LOG.debug("DeployUrl [%s]", deployUrl.get());
-            if (deployId.isEmpty()) {
-                final Optional<Server> server = findServerByDeployUrl(deployUrl.get(), paramName);
-                if (server.isPresent()) {
-                    LOG.info("%s Fallback to deployId [%s]", unicode(0x1F511), server.get().getId());
-                    return server.get().getId() + "::default::" + deployUrl.get();
-                }
-                LOG.error("%s Cant find any credentials for deploy.id [%s] deploy.url [%s]", unicode(0x1F940), deployId.orElse(null), deployUrl.get());
-            } else if (maven.getSettings().getServer(deployId.get()) != null && !isEmpty(maven.getSettings().getServer(deployId.get()).getId())) {
-                LOG.info("%s DeployId [%s] deployUrl [%s]", unicode(0x1F511), deployId.get(), deployUrl.get());
-                return deployId.get() + "::default::" + deployUrl.get();
-            }
-            LOG.error("%s Cant find any credentials for deploy.id [%s] deploy.url [%s]", unicode(0x1F940), deployId.orElse(null), deployUrl.get());
-        }
-        return null;
-    }
-
-    private Optional<Server> findServerByDeployUrl(final String deployUrl, final String paramName) {
-        final String[] artifactRepositories = Arrays
-                .stream(new String[]{"nexus", "artifact", "archiva", "repository", "snapshot"})
-                .sorted(Comparator.comparingInt(o -> (deployUrl.toLowerCase().contains(o.toLowerCase()) ? -1 : 1)))
-                .toArray(String[]::new);
-        LOG.warn("%s [%s] not set", unicode(0x26A0), paramName);
-        return getServerContains(artifactRepositories);
-    }
-
-    private Optional<Server> getServerContains(final String... names) {
-        final List<Server> servers = maven.getSettings().getServers();
-        if (servers != null && !servers.isEmpty())
-            for (String name : names) {
-                final Optional<Server> server = servers.stream()
-                        .filter(s -> !isEmpty(s.getId()))
-                        .filter(s -> s.getId().toLowerCase().contains(name) || (!isEmpty(s.getId()) && s.getUsername().toLowerCase().contains(name)))
-                        .findFirst();
-                if (server.isPresent()) {
-                    return server;
-                }
-            }
-        return Optional.empty();
     }
 
     private String getTagVersion(final String property, final String newProjectVersion) {
@@ -312,7 +265,7 @@ public class MojoRun extends AbstractMojo {
         setWhen("branch.name", GIT_SERVICE.getBranchName().orElse(null));
 
         //ADD SNAPSHOT
-        final String snapshotVersion = isEmpty(projectVersion) ? project.getVersion() : projectVersion;
+        final String snapshotVersion = isEmpty(result) ? project.getVersion() : result;
         if ((isTrue("project.snapshot") || isTrue("deploy.snapshot")) && !snapshotVersion.endsWith("-SNAPSHOT")) {
             setWhen("snapshot.deployment", "true");
             return snapshotVersion + "-SNAPSHOT";
@@ -324,7 +277,7 @@ public class MojoRun extends AbstractMojo {
         LOG = new Logger(getLog());
         requireNonNull(pluginManager);
 
-        MojoExecutor.setLogger(LOG);
+        PluginExecutor.setLogger(LOG);
         ENVIRONMENT = executionEnvironment(project, maven, pluginManager);
         SESSION = new PluginSession(ENVIRONMENT, LOG);
 
@@ -334,6 +287,8 @@ public class MojoRun extends AbstractMojo {
         if (maven.getSettings().getServers() == null) {
             maven.getSettings().setServers(new ArrayList<>());
         }
+
+        SESSION.getMavenSession().getUserProperties().putAll(SESSION.getProperties());
         setWhen("base.dir", basedir.toString(), !hasText("base.dir"));
     }
 
@@ -355,7 +310,7 @@ public class MojoRun extends AbstractMojo {
     private void setWhen(final String key, final String value, final boolean... when) {
         for (boolean trigger : when) {
             if (trigger) {
-                SESSION.setParameter(key, value);
+                SESSION.setNewParam(key, value);
                 break;
             }
         }

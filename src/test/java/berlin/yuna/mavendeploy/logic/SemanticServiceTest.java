@@ -17,6 +17,14 @@ public class SemanticServiceTest {
     public PluginSession session = new PluginSession(null, new Logger());
 
     @Test
+    public void changeOnlyNumberInVersion_ShouldBeSuccessful() {
+        final String version = "1.2.34-SnapShot-4.rc";
+        final SemanticService service = new SemanticService(session, null, null);
+        final String result = service.increaseNumbersInString(version, true);
+        assertThat(result, is(equalTo("2.3.35-SnapShot-5.rc")));
+    }
+
+    @Test
     public void getBranchName_WithBranch_ShouldBeSuccessful() {
         final GitService gitService = mock(GitService.class);
         when(gitService.getBranchNameRefLog()).thenReturn(Optional.of("currentBranch"));

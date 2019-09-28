@@ -13,9 +13,9 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
 
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.configuration;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.element;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.name;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.configuration;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.element;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.name;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
 import static berlin.yuna.mavendeploy.util.MojoUtil.toSecret;
@@ -26,10 +26,10 @@ import static java.util.Objects.requireNonNull;
 
 public class PluginSession {
 
-    private final MojoExecutor.ExecutionEnvironment environment;
+    private final PluginExecutor.ExecutionEnvironment environment;
     private final Logger log;
 
-    public PluginSession(final MojoExecutor.ExecutionEnvironment environment, final Logger log) {
+    public PluginSession(final PluginExecutor.ExecutionEnvironment environment, final Logger log) {
         this.environment = environment;
         this.log = log;
     }
@@ -68,11 +68,7 @@ public class PluginSession {
     }
 
     private Optional<String> getString(final String key) {
-        final Properties props = new Properties();
-        props.putAll(environment.getMavenProject().getProperties());
-        props.putAll(environment.getMavenSession().getSystemProperties());
-        props.putAll(environment.getMavenSession().getUserProperties());
-        for (Map.Entry<Object, Object> entry : props.entrySet()) {
+        for (Map.Entry<Object, Object> entry : getProperties().entrySet()) {
             if (entry.getKey() instanceof String && matchKey(key, (String) entry.getKey())) {
                 return Optional.of(String.valueOf(entry.getValue()));
             }
@@ -80,39 +76,43 @@ public class PluginSession {
         return Optional.empty();
     }
 
-    public void overwriteWhen(final String key, final String value, final boolean... when) {
+    public void setParameter(final String key, final String value, final boolean... when) {
         for (boolean trigger : when) {
             if (trigger) {
-                log.debug("%s Config added key [%s] value [%s]", unicode(0x271A), key, toSecret(key, value));
-                getMavenSession().getUserProperties().setProperty(key, value);
+                if (value == null && getParam(key).isPresent()) {
+                    //[value == null && key is present]
+                    log.debug("%s Config removed key [%s]", unicode(0x26A0), key);
+                    getProject().getProperties().remove(key);
+                    getMavenSession().getSystemProperties().remove(key);
+                    getMavenSession().getUserProperties().remove(key);
+                } else if (value != null && !value.equals(getString(key).orElse(null))) {
+                    //[value != null && hasChanged]
+                    log.info("%s Config added key [%s] value [%s]", unicode(0x271A), key, toSecret(key, value));
+                    getMavenSession().getUserProperties().setProperty(key, value);
+                }
                 break;
             }
         }
     }
 
-    public void setParameter(final String key, final String value) {
-        requireNonNull(key, "setParameter key is null");
-        final String cmdValue = getMavenSession().getUserProperties().getProperty(key);
+    public void setNewParam(final String key, final String value) {
+        requireNonNull(key, "setNewParam key is null");
+        final String cmdValue = getProperties().getProperty(key);
         if (isEmpty(cmdValue)) {
-            log.info("%s Config added key [%s] value [%s]", unicode(0x271A), key, toSecret(key, value));
-            getMavenSession().getUserProperties().setProperty(key, value);
-        } else {
-            log.warn("%s Config key [%s] already set with [%s] - won't take action", unicode(0x2796), key, toSecret(key, cmdValue));
+            setParameter(key, value, true);
         }
     }
 
     public Xpp3Dom prepareXpp3Dom(final Prop... prop) {
-        final MojoExecutor.Element[] elements = stream(prop)
+        final PluginExecutor.Element[] elements = stream(prop)
                 .map(this::prepareElement)
                 .filter(element -> !isEmpty(element.toDom().getValue()) || element.toDom().getChildCount() > 0)
-                .toArray(MojoExecutor.Element[]::new);
+                .toArray(PluginExecutor.Element[]::new);
         return configuration(elements);
     }
 
-    private MojoExecutor.Element prepareElement(final Prop prop) {
-        final Properties properties = environment.getMavenSession().getUserProperties();
-
-        final List<MojoExecutor.Element> childElements = new ArrayList<>();
+    private PluginExecutor.Element prepareElement(final Prop prop) {
+        final List<PluginExecutor.Element> childElements = new ArrayList<>();
         for (Prop childProp : prop.childProps) {
             childElements.add(prepareElement(childProp));
         }
@@ -120,7 +120,7 @@ public class PluginSession {
         final String key = prop.key;
         final String value = prop.value;
         final boolean overwrite = isPresent(value) && value.startsWith("!");
-        final String resultValue = overwrite ? value.substring(1) : properties.getProperty(key, value);
+        final String resultValue = overwrite ? value.substring(1) : getProperties().getProperty(key, value);
         if (childElements.isEmpty()) {
             log.debug("Config property [%s] + [%s] = [%s]",
                     key,
@@ -128,10 +128,10 @@ public class PluginSession {
                     toSecret(key, resultValue));
             return element(name(key), resultValue);
         }
-        return element(name(key), childElements.toArray(new MojoExecutor.Element[0]));
+        return element(name(key), childElements.toArray(new PluginExecutor.Element[0]));
     }
 
-    public MojoExecutor.ExecutionEnvironment getEnvironment() {
+    public PluginExecutor.ExecutionEnvironment getEnvironment() {
         return environment;
     }
 
@@ -145,6 +145,14 @@ public class PluginSession {
 
     public MavenSession getMavenSession() {
         return environment.getMavenSession();
+    }
+
+    public Properties getProperties() {
+        final Properties properties = new Properties();
+        properties.putAll(getProject().getProperties());
+        properties.putAll(getMavenSession().getSystemProperties());
+        properties.putAll(getMavenSession().getUserProperties());
+        return properties;
     }
 
     public String toString(final Server server) {

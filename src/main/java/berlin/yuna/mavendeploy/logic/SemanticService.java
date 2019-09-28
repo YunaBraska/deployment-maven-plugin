@@ -3,11 +3,14 @@ package berlin.yuna.mavendeploy.logic;
 import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 
+import java.util.List;
 import java.util.Optional;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
+import static berlin.yuna.mavendeploy.util.MojoUtil.isNumeric;
+import static berlin.yuna.mavendeploy.util.MojoUtil.splitAtDigits;
 
 public class SemanticService {
 
@@ -55,13 +58,23 @@ public class SemanticService {
         return matcher.find() ? matcher.group(0) : ".";
     }
 
-    private String[] prepareNextSemanticVersion(final String versionOrg, final int semanticPosition) {
+    private String[] prepareNextSemanticVersion(final String versionOrg, final int semanticPos) {
         final String[] version = versionOrg.split(semanticFormat[0]);
-        version[semanticPosition] = ((Integer) (Integer.valueOf(version[semanticPosition]) + 1)).toString();
-        for (int i = (semanticPosition + 1); i < version.length; i++) {
-            version[i] = "0";
+        version[semanticPos] = increaseNumbersInString(version[semanticPos], true);
+        for (int i = (semanticPos + 1); i < version.length; i++) {
+            version[i] = increaseNumbersInString(version[i], false);
         }
         return version;
+    }
+
+    String increaseNumbersInString(final String versionPart, final boolean increase) {
+        final List<String> parts = splitAtDigits(versionPart);
+        for (int i = 0; i < parts.size(); i++) {
+            if (isNumeric(parts.get(i))) {
+                parts.set(i, (increase ? String.valueOf((Integer.valueOf(parts.get(i)) + 1)) : "0"));
+            }
+        }
+        return String.join("", parts);
     }
 
     private int getSemanticPosition(final String branchName) {

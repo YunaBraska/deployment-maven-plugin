@@ -1,12 +1,10 @@
 package berlin.yuna.mavendeploy.config;
 
 import berlin.yuna.mavendeploy.plugin.PluginSession;
-import org.apache.maven.execution.MavenSession;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Map;
-import java.util.Properties;
 import java.util.function.Predicate;
 
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
@@ -39,19 +37,14 @@ public class PropertyWriter extends MojoBase {
         final File output = getOutputFile();
         try {
             final StringBuilder stringBuilder = new StringBuilder();
-            final MavenSession maven = session.getMavenSession();
-            final Properties result = new Properties();
-            result.putAll(session.getProject().getProperties());
-            result.putAll(maven.getSystemProperties());
-            result.putAll(maven.getUserProperties());
-            result.entrySet().stream().filter(excludeProps()).map(this::entryToString).sorted().forEach(r -> stringBuilder.append(r).append(lineSeparator()));
+            session.getProperties().entrySet().stream().filter(excludeProps()).map(this::entryToString).sorted().forEach(r -> stringBuilder.append(r).append(lineSeparator()));
             log.info("%s Writing properties to file [%s]", unicode(0x1F4D1), output.getAbsolutePath());
             if (!output.getParentFile().exists()) {
                 Files.createDirectories(output.getParentFile().toPath());
             }
             Files.write(output.toPath(), stringBuilder.toString().getBytes());
         } catch (Exception e) {
-            log.error("%s Could not write properties to file [%s] %s[%s]", unicode(0x1F940), output, lineSeparator(), e);
+            log.error("Could not write properties to file [%s] %s[%s]", output, lineSeparator(), e);
         }
     }
 

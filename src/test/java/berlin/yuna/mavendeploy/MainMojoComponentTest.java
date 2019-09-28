@@ -3,7 +3,9 @@ package berlin.yuna.mavendeploy;
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Compiler;
 import berlin.yuna.mavendeploy.config.Dependency;
+import berlin.yuna.mavendeploy.config.Deploy;
 import berlin.yuna.mavendeploy.config.Gpg;
+import berlin.yuna.mavendeploy.config.Jar;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.PluginUpdater;
@@ -109,40 +111,41 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
     @Test
     public void settingsSession_withServerFormatOne_shouldAddServerToSession() {
-        terminal.execute(mvnCmd("-Dsettings.xml=\"--ServerId=Server1 --Username=User1 --Password=Pass1 --ServerId=Server2 --Username=User2\""));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [Server1] user [User1] pass [*****]"));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [Server2] user [User2] pass [null]"));
+        terminal.execute(mvnCmd("-Ddeploy -Dsettings.xml=\"--ServerId=Server1 --Username=User1 --Password=Pass1 --ServerId=Server2 --Username=User2\""));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [Server1] user [User1] pass [*****]"));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [Server2] user [User2] pass [null]"));
     }
 
     @Test
     public void settingsSession_withServerFormatTwo_shouldAddServerToSession() {
         terminal.execute(mvnCmd(
-                " -Dserver='servername1::username1::null::privateKey1::passphrase1' "
+                "-Ddeploy"
+                        + " -Dserver='servername1::username1::null::privateKey1::passphrase1' "
                         + " -DSeRvEr0='servername2::username2::password2::::passphrase2' "
                         + " -Dserver1='servername3::username3::::' "
         ));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername1] user [username1] pass [null]"));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername2] user [username2] pass [*********]"));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername3] user [username3] pass [null]"));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [servername1] user [username1] pass [null]"));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [servername2] user [username2] pass [*********]"));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [servername3] user [username3] pass [null]"));
     }
 
     @Test
     public void settingsSession_withServerFormatThree_shouldAddServerToSession() {
-        terminal.execute(mvnCmd(
-                " -Dserver.Id='servername1' -Dserver.username='username1' -Dserver.password='null' "
+        terminal.execute(mvnCmd(" -Ddeploy"
+                        + " -Dserver.Id='servername1' -Dserver.username='username1' -Dserver.password='null' "
                         + " -Dserver0.iD='servername2' -Dserver0-username='username2' -Dserver0.password='password1' "
                         + " -Dserver1.ID='servername3' -Dserver1_username='username3' -Dserver1.password='' "
         ));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername1] user [username1] pass [null]"));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername2] user [username2] pass [*********]"));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername3] user [username3] pass [null]"));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [servername1] user [username1] pass [null]"));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [servername2] user [username2] pass [*********]"));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [servername3] user [username3] pass [null]"));
     }
 
     @Test
     public void setParameter_manually_shouldNotBeOverwritten() {
         terminal.execute(mvnCmd("-Dproject.version=definedVersion -DnewVersion=manualSetVersion"));
 
-        expectPropertiesOverwrite(prop("newVersion", "manualSetVersion"));
+        assertThat(terminal.consoleInfo(), containsString("(f) newVersion = manualSetVersion"));
         assertThat(getCurrentProjectVersion(), is(equalTo("manualSetVersion")));
     }
 
@@ -359,33 +362,32 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         expectProperties(prop("newVersion", oldPomVersion + "-SNAPSHOT"));
         expectProperties(prop("newVersion", oldPomVersion));
         assertThat(getCurrentProjectVersion(), is(equalTo(oldPomVersion)));
-        expectMojoRun(g(Versions.class, "set"));
+        expectMojoRun(true, g(Versions.class, "set"), g(Jar.class, "jar"), g(Deploy.class, "deploy"));
     }
 
     @Test
     public void deploy_withEmptyDeployUrl_shouldNotStartDeployment() {
         terminal.execute(mvnCmd("-Dclean -Ddeploy -Ddeploy.url=''"));
 
-        assertThat(terminal.consoleInfo(), not(containsString("Config added key [altDeploymentRepository]")));
-        expectMojoRun(g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"));
+        assertThat(terminal.consoleInfo(), containsString("[altDeploymentRepository] value [default::default::http://deploy.url-not.found]"));
+        expectMojoRun(true, g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"), g(Jar.class, "jar"), g(Deploy.class, "deploy"));
     }
 
     @Test
     public void deploy_withEmptySettings_shouldNotStartDeployment() {
         terminal.execute(mvnCmd("-Dclean -Ddeploy -Ddeploy.url='https://aa.bb' --settings=" + new SettingsXmlBuilder().create()));
         assertThat(terminal.consoleInfo(), containsString("[deploy.id] not set"));
-        assertThat(terminal.consoleInfo(), containsString("Cant find any credentials for deploy.id [null] deploy.url [https://aa.bb]"));
+        assertThat(terminal.consoleInfo(), containsString("Cant find [deploy.id] by [deploy.url] [https://aa.bb]"));
 
-        expectMojoRun(g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"));
+        expectMojoRun(true, g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"), g(Jar.class, "jar"), g(Deploy.class, "deploy"));
     }
 
     @Test
     public void deploy_withDeployIdAndDeployUrlButEmptySettings_shouldNotStartDeployment() {
-        terminal.execute(mvnCmd("-Dclean -Ddeploy -Ddeploy.id='invalid' -Ddeploy.url='https://nexus.com' --settings=" + new SettingsXmlBuilder().create()));
+        terminal.execute(mvnCmd("-Dclean -Ddeploy -Ddeploy.id='invalid' -Ddeploy.url='https://nexus.invalid' --settings=" + new SettingsXmlBuilder().create()));
 
-        assertThat(terminal.consoleInfo(), containsString("DeployUrl [https://nexus.com]"));
-        assertThat(terminal.consoleInfo(), containsString("Cant find any credentials for deploy.id [invalid] deploy.url [https://nexus.com]"));
-        expectMojoRun(g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"));
+        assertThat(terminal.consoleInfo(), containsString("Config added key [altDeploymentRepository] value [invalid::default::https://nexus.invalid]"));
+        expectMojoRun(true, g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"), g(Jar.class, "jar"), g(Deploy.class, "deploy"));
     }
 
     @Test
@@ -395,7 +397,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
         terminal.execute(mvnCmd("-Ddeploy -Ddeploy.id='validId' -Ddeploy.url='https://nexus.com' --settings=" + sxb.create()));
 
-        assertThat(terminal.consoleInfo(), containsString("DeployId [validId] deployUrl [https://nexus.com]"));
+        assertThat(terminal.consoleInfo(), containsString("Config added key [altDeploymentRepository] value [validId::default::https://nexus.com]"));
     }
 
     @Test
@@ -409,9 +411,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         for (String server : getServerVariants()) {
             terminal.execute(mvnCmd("-Ddeploy -Ddeploy.url='https://aa-" + server + "-bb.com' --settings=" + settingsXml));
 
-            assertThat(terminal.consoleInfo(), containsString("[deploy.id] not set"));
-            assertThat(terminal.consoleInfo(), containsString("Fallback to deployId [" + server + "]"));
-            assertThat(terminal.consoleInfo(), containsString(" The packaging for this project did not assign a file to the build artifact"));
+            assertThat(terminal.consoleInfo(), containsString("Config added key [altDeploymentRepository] value [" + server + "::default::https://aa-" + server + "-bb.com]"));
             terminal.clearConsole();
         }
     }
@@ -428,9 +428,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
             terminal.execute(mvnCmd("-Ddeploy -Ddeploy.url='https://aa.bb' --settings=" + sxb.create()));
 
-            assertThat(terminal.consoleInfo(), containsString("[deploy.id] not set"));
-            assertThat(terminal.consoleInfo(), containsString("Fallback to deployId [" + server + "]"));
-            assertThat(terminal.consoleInfo(), containsString(" The packaging for this project did not assign a file to the build artifact"));
+            assertThat(terminal.consoleInfo(), containsString("Config added key [altDeploymentRepository] value [" + server + "::default::https://aa.bb]"));
             terminal.clearConsole();
         }
     }
@@ -441,7 +439,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
             setupGpgTestKey(terminal, log);
             this.terminal.execute(mvnCmd("-Djava.doc -Djava.source -Dgpg.pass=mySecret"));
         } catch (Exception e) {
-            log.error("%s GPG test failed cause [%s]", unicode(0x1F940), e);
+            log.error("GPG test failed cause [%s]", e);
         } finally {
             teardownGpgTestKey(terminal, log);
         }

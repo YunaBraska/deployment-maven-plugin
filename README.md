@@ -76,7 +76,7 @@ and much more while you can still use the original maven userProperties and/or s
 <plugin>
     <groupId>berlin.yuna</groupId>
     <artifactId>deployment-maven-plugin</artifactId>
-    <version>12.0.3</version>
+    <version>12.0.2</version>
 </plugin>
 ````
 
@@ -229,6 +229,7 @@ server2.passphrase='passphrase2'
 | project.encoding    | Boolean | false              | sets default encoding to every encoding parameter definition               |
 | java.version        | Boolean | false              | sets default java version to every java version parameter definition       |
 | properties.print    | Boolean/String | ''          | writes all properties to (given fileValue or "all.properties") file        |
+| package             | Boolean | false              | build jar file (automatically is true if deployment is requested)          |
 | changes.push        | String  | ''                 | push changes to specific branch                                            |
 
 ### Requirements
@@ -247,10 +248,14 @@ server2.passphrase='passphrase2'
 
 ### TODO
 * [ ] finish converting from bash to real mojo
+* [ ] read properties from file project, system, file ,commandline
+* [ ] replace some GitService functions with scm plugin
 * [ ] Jacoco
+* [ ] failsafe
 * [ ] plugin updater exclusions
 * [ ] plugin updater remove inner bash command
 * [ ] update testProject too
+* [ ] add mavenProperty resolver to getParameter
 * [ ] git last commit as variables
 * [ ] Git credentials
 * [ ] Git push when changes are made

@@ -2,8 +2,8 @@ package berlin.yuna.mavendeploy.config;
 
 import berlin.yuna.mavendeploy.logic.GitService;
 import berlin.yuna.mavendeploy.model.Logger;
-import berlin.yuna.mavendeploy.plugin.MojoExecutor;
-import berlin.yuna.mavendeploy.plugin.MojoRun;
+import berlin.yuna.mavendeploy.plugin.PluginExecutor;
+import berlin.yuna.mavendeploy.plugin.Application;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
@@ -34,7 +34,7 @@ import static org.mockito.Mockito.when;
 public class ReadmeBuilderTest {
 
     private static final Logger log = new Logger().enableDebug(DEBUG);
-    private MojoExecutor.ExecutionEnvironment environment;
+    private PluginExecutor.ExecutionEnvironment environment;
     private MavenProject mavenProject;
     private String projectPath = System.getProperty("user.dir");
 
@@ -48,7 +48,8 @@ public class ReadmeBuilderTest {
         final MavenSession mavenSession = mock(MavenSession.class);
         final Properties properties = prepareProperties(mavenProject);
         when(mavenSession.getUserProperties()).thenReturn(properties);
-        environment = new MojoExecutor.ExecutionEnvironment(mavenProject, mavenSession, new DefaultBuildPluginManager());
+        when(mavenSession.getSystemProperties()).thenReturn(System.getProperties());
+        environment = new PluginExecutor.ExecutionEnvironment(mavenProject, mavenSession, new DefaultBuildPluginManager());
     }
 
     @Test
@@ -80,7 +81,7 @@ public class ReadmeBuilderTest {
     @Test
     public void setFallbackJavaVersion() throws IOException {
         final String javaVersion = environment.getMavenSession().getUserProperties().getProperty("java.version");
-        final Path path = getPath(MojoRun.class);
+        final Path path = getPath(Application.class);
         final String content = Files.readString(path);
         final String result = content.replaceFirst("(?<prefix>.*JAVA_VERSION.*\")(?<version>.*)(?<suffix>\".*)", "${prefix}" + javaVersion + "${suffix}");
         Files.writeString(path, result);

@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Properties;
 
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
+import static berlin.yuna.mavendeploy.util.MojoUtil.deletePath;
 
 public class PluginUpdater extends MojoBase {
 
@@ -48,8 +49,7 @@ public class PluginUpdater extends MojoBase {
         reportPluginUpdates(log, plugins, pomFile.toFile());
 
         logGoal(goal, false);
-        Files.deleteIfExists(pomFile);
-        Files.deleteIfExists(tmpProjectPath);
+        deletePath(tmpProjectPath);
         return this;
     }
 
@@ -59,11 +59,11 @@ public class PluginUpdater extends MojoBase {
 
     //TODO: mojo execution
     private String mvnUpdate() {
-        final Properties prop = session.getEnvironment().getMavenSession().getUserProperties();
+        final Properties prop = session.getProperties();
         final boolean major = prop.containsKey("update.major");
         final boolean minor = prop.containsKey("update.minor");
         final String parameter = (major ? " -Dupdate.major" : "") + (minor ? " -Dupdate.minor" : "");
-        final String mvnCmd = "mvn berlin.yuna:deployment-maven-plugin:12.0.1:run -Dupdate.plugins=false " + parameter;
+        final String mvnCmd = "mvn berlin.yuna:deployment-maven-plugin:12.0.2:run -Dupdate.plugins=false " + parameter;
         log.debug("Running maven command [%s]", mvnCmd);
         return mvnCmd;
     }

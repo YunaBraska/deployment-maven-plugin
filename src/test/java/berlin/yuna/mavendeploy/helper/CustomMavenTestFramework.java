@@ -6,6 +6,7 @@ import berlin.yuna.mavendeploy.config.Compiler;
 import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.Deploy;
 import berlin.yuna.mavendeploy.config.Gpg;
+import berlin.yuna.mavendeploy.config.Jar;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.MojoBase;
@@ -41,12 +42,12 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
-import static berlin.yuna.mavendeploy.logic.SettingsXmlReader.getGpgPath;
+import static berlin.yuna.mavendeploy.config.Gpg.getGpgPath;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
+import static berlin.yuna.mavendeploy.util.MojoUtil.deletePath;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
@@ -104,6 +105,7 @@ public class CustomMavenTestFramework {
             g(Resources.class, "testResources"),
             g(Compiler.class, "compile"),
             g(Compiler.class, "testCompile"),
+            g(Jar.class, "jar"),
             g(Deploy.class, "deploy")
     );
 
@@ -131,7 +133,7 @@ public class CustomMavenTestFramework {
     }
 
     @After
-    public void tearDown() throws IOException {
+    public void tearDown() {
         deleteDir(TEST_DIR);
     }
 
@@ -197,6 +199,10 @@ public class CustomMavenTestFramework {
     }
 
     protected void expectMojoRun(final ActiveGoal... expectedMojos) {
+        expectMojoRun(false, expectedMojos);
+    }
+
+    protected void expectMojoRun(final boolean brokenMojo, final ActiveGoal... expectedMojos) {
         final String console = terminal.consoleInfo();
         assertThat(console, containsString("Building example-maven-test-project"));
         assertThat(console, not(containsString("Unable to invoke plugin")));
@@ -205,7 +211,9 @@ public class CustomMavenTestFramework {
             if (expectedMojoList.contains(definedMojo)) {
                 log.debug("[INFO] Plugin expected: " + definedMojo.toString());
                 assertThat(format("Mojo did not start [%s]", definedMojo), console, containsString("-<=[ Start " + definedMojo.toString()));
-                assertThat(format("Mojo did not run [%s]", definedMojo), console, containsString("-<=[ End " + definedMojo.toString()));
+                if (!brokenMojo) {
+                    assertThat(format("Mojo did not run [%s]", definedMojo), console, containsString("-<=[ End " + definedMojo.toString()));
+                }
             } else {
                 assertThat(format("Mojo unexpectedly started [%s]", definedMojo), console, is(not(containsString("-<=[ Start " + definedMojo.toString()))));
             }
@@ -243,8 +251,8 @@ public class CustomMavenTestFramework {
 
     private Path prepareTestProject() throws IOException, URISyntaxException, GitAPIException {
         final Path src = Paths.get(requireNonNull(getClass().getClassLoader().getResource("testApplication")).toURI());
-        deleteDirIfExists(Paths.get(src.toString(), "target"));
-        deleteDirIfExists(Paths.get(src.toString().replace("target/test-classes", "src/test/resources"), "target"));
+        deletePath(Paths.get(src.toString(), "target"));
+        deletePath(Paths.get(src.toString().replace("target/test-classes", "src/test/resources"), "target"));
         assertThat(format("directory does not exists [%s]", src.toUri().toString()), Files.exists(src), is(true));
         assertThat(format("[%s] is not a directory", src.toUri().toString()), Files.isDirectory(src), is(true));
         final Path tempDirectory = Files.createTempDirectory(getClass().getSimpleName() + "_" + src.getFileName().toString() + "_");
@@ -253,20 +261,17 @@ public class CustomMavenTestFramework {
         return tempDirectory;
     }
 
-    private void deleteDirIfExists(final Path dir) throws IOException {
+    private void deleteDirIfExists(final Path dir) {
         if (Files.exists(dir)) {
             log.info("%s Deleting [%s]", unicode(0x1F4CD), dir.toString());
             deleteDir(dir);
         }
     }
 
-    private void deleteDir(final Path dir) throws IOException {
+    private void deleteDir(final Path dir) {
         assertThat(format("directory does not exists [%s]", dir.toUri().toString()), Files.exists(dir), is(true));
         assertThat(format("[%s] is not a directory", dir.toUri().toString()), Files.isDirectory(dir), is(true));
-        Files.walk(dir)
-                .sorted(Comparator.reverseOrder())
-                .map(Path::toFile)
-                .forEach(File::delete);
+        deletePath(dir);
         assertThat(format("Unable to delete [%s]", dir.toString()), Files.exists(dir), is(false));
     }
 
@@ -317,7 +322,6 @@ public class CustomMavenTestFramework {
 
     protected static void setupGpgTestKey(final Terminal terminal, final Logger log) {
         final String gpgCmd = getGpgPath(log);
-        terminal.execute(gpgCmd + " --version");
         terminal.execute(
                 "cat > " + GPG_KEY_FILE + " <<EOF\n"
                         + "     %echo Generating a basic OpenPGP key\n"

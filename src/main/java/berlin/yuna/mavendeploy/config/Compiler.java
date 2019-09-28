@@ -4,8 +4,8 @@ import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executeMojo;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.goal;
 
 public class Compiler extends MojoBase {
 

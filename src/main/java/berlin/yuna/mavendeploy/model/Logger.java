@@ -6,6 +6,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 
+import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static java.lang.String.format;
 import static java.time.temporal.ChronoUnit.SECONDS;
 
@@ -37,34 +38,34 @@ public class Logger {
     public void debug(final Object... format) {
         if (debugEnabled) {
             if (LOG == null) {
-                System.out.println("[DEBUG]   " + formatMsg(format));
+                System.out.println("[DEBUG]   " + formatMsg(-1, format));
             } else {
-                LOG.debug("   " + formatMsg(format));
+                LOG.debug("   " + formatMsg(-1, format));
             }
         }
     }
 
     public void info(final Object... format) {
         if (LOG == null) {
-            System.out.println("[INFO]    " + formatMsg(format));
+            System.out.println("[INFO]    " + formatMsg(-1, format));
         } else {
-            LOG.info("    " + formatMsg(format));
+            LOG.info("    " + formatMsg(-1, format));
         }
     }
 
     public void warn(final Object... format) {
         if (LOG == null) {
-            System.err.println("[WARNING] " + formatMsg(format));
+            System.err.println("[WARNING] " + formatMsg(0x26A0, format));
         } else {
-            LOG.warn(" " + formatMsg(format));
+            LOG.warn(" " + formatMsg(0x26A0, format));
         }
     }
 
     public void error(final Object... format) {
         if (LOG == null) {
-            System.err.println("[ERROR]   " + formatMsg(format));
+            System.err.println("[ERROR]   " + formatMsg(0x1F940, format));
         } else {
-            LOG.error("   " + formatMsg(format));
+            LOG.error("   " + formatMsg(0x1F940, format));
         }
     }
 
@@ -77,7 +78,7 @@ public class Logger {
         return this;
     }
 
-    private String formatMsg(final Object[] format) {
+    private String formatMsg(final int icon, final Object[] format) {
         final LocalDateTime now = LocalDateTime.now();
         final long diff = lastLog.until(now, SECONDS);
         final String msg = format.length > 1 ? format(String.valueOf(format[0]), Arrays.copyOfRange(format, 1, format.length)) : String.valueOf(format[0]);
@@ -85,7 +86,7 @@ public class Logger {
         return format(
                 "[%s]%s %s", now.format(formatter),
                 ((debugEnabled) ? " [" + diff + "s]" : ""),
-                msg
+                (icon != -1 ? unicode(icon) + " " + msg : msg)
         );
     }
 }

@@ -77,6 +77,7 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 | project.encoding    | Boolean | false              | sets default encoding to every encoding parameter definition               |
 | java.version        | Boolean | false              | sets default java version to every java version parameter definition       |
 | properties.print    | Boolean/String | ''          | writes all properties to (given fileValue or "all.properties") file        |
+| package             | Boolean | false              | build jar file (automatically is true if deployment is requested)          |
 | changes.push        | String  | ''                 | push changes to specific branch                                            |
 
 ### Requirements

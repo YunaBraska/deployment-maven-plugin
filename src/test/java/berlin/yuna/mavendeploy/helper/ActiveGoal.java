@@ -1,8 +1,6 @@
 package berlin.yuna.mavendeploy.helper;
 
 import berlin.yuna.mavendeploy.config.MojoBase;
-import berlin.yuna.mavendeploy.model.Logger;
-import berlin.yuna.mavendeploy.plugin.MojoExecutor;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 
 import java.lang.reflect.InvocationTargetException;

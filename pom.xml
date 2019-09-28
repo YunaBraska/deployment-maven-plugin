@@ -220,7 +220,7 @@
                     <appendAssemblyId>false</appendAssemblyId>
                     <archive>
                         <manifest>
-                            <mainClass>berlin.yuna.mavendeploy.plugin.MojoRun</mainClass>
+                            <mainClass>berlin.yuna.mavendeploy.plugin.Application</mainClass>
                         </manifest>
                     </archive>
                 </configuration>

@@ -2,7 +2,6 @@ package berlin.yuna.mavendeploy.config;
 
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.helper.CustomMavenTestFramework;
-import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.model.Plugin;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
@@ -10,6 +9,8 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -29,6 +30,7 @@ public class PluginUpdateGeneratorTest extends CustomMavenTestFramework {
     @Test
     public void displayPluginUpdates() throws IOException, XmlPullParserException {
         fixedVersions.put("maven-javadoc-plugin", "3.1.0");
+        fixedVersions.put("maven-deploy-plugin", "2.8.2");
 
         final File pomFile = TEST_POM.getPomFile();
         final List<MojoBase> mojoBases = getAllMojos();
@@ -48,7 +50,7 @@ public class PluginUpdateGeneratorTest extends CustomMavenTestFramework {
             try {
                 if (fixedVersions.containsKey(mojo.getArtifactId())) {
                     final String fixedVersion = fixedVersions.get(mojo.getArtifactId());
-                    log.error("%s Update block for [%s] fall back to [%s]", unicode(0x1F940), mojo.getArtifactId(), fixedVersion);
+                    log.error("Update block for [%s] fall back to [%s]", mojo.getArtifactId(), fixedVersion);
                     updateInCodePluginVersions(mojo, fixedVersion, getPath(mojoBases, mojo));
                 } else {
                     updateInCodePluginVersions(mojo, newVersion, getPath(mojoBases, mojo));

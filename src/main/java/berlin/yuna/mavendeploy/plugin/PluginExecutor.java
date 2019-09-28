@@ -18,14 +18,13 @@ import org.apache.maven.plugin.PluginResolutionException;
 import org.apache.maven.plugin.descriptor.MojoDescriptor;
 import org.apache.maven.plugin.descriptor.PluginDescriptor;
 import org.apache.maven.project.MavenProject;
+import org.codehaus.plexus.configuration.PlexusConfiguration;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 import org.codehaus.plexus.util.xml.Xpp3DomUtils;
 
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-
-import static berlin.yuna.mavendeploy.plugin.PlexusConfigurationUtils.toXpp3Dom;
 
 /**
  * Executes an arbitrary mojo using a fluent interface.  This is meant to be executed within the context of a Maven mojo. Here is an
@@ -49,7 +48,7 @@ import static berlin.yuna.mavendeploy.plugin.PlexusConfigurationUtils.toXpp3Dom;
  *          );
  * </pre>
  */
-public class MojoExecutor {
+public class PluginExecutor {
 
     private static Logger logger;
 
@@ -100,7 +99,6 @@ public class MojoExecutor {
             }
             final MojoExecution exec = mojoExecution(mojoDescriptor, executionId, configuration);
             env.getPluginManager().executeMojo(session, exec);
-            // TODO : Consider using JDK7 multi-catch
         } catch (PluginConfigurationException | PluginNotFoundException | InvalidPluginDescriptorException | PluginManagerException | PluginDescriptorParsingException | MojoFailureException | PluginResolutionException e) {
             throw new MojoExecutionException("Unable to execute mojo", e);
         }
@@ -480,7 +478,19 @@ public class MojoExecutor {
     }
 
     public static void setLogger(final Logger logger) {
-        MojoExecutor.logger = logger;
+        PluginExecutor.logger = logger;
         MavenCompatibilityHelper.setLogger(logger);
+    }
+
+    private static Xpp3Dom toXpp3Dom(final PlexusConfiguration config) {
+        final Xpp3Dom result = new Xpp3Dom(config.getName());
+        result.setValue(config.getValue(null));
+        for (String name : config.getAttributeNames()) {
+            result.setAttribute(name, config.getAttribute(name));
+        }
+        for (PlexusConfiguration child : config.getChildren()) {
+            result.addChild(toXpp3Dom(child));
+        }
+        return result;
     }
 }

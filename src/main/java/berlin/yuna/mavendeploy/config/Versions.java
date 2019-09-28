@@ -5,9 +5,9 @@ import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.configuration;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.configuration;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executeMojo;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.goal;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
 
 public class Versions extends MojoBase {
@@ -168,9 +168,7 @@ public class Versions extends MojoBase {
 //                        prop( "maven.version.rules"),
                 ), session.getEnvironment()
         );
-        session.getParamPresent("newVersion").ifPresent(newVersion -> {
-            modifySessionVersion(newVersion);
-        });
+        session.getParamPresent("newVersion").ifPresent(this::modifySessionVersion);
         logGoal(goal, false);
         return this;
     }
@@ -196,12 +194,11 @@ public class Versions extends MojoBase {
                         .orElse((project.getBuild() != null && isPresent(project.getBuild().getFinalName())) ?
                                 project.getBuild().getFinalName() : project.getArtifactId() + "-" + oldVersion
                         )).replace(oldVersion, newVersion);
-        session.setParameter("finalName", finalName);
-        session.setParameter("project.build.finalName", finalName);
-        session.getParamPresent("projectArtifact").ifPresent(pa ->
-                session.setParameter("projectArtifact", pa.replace(oldVersion, newVersion))
-        );
-        session.setParameter("oldVersion", oldVersion);
+        session.setParameter("finalName", finalName, true);
+        session.setParameter("project.build.finalName", finalName, true);
+        project.getAttachedArtifacts().forEach(a -> a.setVersion(a.getVersion().replace(oldVersion, newVersion)));
+        project.getAttachedArtifacts().forEach(a -> log.debug("Attached artifact [%s] [%s]", a.getArtifactId(), a.getVersion()));
+        session.setParameter("oldVersion", oldVersion, true);
         project.setVersion(newVersion);
         if (project.getBuild() != null) {
             project.getBuild().setFinalName(finalName);

@@ -18,7 +18,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import java.util.stream.Collectors;
 
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
@@ -31,8 +30,8 @@ public class GitService {
     private final boolean fake;
     private final File workDir;
     private final boolean active;
-    private static final Pattern PATTERN_ORIGINAL_BRANCH_NAME = Pattern.compile("(.*refs\\/(?<prefix>\\w*\\/)(origin\\/)*)(?<branchName>.*)(?<suffix>@.*)");
-    private static final String SHA_PATTERN = "[0-9a-f]{5,40}";
+    private static final Pattern PATTERN_BRANCH_NAME_REF = Pattern.compile("(.*refs\\/(?<prefix>\\w*\\/)(origin\\/)*)(?<branchName>.*)(?<suffix>@.*)");
+    private static final String SHA_REF_PATTERN = "([0-9a-f]{5,40}\\s*refs\\/heads\\/)";
 
     public GitService(final Logger log, final File workDir, final boolean fake) {
         final boolean hasGit = hasGit(log, workDir);
@@ -48,6 +47,7 @@ public class GitService {
             return null;
         final String tag;
         try {
+//            getString("git tag -l | xargs git tag -d && git fetch --tags --force");
             getString("git fetch --tags --force");
         } catch (Exception ignored) {
         } finally {
@@ -66,7 +66,7 @@ public class GitService {
             try {
                 properties.load(new StringReader(config.get().replaceAll("[\\n|\\r|\\s|$|]", "\n")));
             } catch (IOException e) {
-                log.error("%s Could not read git config due [%s] %s", unicode(0x1F940), config, e);
+                log.error("Could not read git config due [%s] %s", config, e);
             }
         }
         return properties.entrySet().stream()
@@ -79,7 +79,7 @@ public class GitService {
         try {
             return Git.open(workDir).reflog().call();
         } catch (GitAPIException | IOException e) {
-            log.error("%s Could not read git directory due %s", unicode(0x1F940), e);
+            log.error("Could not read git directory due %s", e);
             return null;
         }
     }
@@ -95,19 +95,19 @@ public class GitService {
         try {
             return active && Git.open(workDir).status().call().isClean();
         } catch (GitAPIException | IOException e) {
-            log.error("%s Could not read git directory due %s", unicode(0x1F940), e);
+            log.error("Could not read git directory due %s", e);
             return false;
         }
     }
 
     public boolean gitStash() {
         if (fake) {
-            log.warn("%s Fake stash", unicode(0x26A0));
+            log.warn("Fake stash");
         }
         try {
             return active && Git.open(workDir).stashCreate().call() != null;
         } catch (GitAPIException | IOException e) {
-            log.error("%s Failed to stash %s", unicode(0x1F940), e);
+            log.error("Failed to stash %s", e);
             return false;
         }
 //        return fake ? "fake stash" : getTerminal().execute("git stash clear; git stash").consoleInfo().trim();
@@ -115,7 +115,7 @@ public class GitService {
 
     public String gitLoadStash() {
         if (fake) {
-            log.warn("%s Fake load stash", unicode(0x26A0));
+            log.warn("Fake load stash");
         }
 
         try {
@@ -130,11 +130,11 @@ public class GitService {
     public Optional<String> getBranchNameRefLog() {
         if (!active)
             return Optional.empty();
-        final String[] refLog = getString("git reflog show --all | grep \"refs/head/\" | head -n90").orElse("").split(SHA_PATTERN);
+        final String[] refLog = getString("git reflog show --all | grep \"refs/heads/\" | head -n90").orElse("").split(SHA_REF_PATTERN);
         for (String refLogEntry : refLog) {
-            final Matcher matcher = PATTERN_ORIGINAL_BRANCH_NAME.matcher(refLogEntry);
+            final Matcher matcher = PATTERN_BRANCH_NAME_REF.matcher(refLogEntry);
             if (matcher.find()) {
-                return Optional.ofNullable(matcher.group("branchName"));
+                return Optional.ofNullable(matcher.group("branchName").trim().split("\\s")[0]);
             }
         }
         return getBranchName();
@@ -154,14 +154,14 @@ public class GitService {
             }
             return Optional.ofNullable(branches.get(0).getName());
         } catch (GitAPIException | IOException e) {
-            log.error("%s Could not read git directory due %e", unicode(0x1F940), e);
+            log.error("Could not read git directory due %e", e);
             return Optional.empty();
         }
     }
 
     private void logFakeMessage(final Logger log) {
         if (fake) {
-            log.warn("%s Faked [%s]", unicode(0x26A0), getClass().getSimpleName());
+            log.warn("Faked [%s]", getClass().getSimpleName());
         }
     }
 
