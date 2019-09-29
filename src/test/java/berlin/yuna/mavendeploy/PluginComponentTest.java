@@ -261,7 +261,7 @@ public class PluginComponentTest extends CustomMavenTestFramework {
 
     @Test
     public void createJavaDocBreak_shouldBeSuccessful() {
-        terminal.execute(mvnCmd("-Djava.doc.brak"));
+        terminal.execute(mvnCmd("-Djava.doc.break"));
 
         final File indexHtml = new File(TEST_DIR.toFile(), "target/apidocs/index.html");
         final File javaDoc = new File(TEST_DIR.toFile(), "target/" + TEST_POM.getArtifactId() + "-" + TEST_POM.getVersion() + "-javadoc.jar");
