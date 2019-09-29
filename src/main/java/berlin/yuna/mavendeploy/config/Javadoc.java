@@ -25,7 +25,7 @@ public class Javadoc extends MojoBase {
                 goal(goal),
                 session.prepareXpp3Dom(
 //                        prop("additionalparam", "-Xdoclint:none"),
-                        prop("doclint"),
+                        prop("doclint", session.getBoolean("java.doc.break").orElse(false) ? null : "none"),
                         prop("maven.javadoc.classifier"),
                         prop("destDir"),
                         prop("additionalJOption"),

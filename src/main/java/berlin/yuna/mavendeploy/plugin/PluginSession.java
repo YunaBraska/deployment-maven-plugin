@@ -77,17 +77,25 @@ public class PluginSession {
     }
 
     public void setParameter(final String key, final String value, final boolean... when) {
+        setParameter(false, key, value, when);
+    }
+
+    public void setParameter(final boolean silent, final String key, final String value, final boolean... when) {
         for (boolean trigger : when) {
             if (trigger) {
                 if (value == null && getParam(key).isPresent()) {
                     //[value == null && key is present]
-                    log.debug("%s Config removed key [%s]", unicode(0x26A0), key);
+                    if (!silent) {
+                        log.debug("%s Config removed key [%s]", unicode(0x26A0), key);
+                    }
                     getProject().getProperties().remove(key);
                     getMavenSession().getSystemProperties().remove(key);
                     getMavenSession().getUserProperties().remove(key);
                 } else if (value != null && !value.equals(getString(key).orElse(null))) {
                     //[value != null && hasChanged]
-                    log.info("%s Config added key [%s] value [%s]", unicode(0x271A), key, toSecret(key, value));
+                    if (!silent) {
+                        log.info("%s Config added key [%s] value [%s]", unicode(0x271A), key, toSecret(key, value));
+                    }
                     getMavenSession().getUserProperties().setProperty(key, value);
                 }
                 break;
@@ -96,10 +104,14 @@ public class PluginSession {
     }
 
     public void setNewParam(final String key, final String value) {
+        setNewParam(false, key, value);
+    }
+
+    public void setNewParam(final boolean silent, final String key, final String value) {
         requireNonNull(key, "setNewParam key is null");
         final String cmdValue = getProperties().getProperty(key);
         if (isEmpty(cmdValue)) {
-            setParameter(key, value, true);
+            setParameter(silent, key, value, true);
         }
     }
 

@@ -43,6 +43,9 @@ public class PropertyWriter extends MojoBase {
                 Files.createDirectories(output.getParentFile().toPath());
             }
             Files.write(output.toPath(), stringBuilder.toString().getBytes());
+            if (output.exists()) {
+                log.info("%s Properties [file://%s]", unicode(0x1F516), output.toURI().getRawPath());
+            }
         } catch (Exception e) {
             log.error("Could not write properties to file [%s] %s[%s]", output, lineSeparator(), e);
         }
@@ -52,10 +55,10 @@ public class PropertyWriter extends MojoBase {
         return e -> stream(EXCLUDES).noneMatch(k -> String.valueOf(e.getKey()).toLowerCase().contains(k.toLowerCase()));
     }
 
-    private String entryToString(final Map.Entry<Object, Object> entry) {
-        return entry.getKey() + " = " + (isEmpty(String.valueOf(entry.getValue())) ? "" :
-                toSecret(String.valueOf(entry.getKey()), String.valueOf(entry.getValue())
-                        .replace("\\r", " ").replace("\\n", " ")));
+    protected String entryToString(final Map.Entry<Object, Object> entry) {
+        return (entry.getKey() + " = " + (isEmpty(String.valueOf(entry.getValue())) ? "" :
+                toSecret(String.valueOf(entry.getKey()), String.valueOf(entry.getValue())))
+        ).replace("\r", " ").replace("\n", " ").replace("\t", " ");
     }
 
     private File getOutputFile() {

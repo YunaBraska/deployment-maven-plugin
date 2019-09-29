@@ -49,26 +49,26 @@
 
 ### Motivation
 Once upon a time i had to define the deployment in each of my applications.
-        The pom.xml's and bash scripts didn't stop growing with build instructions which my app doesn't care about.
-        I needed thousands commits for hacky testing of my CI/CD systems even if i just want to do defaults like tagging
-        or semantic versioning.
-        So i started this project to keep the build instructions in my environment and have the plugin already tested.
-        Now i can run with auto configuration my deployments daily.
-        The plugin will even take care of updating all dependencies as semantic versioning.
-        And all lived happily ever after.
+The pom.xml's and bash scripts didn't stop growing with build instructions which my app doesn't care about.
+I needed thousands commits for hacky testing of my CI/CD systems even if i just want to do defaults like tagging
+or semantic versioning.
+So i started this project to keep the build instructions in my environment and have the plugin already tested.
+Now i can run with auto configuration my deployments daily.
+The plugin will even take care of updating all dependencies as semantic versioning.
+And all lived happily ever after.
 
-        This plugin will autoconfigure "every" default for you.
-        Pom file descriptions are not need anymore.
-        For example:
-        * Auto configuration
-        * semantic versioning
-        * update dependencies and plugins
-        * maven plugins,
-        * Readme.md variables and placeholder,
-        * Tagging,
-        * [...]
-        and much more while you can still use the original maven userProperties and/or systemProperties (ignoring ".",
-        "_", "-") to configure the plugins
+This plugin will autoconfigure "every" default for you.
+Pom file descriptions are not need anymore.
+For example:
+* Auto configuration
+* semantic versioning
+* update dependencies and plugins
+* maven plugins,
+* Readme.md variables and placeholder,
+* Tagging,
+* [...]
+and much more while you can still use the original maven userProperties and/or systemProperties (ignoring ".",
+"_", "-") to configure the plugins
 
 ### Usage as plugin
 *version = \<version>java.major/release.minor/features/fixes\</version>*
@@ -76,7 +76,7 @@ Once upon a time i had to define the deployment in each of my applications.
 <plugin>
     <groupId>berlin.yuna</groupId>
     <artifactId>deployment-maven-plugin</artifactId>
-    <version>!{project.version}</version>
+    <version>12.0.2</version>
 </plugin>
 ````
 
@@ -214,9 +214,10 @@ server2.passphrase='passphrase2'
 #### UNDER CONSTRUCTION (NOT STABLE)
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
-| clean               | Boolean | false              | cleans target and resolves dependencies                                    |
+| clean               | Boolean | false              | Cleans target and resolves dependencies                                    |
 | clean.cache         | Boolean | false              | Purges local maven repository cache                                        |
 | java.doc            | Boolean | false              | Creates java doc (javadoc.jar) if its not a pom artifact                   |
+| java.doc.break      | Boolean | false              | Same as "java.doc" but breaks on error                                     |
 | java.source         | Boolean | false              | Creates java sources (sources.jar) if its not a pom artifact               |
 | gpg.pass            | String  | ''                 | Signs artifacts (.asc) with GPG 2.1                                        |
 
@@ -225,12 +226,12 @@ server2.passphrase='passphrase2'
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | REPORT              | Boolean | false              | Generates report about version updates                                     |
-| test.skip           | Boolean | false              | same as "maven.test.skip"                                                  |
-| project.encoding    | Boolean | false              | sets default encoding to every encoding parameter definition               |
-| java.version        | Boolean | false              | sets default java version to every java version parameter definition       |
-| properties.print    | Boolean/String | ''          | writes all properties to (given fileValue or "all.properties") file        |
-| package             | Boolean | false              | build jar file (automatically is true if deployment is requested)          |
-| changes.push        | String  | ''                 | push changes to specific branch                                            |
+| test.skip           | Boolean | false              | Same as "maven.test.skip"                                                  |
+| project.encoding    | Boolean | false              | Sets default encoding to every encoding parameter definition               |
+| java.version        | Boolean | false              | Sets default java version to every java version parameter definition       |
+| properties.print    | Boolean/String | ''          | Writes all properties to (given fileValue or "all.properties") file        |
+| package             | Boolean | false              | Build jar file (automatically is true if deployment is requested)          |
+| changes.push        | String  | ''                 | Push changes to specific branch                                            |
 
 ### Requirements
 * \[JAVA\] for maven 

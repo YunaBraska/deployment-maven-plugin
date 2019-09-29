@@ -83,16 +83,6 @@ public class Application extends AbstractMojo {
             LOG.info("%s STEP [1/6] SETUP MOJO PROPERTIES", unicode(0x1F4DD));
             //SET GIT PROPERTIES
             setWhen("project.library", String.valueOf(isLibrary));
-            setWhen("project.name", project.getName());
-            setWhen("project.groupId", project.getGroupId());
-            setWhen("project.artifactId", project.getArtifactId());
-            setWhen("project.packaging", project.getPackaging());
-            setWhen("project.description", project.getDescription());
-            setWhen("project.url", project.getUrl());
-            setWhen("project.id", project.getId());
-            setWhen("project.defaultGoal", project.getDefaultGoal());
-            setWhen("project.inceptionYear", project.getInceptionYear());
-            setWhen("project.modelVersion", project.getModelVersion());
             setWhen("newVersion", newProjectVersion, !isEmpty(newProjectVersion) && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
             setWhen("removeSnapshot", "true", isTrue("remove.snapshot"));
             setWhen("generateBackupPoms", "false", true);
@@ -140,12 +130,12 @@ public class Application extends AbstractMojo {
             runWhen(() -> Surefire.build(SESSION).test(), isTrue("test.run", "test.unit"));
 
             LOG.info("%s STEP [5/6] RUN PLUGINS WITH ACTIONS", unicode(0x1F3AC));
-            runWhen(() -> Javadoc.build(SESSION).jar(), (!isLibrary() && isTrue("java.doc")));
+            runWhen(() -> Javadoc.build(SESSION).jar(), (!isLibrary() && isTrue("java.doc", "java.doc.break")));
             runWhen(() -> JavaSource.build(SESSION).jarNoFork(), (!isLibrary() && isTrue("java.source")));
             runWhen(() -> Jar.build(SESSION).jar(), hasText("package") || isTrue("deploy", "deploy.snapshot"));
             runWhen(() -> Gpg.build(SESSION).sign(), hasText("gpg.passphrase"));
-            runWhen(() -> Scm.build(SESSION).tag(), hasNewTag);
             runWhen(() -> Deploy.build(SESSION).deploy(), isTrue("deploy", "deploy.snapshot"));
+            runWhen(() -> Scm.build(SESSION).tag(), hasNewTag);
 
             //TODO: implement to push on changes && new parameter change version only on changes version.onchange && tag.onchange
 //                if (GIT_SERVICE.gitHasChanges() && SESSION.getBoolean("changes.push").orElse(false)) {
@@ -302,8 +292,17 @@ public class Application extends AbstractMojo {
         mavenSession.getUserProperties().putAll(readLicenseProperties(project.getLicenses()));
         mavenSession.getUserProperties().putAll(readDeveloperProperties(project.getDevelopers()));
         GIT_SERVICE.getConfig().forEach((key, value) -> setWhen("git." + key, value));
-
-
+        setWhen(true, "project.name", project.getName());
+        setWhen(true, "project.groupId", project.getGroupId());
+        setWhen(true, "project.artifactId", project.getArtifactId());
+        setWhen(true, "project.packaging", project.getPackaging());
+        setWhen(true, "project.description", project.getDescription());
+        setWhen(true, "project.url", project.getUrl());
+        setWhen(true, "project.id", project.getId());
+        setWhen(true, "project.version", project.getVersion());
+        setWhen(true, "project.defaultGoal", project.getDefaultGoal());
+        setWhen(true, "project.inceptionYear", project.getInceptionYear());
+        setWhen(true, "project.modelVersion", project.getModelVersion());
 
         setWhen("base.dir", basedir.toString(), !hasText("base.dir"));
     }
@@ -317,17 +316,19 @@ public class Application extends AbstractMojo {
         }
     }
 
-    private void setWhen(final String key, final String value) {
-        if (isPresent(value)) {
-            setWhen(key, value, true);
-        }
+    private void setWhen(final String key, final String value, final boolean... when) {
+        setWhen(false, key, value, when);
     }
 
-    private void setWhen(final String key, final String value, final boolean... when) {
-        for (boolean trigger : when) {
-            if (trigger) {
-                SESSION.setNewParam(key, value);
-                break;
+    private void setWhen(final boolean silent, final String key, final String value, final boolean... when) {
+        if (when.length == 0) {
+            SESSION.setNewParam(silent, key, value);
+        } else {
+            for (boolean trigger : when) {
+                if (trigger) {
+                    SESSION.setNewParam(silent, key, value);
+                    break;
+                }
             }
         }
     }

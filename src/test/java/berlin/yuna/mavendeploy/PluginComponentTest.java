@@ -25,7 +25,6 @@ import java.nio.file.Path;
 import java.util.List;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
-import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -35,8 +34,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.IsNot.not;
 
-//FIXME: how to do a GPG test? ¯\_(ツ)_/¯
-public class MainMojoComponentTest extends CustomMavenTestFramework {
+public class PluginComponentTest extends CustomMavenTestFramework {
 
     @Test
     public void mojoClear_WithTrigger_shouldExecute() {
@@ -132,9 +130,9 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     @Test
     public void settingsSession_withServerFormatThree_shouldAddServerToSession() {
         terminal.execute(mvnCmd(" -Ddeploy"
-                        + " -Dserver.Id='servername1' -Dserver.username='username1' -Dserver.password='null' "
-                        + " -Dserver0.iD='servername2' -Dserver0-username='username2' -Dserver0.password='password1' "
-                        + " -Dserver1.ID='servername3' -Dserver1_username='username3' -Dserver1.password='' "
+                + " -Dserver.Id='servername1' -Dserver.username='username1' -Dserver.password='null' "
+                + " -Dserver0.iD='servername2' -Dserver0-username='username2' -Dserver0.password='password1' "
+                + " -Dserver1.ID='servername3' -Dserver1_username='username3' -Dserver1.password='' "
         ));
         assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [servername1] user [username1] pass [null]"));
         assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [servername2] user [username2] pass [*********]"));
@@ -252,6 +250,18 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     @Test
     public void createJavaDoc_shouldBeSuccessful() {
         terminal.execute(mvnCmd("-Djava.doc"));
+
+        final File indexHtml = new File(TEST_DIR.toFile(), "target/apidocs/index.html");
+        final File javaDoc = new File(TEST_DIR.toFile(), "target/" + TEST_POM.getArtifactId() + "-" + TEST_POM.getVersion() + "-javadoc.jar");
+        assertThat(format("Cant find [%s]", indexHtml), indexHtml.exists(), is(true));
+        assertThat(format("Cant find [%s]", javaDoc), javaDoc.exists(), is(true));
+
+        expectMojoRun(g(Javadoc.class, "jar"));
+    }
+
+    @Test
+    public void createJavaDocBreak_shouldBeSuccessful() {
+        terminal.execute(mvnCmd("-Djava.doc.brak"));
 
         final File indexHtml = new File(TEST_DIR.toFile(), "target/apidocs/index.html");
         final File javaDoc = new File(TEST_DIR.toFile(), "target/" + TEST_POM.getArtifactId() + "-" + TEST_POM.getVersion() + "-javadoc.jar");
@@ -445,6 +455,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         }
 
         //FIXME: Travis has different GPG version, this test wont work
+        //FIXME: how set GPG key as default? ¯\_(ツ)_/¯
         if (DEBUG) {
             final File target = new File(TEST_DIR.toFile(), "target");
             assertThat(target.exists(), is(true));

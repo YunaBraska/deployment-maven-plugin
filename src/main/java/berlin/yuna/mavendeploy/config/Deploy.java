@@ -109,7 +109,7 @@ public class Deploy extends MojoBase {
 
     private Optional<Server> getServerContains(final String... names) {
         final List<Server> servers = session.getMavenSession().getSettings().getServers();
-        if (servers != null && !servers.isEmpty())
+        if (servers != null && !servers.isEmpty()) {
             for (String name : names) {
                 final Optional<Server> server = servers.stream()
                         .filter(s -> !isEmpty(s.getId()))
@@ -117,8 +117,11 @@ public class Deploy extends MojoBase {
                         .findFirst();
                 if (server.isPresent()) {
                     return server;
+                } else if(!servers.isEmpty()){
+                    return servers.stream().findFirst();
                 }
             }
+        }
         return Optional.empty();
     }
 }
