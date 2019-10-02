@@ -49,7 +49,7 @@ public class ActiveGoal {
 
     private MojoBase getDummyMojo() {
         try {
-            return activeMojo.getDeclaredConstructor(PluginSession.class).newInstance(new PluginSession(null, null));
+            return activeMojo.getDeclaredConstructor(PluginSession.class).newInstance(new PluginSession(null));
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             throw new RuntimeException(e);
         }

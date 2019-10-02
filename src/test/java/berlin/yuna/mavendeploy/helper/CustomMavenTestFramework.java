@@ -46,6 +46,7 @@ import java.util.List;
 import java.util.Set;
 
 import static berlin.yuna.mavendeploy.config.Gpg.getGpgPath;
+import static berlin.yuna.mavendeploy.helper.PluginUnitBase.createTestSession;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.deletePath;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
@@ -78,8 +79,8 @@ public class CustomMavenTestFramework {
     private static final String DEBUG_ENV = System.getenv("DEBUG");
     public static final boolean DEBUG = isEmpty(DEBUG_ENV) || parseBoolean(DEBUG_ENV);
 
-    protected static GitService gitService;
-    protected static Logger log = new Logger(null, "HH:mm:ss").enableDebug(DEBUG);
+    protected GitService gitService;
+    protected Logger log;
 
     private final List<ActiveGoal> definedMojoList = asList(
             g(Clean.class, "clean"),
@@ -111,18 +112,20 @@ public class CustomMavenTestFramework {
 
     @BeforeClass
     public static void setUpClass() {
-        log.debug("Start preparing [%s]", name);
-        getTerminal().execute("mvn -Dmaven.test.skip=true install --quiet");
-        log.debug("End preparing [%s]", name);
+        final PluginSession testSession = createTestSession();
+        testSession.getLog().debug("Start preparing [%s]", name);
+        getTerminal(testSession.getLog()).execute("mvn -Dmaven.test.skip=true install --quiet");
+        testSession.getLog().debug("End preparing [%s]", name);
     }
 
     @Before
     public void setUp() throws IOException, URISyntaxException, GitAPIException {
+        log = createTestSession().getLog();
         TEST_DIR = prepareTestProject();
         PROJECT_POM = getPomFile(new File(System.getProperty("user.dir"), "pom.xml"));
         TEST_POM = getPomFile(new File(TEST_DIR.toFile(), "pom.xml"));
-        terminal = getTerminal().dir(TEST_DIR);
-        terminalNoLog = getTerminalNoLog().dir(TEST_DIR);
+        terminal = getTerminal(log).dir(TEST_DIR);
+        terminalNoLog = getTerminalNoLog(log).dir(TEST_DIR);
         gitService = new GitService(log, TEST_DIR.toFile(), true);
         assertThat(
                 format("Terminal does not point to test project [%s]", terminal.dir()),
@@ -190,11 +193,11 @@ public class CustomMavenTestFramework {
         }
     }
 
-    private static Terminal getTerminal() {
-        return DEBUG ? getTerminalNoLog().consumerInfo(log::info) : getTerminalNoLog();
+    private static Terminal getTerminal(final Logger log) {
+        return DEBUG ? getTerminalNoLog(log).consumerInfo(log::info) : getTerminalNoLog(log);
     }
 
-    private static Terminal getTerminalNoLog() {
+    private static Terminal getTerminalNoLog(final Logger log) {
         return new Terminal().dir(System.getProperty("user.dir")).consumerError(log::error);
     }
 
@@ -209,7 +212,7 @@ public class CustomMavenTestFramework {
         final List<ActiveGoal> expectedMojoList = expectedMojos == null ? new ArrayList<>() : asList(expectedMojos);
         for (ActiveGoal definedMojo : definedMojoList) {
             if (expectedMojoList.contains(definedMojo)) {
-                log.debug("[INFO] Plugin expected: " + definedMojo.toString());
+                log.debug("Plugin expected: " + definedMojo.toString());
                 assertThat(format("Mojo did not start [%s]", definedMojo), console, containsString("-<=[ Start " + definedMojo.toString()));
                 if (!brokenMojo) {
                     assertThat(format("Mojo did not run [%s]", definedMojo), console, containsString("-<=[ End " + definedMojo.toString()));
@@ -223,7 +226,7 @@ public class CustomMavenTestFramework {
     protected void expectProperties(final Prop... configs) {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
-            log.debug("[INFO] Config expected key [%s] value [%s] ", config.key, config.value);
+            log.info("Config expected key [%s] value [%s] ", config.key, config.value);
             assertThat(format("Config [%s] is dropped", config.key), consoleInfo, not(containsString(format("Config key [%s] already set", config.key))));
             assertThat(format("Config [%s] is not set", config.key), consoleInfo, containsString(format("Config added key [%s]", config.key)));
             assertThat(format("Config [%s] has wrong value", config.key), consoleInfo, containsString(format("Config added key [%s] value [%s]", config.key, config.value)));
@@ -233,7 +236,7 @@ public class CustomMavenTestFramework {
     protected void expectPropertiesOverwrite(final Prop... configs) {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
-            log.debug("[INFO] Config not expected: " + config.key);
+            log.info("Config not expected: " + config.key);
             assertThat(format("Config [%s] is set but not overwritten", config.key), consoleInfo, not(containsString(format("Config added key [%s]", config.key))));
             assertThat(format("Config [%s] was not set at all", config.key), consoleInfo, containsString(format("Config key [%s] already set with [%s]", config.key, config.value)));
         }
@@ -312,7 +315,7 @@ public class CustomMavenTestFramework {
             final Set<Class<? extends MojoBase>> classes = reflections.getSubTypesOf(MojoBase.class);
 
             for (Class<? extends MojoBase> mojo : classes) {
-                mojoList.add(mojo.getDeclaredConstructor(PluginSession.class).newInstance(new PluginSession(null, log)));
+                mojoList.add(mojo.getDeclaredConstructor(PluginSession.class).newInstance(new PluginSession(null)));
             }
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             e.printStackTrace();

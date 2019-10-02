@@ -8,17 +8,20 @@ import org.apache.maven.settings.Server;
 import org.codehaus.plexus.util.xml.Xpp3Dom;
 
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Properties;
+import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.configuration;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.element;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.name;
+import static berlin.yuna.mavendeploy.util.MojoUtil.SECRET_URL_PATTERN;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
-import static berlin.yuna.mavendeploy.util.MojoUtil.toSecret;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 import static java.util.Arrays.stream;
@@ -27,12 +30,36 @@ import static java.util.Objects.requireNonNull;
 public class PluginSession {
 
     private final PluginExecutor.ExecutionEnvironment environment;
-    private final Logger log;
+    private final Logger log = new Logger("HH:mm:ss");
+    private static final Set<String> credentialInfos = ConcurrentHashMap.newKeySet();
 
-    public PluginSession(final PluginExecutor.ExecutionEnvironment environment, final Logger log) {
+    public PluginSession(final PluginExecutor.ExecutionEnvironment environment) {
         this.environment = environment;
-        this.log = log;
     }
+
+    public static String hildeSecrets(final String text) {
+        if (isPresent(text)) {
+            String result = text.replaceAll(SECRET_URL_PATTERN, "${prefix}${suffix}");
+            for (String credentialInfo : credentialInfos) {
+                final String secret = String.join("", Collections.nCopies(credentialInfo.length(), "*"));
+                result = result.replace(credentialInfo, secret);
+            }
+            return result;
+        }
+        return text;
+    }
+
+    public static void addSecret(final String key, final String value) {
+        if (isSecret(key, value)) {
+            credentialInfos.add(value);
+        }
+    }
+
+    public static boolean isSecret(final String key, final String value) {
+        return !isEmpty(key) && !isEmpty(value)
+                && (key.toLowerCase().contains("pass") || key.toLowerCase().contains("secret"));
+    }
+
 
     public boolean isTrue(final String... keys) {
         return getBoolean(keys).orElse(false);
@@ -93,8 +120,9 @@ public class PluginSession {
                     getMavenSession().getUserProperties().remove(key);
                 } else if (value != null && !value.equals(getString(key).orElse(null))) {
                     //[value != null && hasChanged]
+                    addSecret(key, value);
                     if (!silent) {
-                        log.info("%s Config added key [%s] value [%s]", unicode(0x271A), key, toSecret(key, value));
+                        log.info("%s Config added key [%s] value [%s]", unicode(0x271A), key, value);
                     }
                     getMavenSession().getUserProperties().setProperty(key, value);
                 }
@@ -134,10 +162,7 @@ public class PluginSession {
         final boolean overwrite = isPresent(value) && value.startsWith("!");
         final String resultValue = overwrite ? value.substring(1) : getProperties().getProperty(key, value);
         if (childElements.isEmpty()) {
-            log.debug("Config property [%s] + [%s] = [%s]",
-                    key,
-                    toSecret(key, value),
-                    toSecret(key, resultValue));
+            log.debug("Config property [%s] + [%s] = [%s]", key, value, resultValue);
             return element(name(key), resultValue);
         }
         return element(name(key), childElements.toArray(new PluginExecutor.Element[0]));
@@ -172,7 +197,7 @@ public class PluginSession {
                 Server.class.getSimpleName(),
                 server.getId(),
                 server.getUsername(),
-                toSecret(server.getPassword()));
+                hildeSecrets(server.getPassword()));
     }
 
     public static String unicode(final int unicode) {

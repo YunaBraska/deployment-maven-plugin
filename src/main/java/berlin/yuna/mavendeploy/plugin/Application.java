@@ -42,6 +42,8 @@ import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
+import static org.codehaus.plexus.logging.Logger.LEVEL_DEBUG;
+import static org.codehaus.plexus.logging.Logger.LEVEL_DISABLED;
 
 //https://stackoverflow.com/questions/53954902/custom-maven-plugin-development-getartifacts-is-empty-though-dependencies-are
 @Mojo(name = "run",
@@ -62,7 +64,7 @@ public class Application extends AbstractMojo {
     @Parameter(defaultValue = "${mojoExecution}")
     private MojoExecution plugin;
 
-    private Logger LOG;
+    private Logger LOG = new Logger("HH:mm:ss");
     private GitService GIT_SERVICE;
     private SemanticService SEMANTIC_SERVICE;
     private PluginExecutor.ExecutionEnvironment ENVIRONMENT;
@@ -272,12 +274,16 @@ public class Application extends AbstractMojo {
     }
 
     private void before() {
-        LOG = new Logger(getLog());
+        final boolean debugEnabled = getLog().isDebugEnabled();
         requireNonNull(pluginManager);
 
-        PluginExecutor.setLogger(LOG);
+        //TODO: merge with plugin session
         ENVIRONMENT = executionEnvironment(project, maven, pluginManager);
-        SESSION = new PluginSession(ENVIRONMENT, LOG);
+        SESSION = new PluginSession(ENVIRONMENT);
+        LOG = SESSION.getLog();
+        LOG.setLogLevel(debugEnabled ? LEVEL_DEBUG : LEVEL_DISABLED);
+        setLog(LOG);
+        PluginExecutor.setLogger(LOG);
 
         GIT_SERVICE = new GitService(LOG, basedir, SESSION.getBoolean("fake").orElse(false));
         SEMANTIC_SERVICE = new SemanticService(SESSION, GIT_SERVICE, SESSION.getParamPresent("semantic.format").orElse(null));
@@ -291,7 +297,7 @@ public class Application extends AbstractMojo {
         mavenSession.getUserProperties().putAll(readModuleProperties(project.getModules()));
         mavenSession.getUserProperties().putAll(readLicenseProperties(project.getLicenses()));
         mavenSession.getUserProperties().putAll(readDeveloperProperties(project.getDevelopers()));
-        GIT_SERVICE.getConfig().forEach((key, value) -> setWhen("git." + key, value));
+        GIT_SERVICE.getConfig().forEach((key, value) -> setWhen(true, "git." + key, value));
         setWhen(true, "project.name", project.getName());
         setWhen(true, "project.groupId", project.getGroupId());
         setWhen(true, "project.artifactId", project.getArtifactId());

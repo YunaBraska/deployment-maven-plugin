@@ -14,7 +14,7 @@ import static org.mockito.Mockito.when;
 
 public class SemanticServiceTest {
 
-    public PluginSession session = new PluginSession(null, new Logger());
+    public PluginSession session = new PluginSession(null);
 
     @Test
     public void changeOnlyNumberInVersion_ShouldBeSuccessful() {

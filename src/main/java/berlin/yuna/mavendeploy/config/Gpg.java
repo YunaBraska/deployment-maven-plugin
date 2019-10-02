@@ -15,7 +15,6 @@ import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.goal;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
-import static berlin.yuna.mavendeploy.util.MojoUtil.toSecret;
 
 public class Gpg extends MojoBase {
 
@@ -70,7 +69,7 @@ public class Gpg extends MojoBase {
         properties.setProperty("gpg.passphrase", passPhrase);
         profile.setProperties(properties);
         if (session.getMavenSession().getSettings().getProfiles().stream().noneMatch(p -> p.getId().equals(profile.getId()))) {
-            log.info("%s Created profile id [%s] passphrase [%s] path [%s]", unicode(0x1F4D1), profile.getId(), toSecret(passPhrase), gpgPath);
+            log.info("%s Created profile id [%s] passphrase [%s] path [%s]", unicode(0x1F4D1), profile.getId(), passPhrase, gpgPath);
             session.getMavenSession().getSettings().getProfiles().add(profile);
         } else {
             log.debug("%s Profile id [%s] already exists", unicode(0x26A0), profile.getId());

@@ -1,4 +1,5 @@
 #!/bin/bash
+set -e
 echo "Cleaning maven cache"
 rm -rf $(mvn help:evaluate -Dexpression=settings.localRepository | grep -v '\[INFO\]')/*
 echo "CLU cloning"

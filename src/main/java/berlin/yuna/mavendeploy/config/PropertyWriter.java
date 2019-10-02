@@ -7,9 +7,9 @@ import java.nio.file.Files;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import static berlin.yuna.mavendeploy.plugin.PluginSession.hildeSecrets;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
-import static berlin.yuna.mavendeploy.util.MojoUtil.toSecret;
 import static java.lang.System.lineSeparator;
 import static java.util.Arrays.stream;
 
@@ -56,8 +56,7 @@ public class PropertyWriter extends MojoBase {
     }
 
     protected String entryToString(final Map.Entry<Object, Object> entry) {
-        return (entry.getKey() + " = " + (isEmpty(String.valueOf(entry.getValue())) ? "" :
-                toSecret(String.valueOf(entry.getKey()), String.valueOf(entry.getValue())))
+        return (entry.getKey() + " = " + (isEmpty(String.valueOf(entry.getValue())) ? "" : hildeSecrets(String.valueOf(entry.getValue())))
         ).replace("\r", " ").replace("\n", " ").replace("\t", " ");
     }
 

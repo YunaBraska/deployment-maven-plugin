@@ -18,7 +18,6 @@ import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.goal;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
-import static berlin.yuna.mavendeploy.util.MojoUtil.toSecret;
 
 public class Deploy extends MojoBase {
 
@@ -73,7 +72,7 @@ public class Deploy extends MojoBase {
         }
         if (session.getParamPresent("deploy").isPresent()) {
             if (session.getProject().getDistributionManagement().getRepository() == null || !session.getProject().getDistributionManagement().getRepository().getId().equals(deployId)) {
-                log.info("%s Created repository id [%s] url [%s]", unicode(0x1f4d1), deployId, toSecret(null, deployUrl));
+                log.info("%s Created repository id [%s] url [%s]", unicode(0x1f4d1), deployId, deployUrl);
                 session.getProject().getDistributionManagement().setRepository(prepareRepository(deployId, deployUrl));
             }
         } else if (session.getParamPresent("deploy.snapshot").isPresent()) {
@@ -102,7 +101,7 @@ public class Deploy extends MojoBase {
         if (server.isPresent()) {
             log.info("%s Fallback to [deploy.id] [%s]", unicode(0x1F511), server.get().getId());
         } else {
-            log.warn("Cant find [deploy.id] by [deploy.url] [%s]", toSecret(null, deployUrl));
+            log.warn("Cant find [deploy.id] by [deploy.url] [%s]", deployUrl);
         }
         return server;
     }
@@ -117,7 +116,7 @@ public class Deploy extends MojoBase {
                         .findFirst();
                 if (server.isPresent()) {
                     return server;
-                } else if(!servers.isEmpty()){
+                } else if (!servers.isEmpty()) {
                     return servers.stream().findFirst();
                 }
             }

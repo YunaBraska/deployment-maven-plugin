@@ -2,7 +2,6 @@ package berlin.yuna.mavendeploy.logic;
 
 
 import berlin.yuna.mavendeploy.config.Gpg;
-import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.PluginExecutor.ExecutionEnvironment;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.execution.MavenSession;
@@ -17,7 +16,6 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Stream;
 
-import static berlin.yuna.mavendeploy.helper.CustomMavenTestFramework.DEBUG;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
 import static java.util.Arrays.stream;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -38,7 +36,7 @@ public class SettingsXmlReaderTest {
         mavenSession = mock(MavenSession.class);
         final ExecutionEnvironment environment = mock(ExecutionEnvironment.class);
         when(environment.getMavenSession()).thenReturn(mavenSession);
-        pluginSession = new PluginSession(environment, new Logger().enableDebug(DEBUG));
+        pluginSession = new PluginSession(environment);
     }
 
     @Test

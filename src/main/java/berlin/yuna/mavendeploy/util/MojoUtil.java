@@ -1,11 +1,9 @@
 package berlin.yuna.mavendeploy.util;
 
 import java.io.IOException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
@@ -17,6 +15,8 @@ import static java.util.stream.Collectors.toList;
 
 public class MojoUtil {
 
+    public static String SECRET_URL_PATTERN = "(?<prefix>.*\\/\\/)(?<credentials>.*@)(?<suffix>.*)";
+
     public static boolean isPresent(final String test) {
         return !isEmpty(test);
     }
@@ -27,36 +27,6 @@ public class MojoUtil {
 
     private static String nullToEmpty(final String test) {
         return isEmpty(test) ? "" : test;
-    }
-
-    public static String toSecret(final String value) {
-        return toSecret("pass", value);
-    }
-
-    public static String toSecret(final String key, final String value) {
-        final boolean isSecret
-                = !isEmpty(key)
-                && !isEmpty(value)
-                && (key.toLowerCase().contains("pass") || key.toLowerCase().contains("secret"));
-        final String result = isSecret ? String.join("", Collections.nCopies(value.length(), "*")) : value;
-        return removeUrlCredentials(result);
-    }
-
-    private static String removeUrlCredentials(final String url) {
-        final Optional<String> urlUserInfo = getUrlUserInfo(url);
-        return urlUserInfo.map(ui -> url.replace(ui, "").replace("@", "")).orElse(url);
-    }
-
-    private static Optional<String> getUrlUserInfo(final String urlString) {
-        if (isPresent(urlString)) {
-            for (String url : urlString.split("::|,|;")) {
-                try {
-                    return Optional.ofNullable(new URL(url).toURI().getUserInfo());
-                } catch (Exception ignored) {
-                }
-            }
-        }
-        return Optional.empty();
     }
 
     //TODO: move to CLU

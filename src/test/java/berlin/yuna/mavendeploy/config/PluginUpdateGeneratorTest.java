@@ -2,6 +2,7 @@ package berlin.yuna.mavendeploy.config;
 
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.helper.CustomMavenTestFramework;
+import berlin.yuna.mavendeploy.helper.PluginUnitBase;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.model.Plugin;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;
@@ -9,8 +10,6 @@ import org.junit.Test;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URL;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.HashMap;
@@ -20,13 +19,17 @@ import java.util.stream.Collectors;
 
 import static berlin.yuna.mavendeploy.config.PluginUpdater.createPomFile;
 import static berlin.yuna.mavendeploy.config.PluginUpdater.reportPluginUpdates;
-import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
+import static berlin.yuna.mavendeploy.helper.PluginUnitBase.createTestSession;
 import static java.lang.String.format;
 
 public class PluginUpdateGeneratorTest extends CustomMavenTestFramework {
 
     final HashMap<String, String> fixedVersions = new HashMap<>();
 
+    @Test
+    public void runPluginUpdater() throws IOException, XmlPullParserException {
+        new PluginUpdater(createTestSession()).update();
+    }
     @Test
     public void displayPluginUpdates() throws IOException, XmlPullParserException {
         fixedVersions.put("maven-javadoc-plugin", "3.1.0");
@@ -35,14 +38,13 @@ public class PluginUpdateGeneratorTest extends CustomMavenTestFramework {
         final File pomFile = TEST_POM.getPomFile();
         final List<MojoBase> mojoBases = getAllMojos();
         final List<Plugin> mojoList = mojoBases.stream()
-                .filter(mojo -> !mojo.equals(new PluginUpdater(new PluginSession(null, log))))
-                .filter(mojo -> !mojo.equals(new ReadmeBuilder(new PluginSession(null, log))))
-                .filter(mojo -> !mojo.equals(new PropertyWriter(new PluginSession(null, log))))
+                .filter(mojo -> !mojo.equals(new PluginUpdater(new PluginSession(null))))
+                .filter(mojo -> !mojo.equals(new ReadmeBuilder(new PluginSession(null))))
+                .filter(mojo -> !mojo.equals(new PropertyWriter(new PluginSession(null))))
                 .map(MojoBase::toPlugin)
                 .collect(Collectors.toList());
-        createPomFile(pomFile.toPath(), mojoList);
+        createPomFile(pomFile.toPath(), mojoList, createTestSession());
 
-        updatePluginUpdaterClass();
         getTerminal().execute(mvnCmd("-Dupdate.major"));
         final HashMap<Plugin, String> availableVersions = reportPluginUpdates(log, mojoList, pomFile);
 
@@ -65,23 +67,6 @@ public class PluginUpdateGeneratorTest extends CustomMavenTestFramework {
         final String content = Files.readString(path);
         Files.writeString(path,
                 content.replace(format("\"%s\",", mojo.getVersion()), format("\"%s\",", newVersion)));
-    }
-
-    //TODO: move target to MojoHelper and use it as environment variable
-    private void updatePluginUpdaterClass() throws IOException {
-        final Path path = getPath(PluginUpdater.class);
-        final String content = Files.readString(path);
-        //final String mvnCmd
-        Files.write(path, content.replaceFirst(
-                "final String mvnCmd.*;",
-                "final String mvnCmd = \"mvn "
-                        + PROJECT_POM.getGroupId()
-                        + ":"
-                        + PROJECT_POM.getArtifactId()
-                        + ":"
-                        + PROJECT_POM.getVersion()
-                        + ":run -Dupdate.plugins=false \" + parameter;"
-        ).getBytes());
     }
 
     private Terminal getTerminal() {
