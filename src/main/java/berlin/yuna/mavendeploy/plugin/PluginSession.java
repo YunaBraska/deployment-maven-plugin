@@ -31,13 +31,13 @@ public class PluginSession {
 
     private final PluginExecutor.ExecutionEnvironment environment;
     private final Logger log = new Logger("HH:mm:ss");
-    private static final Set<String> credentialInfos = ConcurrentHashMap.newKeySet();
+    public static final Set<String> credentialInfos = ConcurrentHashMap.newKeySet();
 
     public PluginSession(final PluginExecutor.ExecutionEnvironment environment) {
         this.environment = environment;
     }
 
-    public static String hildeSecrets(final String text) {
+    public static String hideSecrets(final String text) {
         if (isPresent(text)) {
             String result = text.replaceAll(SECRET_URL_PATTERN, "${prefix}${suffix}");
             for (String credentialInfo : credentialInfos) {
@@ -197,7 +197,7 @@ public class PluginSession {
                 Server.class.getSimpleName(),
                 server.getId(),
                 server.getUsername(),
-                hildeSecrets(server.getPassword()));
+                hideSecrets(server.getPassword()));
     }
 
     public static String unicode(final int unicode) {

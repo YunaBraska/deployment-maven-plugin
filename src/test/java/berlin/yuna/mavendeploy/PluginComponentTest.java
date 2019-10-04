@@ -436,7 +436,7 @@ public class PluginComponentTest extends CustomMavenTestFramework {
             sxb.addServer("gg", "hh", "ii");
             sxb.addServer("jj", "kk", "ll");
 
-            terminal.execute(mvnCmd("-Ddeploy -Ddeploy.url='https://aa.bb' --settings=" + sxb.create()));
+            terminal.execute(mvnCmd("--settings=" + sxb.create()) + " -Ddeploy -Ddeploy.url='https://aa.bb'");
 
             assertThat(terminal.consoleInfo(), containsString("Config added key [altDeploymentRepository] value [" + server + "::default::https://aa.bb]"));
             terminal.clearConsole();
@@ -467,7 +467,7 @@ public class PluginComponentTest extends CustomMavenTestFramework {
 
     @Test
     public void writeAllProperties_withBoolean_ShouldBeSuccessful() throws IOException {
-        terminal.execute(mvnCmd("-Dproperties.print -Dsomepassword=berlin -Dsomesecret=iAmAHero"));
+        terminal.execute(mvnCmd("-Dproperties.print -Dsomepassword=b3rl1n -Dsomesecret=iAmAHero"));
 
         final File allProps = new File(TEST_DIR.toFile(), "target/all.properties");
         expectPropertyFile(allProps);
@@ -476,7 +476,7 @@ public class PluginComponentTest extends CustomMavenTestFramework {
     @Test
     public void writeAllProperties_withFileString_ShouldBeSuccessful() throws IOException {
         final File allProps = new File(TEST_DIR.toFile(), "myFolder/my.properties");
-        terminal.execute(mvnCmd("-Dproperties.print=" + allProps + " -Dsomepassword=berlin -Dsomesecret=iAmAHero"));
+        terminal.execute(mvnCmd("-Dproperties.print=" + allProps + " -Dsomepassword=b3rl1n -Dsomesecret=iAmAHero"));
 
         expectPropertyFile(allProps);
     }

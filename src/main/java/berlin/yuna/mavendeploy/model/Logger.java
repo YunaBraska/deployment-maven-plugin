@@ -9,7 +9,7 @@ import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashMap;
 
-import static berlin.yuna.mavendeploy.plugin.PluginSession.hildeSecrets;
+import static berlin.yuna.mavendeploy.plugin.PluginSession.hideSecrets;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static java.lang.String.format;
 import static java.lang.System.lineSeparator;
@@ -44,7 +44,7 @@ public class Logger implements Log {
     public Logger(final String timeFormat) {
         logTypes.put(LEVEL_DEBUG, "[" + ANSI_CYAN + "DEBUG" + ANSI_RESET + "]    ");
         logTypes.put(LEVEL_INFO, "[" + ANSI_BLUE + "INFO" + ANSI_RESET + "]     ");
-        logTypes.put(LEVEL_WARN, "[" + ANSI_YELLOW + "[WARNING" + ANSI_RESET + "]  ");
+        logTypes.put(LEVEL_WARN, "[" + ANSI_YELLOW + "WARNING" + ANSI_RESET + "]  ");
         logTypes.put(LEVEL_ERROR, "[" + ANSI_RED + "ERROR" + ANSI_RESET + "]    ");
         logTypes.put(LEVEL_FATAL, "[" + ANSI_PURPLE + "FATAL" + ANSI_RESET + "]    ");
         logTypes.put(LEVEL_DISABLED, "[" + ANSI_GREEN + "DISABLED" + ANSI_RESET + "] ");
@@ -71,15 +71,15 @@ public class Logger implements Log {
         print(LEVEL_FATAL, 0x1F940, null, format);
     }
 
-    private void print(final int logLevel, final int icon, final Throwable throwable, final Object... format) {
+    private synchronized void print(final int logLevel, final int icon, final Throwable throwable, final Object... format) {
         if (this.logLevel <= logLevel && logLevel < LEVEL_DISABLED) {
             final String result = logTypes.get(logLevel)
-                    + " [" + LocalDateTime.now().format(formatter) + "]"
-                    + ((this.logLevel <= LEVEL_DEBUG) ? " [" + lastLog.until(LocalDateTime.now(), SECONDS) + "s]" : "")
+                    + " [" + ANSI_YELLOW + LocalDateTime.now().format(formatter) + ANSI_RESET + "]"
+                    + ((this.logLevel <= LEVEL_DEBUG) ? " [" + ANSI_PURPLE + lastLog.until(LocalDateTime.now(), SECONDS) + "s" + ANSI_RESET + "]" : "")
                     + (icon != -1 ? " " + unicode(icon) : "")
                     + " " + formatMsg(format)
                     + " " + toString(throwable);
-            if (logLevel == LEVEL_ERROR || logLevel == LEVEL_WARN) {
+            if (logLevel == LEVEL_ERROR || logLevel == LEVEL_FATAL) {
                 System.err.println(result);
             } else {
                 System.out.println(result);
@@ -90,7 +90,7 @@ public class Logger implements Log {
 
     private String formatMsg(final Object[] format) {
         final String msg = format.length > 1 ? format(String.valueOf(format[0]), Arrays.copyOfRange(format, 1, format.length)) : String.valueOf(format[0]);
-        return hildeSecrets(msg);
+        return hideSecrets(msg);
     }
 
     public void debug(final CharSequence content) {

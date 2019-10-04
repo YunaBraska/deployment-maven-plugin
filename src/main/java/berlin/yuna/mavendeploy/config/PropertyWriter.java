@@ -5,9 +5,11 @@ import berlin.yuna.mavendeploy.plugin.PluginSession;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Map;
+import java.util.Properties;
 import java.util.function.Predicate;
 
-import static berlin.yuna.mavendeploy.plugin.PluginSession.hildeSecrets;
+import static berlin.yuna.mavendeploy.plugin.PluginSession.addSecret;
+import static berlin.yuna.mavendeploy.plugin.PluginSession.hideSecrets;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 import static java.lang.System.lineSeparator;
@@ -36,13 +38,14 @@ public class PropertyWriter extends MojoBase {
     private void writeToFile() {
         final File output = getOutputFile();
         try {
+            session.getProperties().forEach((key, value) -> addSecret(String.valueOf(key), String.valueOf(value)));
             final StringBuilder stringBuilder = new StringBuilder();
             session.getProperties().entrySet().stream().filter(excludeProps()).map(this::entryToString).sorted().forEach(r -> stringBuilder.append(r).append(lineSeparator()));
             log.info("%s Writing properties to file [%s]", unicode(0x1F4D1), output.getAbsolutePath());
             if (!output.getParentFile().exists()) {
                 Files.createDirectories(output.getParentFile().toPath());
             }
-            Files.write(output.toPath(), stringBuilder.toString().getBytes());
+            Files.write(output.toPath(), hideSecrets(stringBuilder.toString()).getBytes());
             if (output.exists()) {
                 log.info("%s Properties [file://%s]", unicode(0x1F516), output.toURI().getRawPath());
             }
@@ -56,7 +59,7 @@ public class PropertyWriter extends MojoBase {
     }
 
     protected String entryToString(final Map.Entry<Object, Object> entry) {
-        return (entry.getKey() + " = " + (isEmpty(String.valueOf(entry.getValue())) ? "" : hildeSecrets(String.valueOf(entry.getValue())))
+        return (entry.getKey() + " = " + (isEmpty(String.valueOf(entry.getValue())) ? "" : String.valueOf(entry.getValue()))
         ).replace("\r", " ").replace("\n", " ").replace("\t", " ");
     }
 

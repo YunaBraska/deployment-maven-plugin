@@ -206,7 +206,7 @@ public class CustomMavenTestFramework {
     }
 
     protected void expectMojoRun(final boolean brokenMojo, final ActiveGoal... expectedMojos) {
-        final String console = terminal.consoleInfo();
+        final String console = terminal.consoleInfo() + terminal.consoleError();
         assertThat(console, containsString("Building example-maven-test-project"));
         assertThat(console, not(containsString("Unable to invoke plugin")));
         final List<ActiveGoal> expectedMojoList = expectedMojos == null ? new ArrayList<>() : asList(expectedMojos);

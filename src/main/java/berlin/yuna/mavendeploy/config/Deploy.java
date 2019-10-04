@@ -5,6 +5,7 @@ import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.model.DeploymentRepository;
 import org.apache.maven.model.DistributionManagement;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.settings.IdentifiableBase;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 
@@ -12,10 +13,12 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
+import java.util.stream.Collectors;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.goal;
+import static berlin.yuna.mavendeploy.plugin.PluginSession.addSecret;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 
@@ -52,6 +55,7 @@ public class Deploy extends MojoBase {
 
     private void prepareSettingsServer() {
         final List<Server> serverList = SettingsXmlReader.read(session);
+        serverList.forEach(server -> addSecret("pass", server.getPassword()));
         serverList.forEach(server -> log.info("%s [%s] added %s", unicode(0x271A), Settings.class.getSimpleName(), session.toString(server)));
         serverList.forEach(server -> {
             if (session.getMavenSession().getSettings().getServer(server.getId()) == null) {
@@ -109,11 +113,13 @@ public class Deploy extends MojoBase {
     private Optional<Server> getServerContains(final String... names) {
         final List<Server> servers = session.getMavenSession().getSettings().getServers();
         if (servers != null && !servers.isEmpty()) {
+            log.debug("serverList [%s]", servers.stream().map(IdentifiableBase::getId).collect(Collectors.joining(", ")));
             for (String name : names) {
                 final Optional<Server> server = servers.stream()
                         .filter(s -> !isEmpty(s.getId()))
-                        .filter(s -> s.getId().toLowerCase().contains(name) || (!isEmpty(s.getUsername()) && s.getUsername().toLowerCase().contains(name)))
+                        .filter(s -> s.getId().toLowerCase().contains(name.toLowerCase()) || (!isEmpty(s.getUsername()) && s.getUsername().toLowerCase().contains(name)))
                         .findFirst();
+                log.debug("server [%s] name [%s]", server.orElse(new Server()).getId(), name);
                 if (server.isPresent()) {
                     return server;
                 } else if (!servers.isEmpty()) {

@@ -12,6 +12,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
+import static berlin.yuna.mavendeploy.plugin.PluginSession.addSecret;
+import static berlin.yuna.mavendeploy.plugin.PluginSession.credentialInfos;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
 import static java.util.Arrays.stream;
