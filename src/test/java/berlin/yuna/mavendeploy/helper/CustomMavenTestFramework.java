@@ -206,7 +206,8 @@ public class CustomMavenTestFramework {
     }
 
     protected void expectMojoRun(final boolean brokenMojo, final ActiveGoal... expectedMojos) {
-        final String console = terminal.consoleInfo() + terminal.consoleError();
+        final String console = getConsoleOutput();
+
         assertThat(console, containsString("Building example-maven-test-project"));
         assertThat(console, not(containsString("Unable to invoke plugin")));
         final List<ActiveGoal> expectedMojoList = expectedMojos == null ? new ArrayList<>() : asList(expectedMojos);
@@ -221,6 +222,18 @@ public class CustomMavenTestFramework {
                 assertThat(format("Mojo unexpectedly started [%s]", definedMojo), console, is(not(containsString("-<=[ Start " + definedMojo.toString()))));
             }
         }
+    }
+
+    protected String getConsoleOutput() {
+        String console;
+        do {
+            console = terminal.consoleInfo() + terminal.consoleError();
+            try {
+                Thread.sleep(128);
+            } catch (InterruptedException ignore) {
+            }
+        } while (console.length() != (terminal.consoleInfo() + terminal.consoleError()).length());
+        return console;
     }
 
     protected void expectProperties(final Prop... configs) {
