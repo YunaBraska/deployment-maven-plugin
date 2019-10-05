@@ -8,6 +8,7 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Arrays;
 import java.util.HashMap;
+import java.util.function.Consumer;
 
 import static berlin.yuna.mavendeploy.plugin.PluginSession.hideSecrets;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
@@ -23,6 +24,7 @@ import static org.codehaus.plexus.logging.Logger.LEVEL_WARN;
 
 public class Logger implements Log {
 
+    private Consumer<String> consumer;
     private final DateTimeFormatter formatter;
     private final HashMap<Integer, String> logTypes = new HashMap<>();
     private static final String ANSI_RESET = "\u001B[0m";
@@ -79,13 +81,19 @@ public class Logger implements Log {
                     + (icon != -1 ? " " + unicode(icon) : "")
                     + " " + formatMsg(format)
                     + " " + toString(throwable);
-            if (logLevel == LEVEL_ERROR || logLevel == LEVEL_FATAL) {
-                System.err.println(result);
-            } else {
-                System.out.println(result);
-            }
+            print(logLevel, result);
         }
         lastLog = LocalDateTime.now();
+    }
+
+    private void print(final int logLevel, final String result) {
+        if (consumer != null) {
+            consumer.accept(result);
+        } else if (logLevel == LEVEL_ERROR || logLevel == LEVEL_FATAL) {
+            System.err.println(result);
+        } else {
+            System.out.println(result);
+        }
     }
 
     private String formatMsg(final Object[] format) {
@@ -157,8 +165,12 @@ public class Logger implements Log {
         return logLevel <= LEVEL_ERROR;
     }
 
-    public final void setLogLevel(final int logLevel) {
+    public void setLogLevel(final int logLevel) {
         this.logLevel = logLevel;
+    }
+
+    public void setConsumer(final Consumer<String> consumer) {
+        this.consumer = consumer;
     }
 
     private String toString(final Throwable error) {

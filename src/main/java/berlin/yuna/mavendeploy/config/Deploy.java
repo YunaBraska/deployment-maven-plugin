@@ -53,7 +53,7 @@ public class Deploy extends MojoBase {
         return this;
     }
 
-    private void prepareSettingsServer() {
+    public void prepareSettingsServer() {
         final List<Server> serverList = SettingsXmlReader.read(session);
         serverList.forEach(server -> addSecret("pass", server.getPassword()));
         serverList.forEach(server -> log.info("%s [%s] added %s", unicode(0x271A), Settings.class.getSimpleName(), session.toString(server)));
@@ -64,7 +64,7 @@ public class Deploy extends MojoBase {
         });
     }
 
-    private void configureDeployment() {
+    public void configureDeployment() {
         final String deployUrl = session.getParamPresent("deploy.url").orElse("http://deploy.url-not.found");
         final String deployId = session.getParamPresent("deploy.id").orElse(findServerByDeployUrl(deployUrl).orElse(new Server()).getId());
         session.setParameter("deployId", deployId, true);
@@ -122,11 +122,9 @@ public class Deploy extends MojoBase {
                 log.debug("server [%s] name [%s]", server.orElse(new Server()).getId(), name);
                 if (server.isPresent()) {
                     return server;
-                } else if (!servers.isEmpty()) {
-                    return servers.stream().findFirst();
                 }
             }
         }
-        return Optional.empty();
+        return ((servers != null) ? servers.stream().findFirst() : Optional.empty());
     }
 }

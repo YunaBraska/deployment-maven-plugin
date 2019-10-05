@@ -9,6 +9,7 @@ import org.apache.maven.execution.MavenSession;
 import org.apache.maven.model.Model;
 import org.apache.maven.plugin.DefaultBuildPluginManager;
 import org.apache.maven.project.MavenProject;
+import org.apache.maven.settings.Settings;
 import org.junit.Before;
 import org.junit.Test;
 
@@ -78,16 +79,18 @@ public class PluginUnitBase {
     public static PluginSession createTestSession() {
         final File pomFile = new File(System.getProperty("user.dir"), "pom.xml");
         final Model project = getPomFile(pomFile);
-        project.setPomFile(pomFile);
+        final Settings settings = new Settings();
         final MavenProject mavenProject = new MavenProject(project);
-        mavenProject.setFile(project.getPomFile());
         final MavenSession mavenSession = mock(MavenSession.class);
         final PluginExecutor.ExecutionEnvironment environment = new PluginExecutor.ExecutionEnvironment(mavenProject, mavenSession, new DefaultBuildPluginManager());
         final PluginSession pluginSession = new PluginSession(environment);
+        project.setPomFile(pomFile);
+        mavenProject.setFile(project.getPomFile());
         pluginSession.getLog().setLogLevel(DEBUG? LEVEL_DEBUG : LEVEL_DISABLED);
+        when(mavenSession.getSettings()).thenReturn(settings);
         final Properties properties = prepareProperties(mavenProject, pluginSession.getLog());
-        when(mavenSession.getUserProperties()).thenReturn(properties);
         when(mavenSession.getSystemProperties()).thenReturn(System.getProperties());
+        when(mavenSession.getUserProperties()).thenReturn(properties);
         return pluginSession;
     }
 
@@ -113,5 +116,15 @@ public class PluginUnitBase {
         properties.putAll(readLicenseProperties(project.getLicenses()));
         properties.putAll(readModuleProperties(project.getModules()));
         return properties;
+    }
+
+    public static String[] getServerVariants() {
+        return new String[]{
+                "my-nexus",
+                "artifactsGoesHere",
+                "archivaIsNow",
+                "some-repository",
+                "whatASnapshot"
+        };
     }
 }

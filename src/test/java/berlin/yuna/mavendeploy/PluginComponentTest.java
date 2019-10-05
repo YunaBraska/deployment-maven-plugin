@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static berlin.yuna.mavendeploy.helper.PluginUnitBase.getServerVariants;
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
@@ -488,15 +489,5 @@ public class PluginComponentTest extends CustomMavenTestFramework {
         assertThat(content, containsString("somesecret = ********"));
         assertThat(content, not(containsString("iAmAHero")));
         expectMojoRun(g(PropertyWriter.class, "write"));
-    }
-
-    private String[] getServerVariants() {
-        return new String[]{
-                "my-nexus",
-                "artifactsGoesHere",
-                "archivaIsNow",
-                "some-repository",
-                "whatASnapshot"
-        };
     }
 }
