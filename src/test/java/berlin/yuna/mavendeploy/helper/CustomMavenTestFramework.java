@@ -46,11 +46,10 @@ import java.util.List;
 import java.util.Set;
 
 import static berlin.yuna.mavendeploy.config.Gpg.getGpgPath;
+import static berlin.yuna.mavendeploy.helper.PluginUnitBase.ENV_DEBUG;
 import static berlin.yuna.mavendeploy.helper.PluginUnitBase.createTestSession;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.deletePath;
-import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
-import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 import static java.nio.file.Files.readAllBytes;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -76,8 +75,6 @@ public class CustomMavenTestFramework {
     public static final String GPG_KEY_FILE = TMP_DIR + "/gpg.keyfile";
     public static final String GPG_SEC = TMP_DIR + "/gpg.sec";
     public static final String GPG_PUB = TMP_DIR + "/gpg.pub";
-    private static final String DEBUG_ENV = System.getenv("DEBUG");
-    public static final boolean DEBUG = isEmpty(DEBUG_ENV) || parseBoolean(DEBUG_ENV);
 
     protected GitService gitService;
     protected Logger log;
@@ -194,7 +191,7 @@ public class CustomMavenTestFramework {
     }
 
     private static Terminal getTerminal(final Logger log) {
-        return DEBUG ? getTerminalNoLog(log).consumerInfo(log::info) : getTerminalNoLog(log);
+        return ENV_DEBUG ? getTerminalNoLog(log).consumerInfo(log::info) : getTerminalNoLog(log);
     }
 
     private static Terminal getTerminalNoLog(final Logger log) {

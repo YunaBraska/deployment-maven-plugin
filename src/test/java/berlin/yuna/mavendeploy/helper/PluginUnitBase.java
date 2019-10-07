@@ -18,14 +18,16 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.Properties;
 
-import static berlin.yuna.mavendeploy.helper.CustomMavenTestFramework.DEBUG;
 import static berlin.yuna.mavendeploy.helper.CustomMavenTestFramework.getPomFile;
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readDeveloperProperties;
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readLicenseProperties;
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readModuleProperties;
+import static berlin.yuna.mavendeploy.model.Logger.LogLevel.DEBUG;
+import static berlin.yuna.mavendeploy.model.Logger.LogLevel.DISABLED;
+import static berlin.yuna.mavendeploy.model.Logger.LogLevel.INFO;
+import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
-import static org.codehaus.plexus.logging.Logger.LEVEL_DEBUG;
-import static org.codehaus.plexus.logging.Logger.LEVEL_DISABLED;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.Is.is;
@@ -40,11 +42,12 @@ public class PluginUnitBase {
     protected MavenProject mavenProject;
     protected String projectPath;
     protected PluginSession session;
+    public static final boolean ENV_DEBUG = isEmpty(System.getenv("DEBUG")) || parseBoolean(System.getenv("DEBUG"));
 
     @Before
     public void setUp() {
         session = createTestSession();
-        log = session.getLog();
+        log = session.getLog().setLogLevel(ENV_DEBUG? DEBUG : INFO);
         mavenProject = session.getProject();
         environment = session.getEnvironment();
         projectPath = session.getProject().getFile().getParent();
@@ -86,7 +89,7 @@ public class PluginUnitBase {
         final PluginSession pluginSession = new PluginSession(environment);
         project.setPomFile(pomFile);
         mavenProject.setFile(project.getPomFile());
-        pluginSession.getLog().setLogLevel(DEBUG? LEVEL_DEBUG : LEVEL_DISABLED);
+        pluginSession.getLog().setLogLevel(ENV_DEBUG ? DEBUG : DISABLED);
         when(mavenSession.getSettings()).thenReturn(settings);
         final Properties properties = prepareProperties(mavenProject, pluginSession.getLog());
         when(mavenSession.getSystemProperties()).thenReturn(System.getProperties());

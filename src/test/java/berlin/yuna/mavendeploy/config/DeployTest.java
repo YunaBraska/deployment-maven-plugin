@@ -1,11 +1,13 @@
 package berlin.yuna.mavendeploy.config;
 
+import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.settings.Server;
 import org.junit.Test;
 
 import static berlin.yuna.mavendeploy.helper.PluginUnitBase.createTestSession;
 import static berlin.yuna.mavendeploy.helper.PluginUnitBase.getServerVariants;
+import static berlin.yuna.mavendeploy.model.Logger.LogLevel.DEBUG;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.mockito.Mockito.mock;
@@ -18,7 +20,7 @@ public class DeployTest {
         for (String server : getServerVariants()) {
             final StringBuilder console = new StringBuilder();
             final PluginSession session = createTestSession();
-            session.getLog().setConsumer(console::append);
+            session.getLog().setLogLevel(DEBUG).setConsumer(console::append);
             session.setNewParam("deploy", null);
             session.setNewParam("deploy.url", "https://aa.bb");
 
@@ -28,8 +30,9 @@ public class DeployTest {
             session.getMavenSession().getSettings().addServer(prepareServer("gg", "hh"));
             session.getMavenSession().getSettings().addServer(prepareServer("jj", "kk"));
 
-            new Deploy(session).prepareSettingsServer();
-            new Deploy(session).configureDeployment();
+            final Deploy deployPlugin = new Deploy(session);
+            deployPlugin.prepareSettingsServer();
+            deployPlugin.configureDeployment();
 
             assertThat(console.toString(), containsString("Config added key [altDeploymentRepository] value [" + server + "::default::https://aa.bb]"));
         }
