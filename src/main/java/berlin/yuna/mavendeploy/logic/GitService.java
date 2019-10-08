@@ -14,6 +14,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.regex.Matcher;
@@ -21,6 +22,7 @@ import java.util.regex.Pattern;
 
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
+import static java.util.Objects.requireNonNull;
 import static java.util.stream.Collectors.toMap;
 
 //TODO can be replaced by SCM Plugin?
@@ -145,7 +147,7 @@ public class GitService {
             return Optional.empty();
         //        return getString("git rev-parse --abbrev-ref HEAD");
         try {
-            final ReflogEntry reflogEntry = getRefLog().iterator().next();
+            final ReflogEntry reflogEntry = requireNonNull(getRefLog()).iterator().next();
             final List<Ref> branches = Git.open(workDir).branchList().call();
             for (Ref branch : branches) {
                 if (branch.getObjectId().equals(reflogEntry.getNewId())) {

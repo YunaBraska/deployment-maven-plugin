@@ -53,7 +53,7 @@ public class Logger implements Log {
         logTypes.put(FATAL, "[" + ANSI_PURPLE + "FATAL" + ANSI_RESET + "]    ");
         logTypes.put(DISABLED, "[" + ANSI_GREEN + "DISABLED" + ANSI_RESET + "] ");
         formatter = DateTimeFormatter.ofPattern(timeFormat == null ? "yyyy-MM-dd HH:mm:ss" : timeFormat);
-        setLogLevel((isPresent(System.getenv("DEBUG")) && parseBoolean(System.getenv("DEBUG")))? DEBUG : INFO);
+        setLogLevel((isPresent(System.getenv("DEBUG")) && parseBoolean(System.getenv("DEBUG"))) ? DEBUG : INFO);
     }
 
     public void debug(final Object... format) {
@@ -76,7 +76,7 @@ public class Logger implements Log {
         print(FATAL, 0x1F940, null, format);
     }
 
-    private synchronized void print(final LogLevel logLevel, final int icon, final Throwable throwable, final Object... format) {
+    private void print(final LogLevel logLevel, final int icon, final Throwable throwable, final Object... format) {
         if (this.logLevel.ordinal() <= logLevel.ordinal() && logLevel.ordinal() < DISABLED.ordinal()) {
             final String result = logTypes.get(logLevel)
                     + " [" + ANSI_YELLOW + LocalDateTime.now().format(formatter) + ANSI_RESET + "]"

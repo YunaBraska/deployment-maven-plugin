@@ -195,7 +195,7 @@ public class CustomMavenTestFramework {
     }
 
     private static Terminal getTerminalNoLog(final Logger log) {
-        return new Terminal().dir(System.getProperty("user.dir")).consumerError(log::error);
+        return new Terminal().waitFor(512).dir(System.getProperty("user.dir")).consumerError(log::error);
     }
 
     protected void expectMojoRun(final ActiveGoal... expectedMojos) {
@@ -222,15 +222,7 @@ public class CustomMavenTestFramework {
     }
 
     protected String getConsoleOutput() {
-        String console;
-        do {
-            console = terminal.consoleInfo() + terminal.consoleError();
-            try {
-                Thread.sleep(128);
-            } catch (InterruptedException ignore) {
-            }
-        } while (console.length() != (terminal.consoleInfo() + terminal.consoleError()).length());
-        return console;
+        return terminal.consoleInfo() + terminal.consoleError();
     }
 
     protected void expectProperties(final Prop... configs) {

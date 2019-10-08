@@ -35,6 +35,8 @@ import java.util.Optional;
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readDeveloperProperties;
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readLicenseProperties;
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readModuleProperties;
+import static berlin.yuna.mavendeploy.model.Logger.LogLevel.DEBUG;
+import static berlin.yuna.mavendeploy.model.Logger.LogLevel.INFO;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executionEnvironment;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
@@ -42,8 +44,6 @@ import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
 import static java.util.Objects.requireNonNull;
-import static org.codehaus.plexus.logging.Logger.LEVEL_DEBUG;
-import static org.codehaus.plexus.logging.Logger.LEVEL_DISABLED;
 
 //https://stackoverflow.com/questions/53954902/custom-maven-plugin-development-getartifacts-is-empty-though-dependencies-are
 @Mojo(name = "run",
@@ -281,7 +281,7 @@ public class Application extends AbstractMojo {
         ENVIRONMENT = executionEnvironment(project, maven, pluginManager);
         SESSION = new PluginSession(ENVIRONMENT);
         LOG = SESSION.getLog();
-        LOG.setLogLevel(debugEnabled ? LEVEL_DEBUG : LEVEL_DISABLED);
+        LOG.setLogLevel(debugEnabled ? DEBUG : INFO);
         setLog(LOG);
         PluginExecutor.setLogger(LOG);
 

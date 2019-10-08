@@ -1,9 +1,7 @@
 package berlin.yuna.mavendeploy.logic;
 
-import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import berlin.yuna.mavendeploy.util.MojoUtil;
-import org.apache.maven.execution.MavenSession;
 import org.apache.maven.settings.IdentifiableBase;
 import org.apache.maven.settings.Server;
 
@@ -12,8 +10,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 
-import static berlin.yuna.mavendeploy.plugin.PluginSession.addSecret;
-import static berlin.yuna.mavendeploy.plugin.PluginSession.credentialInfos;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
 import static java.util.Arrays.stream;
@@ -23,14 +19,10 @@ import static java.util.stream.Collectors.toList;
 public class SettingsXmlReader {
 
     private final PluginSession session;
-    private final Logger log;
-    private final MavenSession maven;
 
 
     private SettingsXmlReader(final PluginSession session) {
         this.session = session;
-        this.log = session.getLog();
-        this.maven = session.getMavenSession();
     }
 
     private List<Server> read() {

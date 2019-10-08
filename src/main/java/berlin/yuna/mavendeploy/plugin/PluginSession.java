@@ -15,6 +15,7 @@ import java.util.Optional;
 import java.util.Properties;
 import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.locks.ReentrantLock;
 
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.configuration;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.element;
@@ -31,27 +32,38 @@ public class PluginSession {
 
     private final PluginExecutor.ExecutionEnvironment environment;
     private final Logger log = new Logger("HH:mm:ss");
-    public static final Set<String> credentialInfos = ConcurrentHashMap.newKeySet();
+    private static final Set<String> credentialInfos = ConcurrentHashMap.newKeySet();
+    private static ReentrantLock secretsLock = new ReentrantLock();
 
     public PluginSession(final PluginExecutor.ExecutionEnvironment environment) {
         this.environment = environment;
     }
 
     public static String hideSecrets(final String text) {
-        if (isPresent(text)) {
-            String result = text.replaceAll(SECRET_URL_PATTERN, "${prefix}${suffix}");
-            for (String credentialInfo : credentialInfos) {
-                final String secret = String.join("", Collections.nCopies(credentialInfo.length(), "*"));
-                result = result.replace(credentialInfo, secret);
+        secretsLock.lock();
+        try {
+            if (isPresent(text)) {
+                String result = text.replaceAll(SECRET_URL_PATTERN, "${prefix}${suffix}");
+                for (String credentialInfo : credentialInfos) {
+                    final String secret = String.join("", Collections.nCopies(credentialInfo.length(), "*"));
+                    result = result.replace(credentialInfo, secret);
+                }
+                return result;
             }
-            return result;
+        } finally {
+            secretsLock.unlock();
         }
         return text;
     }
 
     public static void addSecret(final String key, final String value) {
-        if (isSecret(key, value)) {
-            credentialInfos.add(value);
+        secretsLock.tryLock();
+        try {
+            if (isSecret(key, value)) {
+                credentialInfos.add(value);
+            }
+        } finally {
+            secretsLock.unlock();
         }
     }
 

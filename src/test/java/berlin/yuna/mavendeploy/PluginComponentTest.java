@@ -24,6 +24,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static berlin.yuna.mavendeploy.helper.PluginUnitBase.ENV_DEBUG;
 import static berlin.yuna.mavendeploy.helper.PluginUnitBase.getServerVariants;
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static java.lang.String.format;
@@ -200,6 +201,7 @@ public class PluginComponentTest extends CustomMavenTestFramework {
         mergeBranch("feature/MarketingJustWantsThis");
         mergeBranch("bugfix/bugsEverywhere");
         mergeBranch("major/newAge");
+        log.debug("Terminal status [%s]", terminalNoLog.status());
         terminal.execute(mvnCmd("-Dsemantic.format='[.]::major.*::feature.*::bugfix.*'"));
 
         expectMojoRun(g(Versions.class, "set"));
@@ -378,7 +380,8 @@ public class PluginComponentTest extends CustomMavenTestFramework {
 
     @Test
     public void deploy_withEmptyDeployUrl_shouldNotStartDeployment() {
-        terminal.execute(mvnCmd("-Dclean -Ddeploy -Ddeploy.url=''"));
+        terminal.execute(mvnCmd("--settings=" + new SettingsXmlBuilder().create() + " -Dclean -Ddeploy -Ddeploy" +
+                ".url=''"));
 
         assertThat(terminal.consoleInfo(), containsString("[altDeploymentRepository] value [default::default::http://deploy.url-not.found]"));
         expectMojoRun(true, g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"), g(Jar.class, "jar"), g(Deploy.class, "deploy"));
@@ -457,7 +460,7 @@ public class PluginComponentTest extends CustomMavenTestFramework {
 
         //FIXME: Travis has different GPG version, this test wont work
         //FIXME: how set GPG key as default? ¯\_(ツ)_/¯
-        if (DEBUG) {
+        if (ENV_DEBUG) {
             final File target = new File(TEST_DIR.toFile(), "target");
             assertThat(target.exists(), is(true));
             final List<Path> ascFiles = Files.walk(target.toPath()).filter(f -> f.getFileName().toString().endsWith(".asc")).collect(toList());

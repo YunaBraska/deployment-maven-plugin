@@ -78,7 +78,6 @@ public class Gpg extends MojoBase {
 
     public static String getGpgPath(final Logger log) {
         final String result;
-        //TODO: implement copy terminal
         final Terminal t = new Terminal().consumerError(log::info).timeoutMs(5000).breakOnError(false);
         if (SystemUtil.isWindows()) {
             //FIXME: test on windows if installed, gpg || gpg2, same as with unix
