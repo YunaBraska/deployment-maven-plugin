@@ -26,6 +26,8 @@ import java.util.List;
 
 import static berlin.yuna.mavendeploy.helper.PluginUnitBase.ENV_DEBUG;
 import static berlin.yuna.mavendeploy.helper.PluginUnitBase.getServerVariants;
+import static berlin.yuna.mavendeploy.model.Parameter.NEW_VERSION;
+import static berlin.yuna.mavendeploy.model.Parameter.PROJECT_LIBRARY;
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
@@ -153,7 +155,7 @@ public class PluginComponentTest extends CustomMavenTestFramework {
     public void setParameter_auto_shouldBeOverwritten() {
         terminal.execute(mvnCmd("-Dproject.version=definedVersion"));
 
-        expectProperties(prop("newVersion", "definedVersion"));
+        expectProperties(prop(NEW_VERSION.maven(), "definedVersion"));
         assertThat(getCurrentProjectVersion(), is(equalTo("definedVersion")));
     }
 
@@ -162,7 +164,7 @@ public class PluginComponentTest extends CustomMavenTestFramework {
         final String prevPomVersion = getCurrentProjectVersion();
         terminal.execute(mvnCmd("-Dproject.version=definedVersion"));
 
-        expectProperties(prop("newVersion", "definedVersion"));
+        expectProperties(prop(NEW_VERSION.maven(), "definedVersion"));
         final String newPomVersion = getCurrentProjectVersion();
 
         expectMojoRun(g(Versions.class, "set"));
@@ -179,7 +181,7 @@ public class PluginComponentTest extends CustomMavenTestFramework {
 
         terminal.execute(mvnCmd("-Dproject.version=1.0.0-fallBackVersion -Dsemantic.format='[.]::none::none::none'"));
         assertThat(getCurrentProjectVersion(), is(equalTo("1.0.0-fallBackVersion")));
-        expectProperties(prop("newVersion", "1.0.0-fallBackVersion"));
+        expectProperties(prop(NEW_VERSION.maven(), "1.0.0-fallBackVersion"));
     }
 
     @Test
@@ -201,12 +203,11 @@ public class PluginComponentTest extends CustomMavenTestFramework {
         mergeBranch("feature/MarketingJustWantsThis");
         mergeBranch("bugfix/bugsEverywhere");
         mergeBranch("major/newAge");
-        log.debug("Terminal status [%s]", terminalNoLog.status());
         terminal.execute(mvnCmd("-Dsemantic.format='[.]::major.*::feature.*::bugfix.*'"));
 
         expectMojoRun(g(Versions.class, "set"));
         assertThat(getCurrentProjectVersion(), is(equalTo("2.0.0")));
-        expectProperties(prop("newVersion", "2.0.0"));
+        expectProperties(prop(NEW_VERSION.maven(), "2.0.0"));
     }
 
     @Test
@@ -221,7 +222,7 @@ public class PluginComponentTest extends CustomMavenTestFramework {
 
         expectMojoRun(g(Versions.class, "set"));
         assertThat(getCurrentProjectVersion(), is(equalTo("1.3.0")));
-        expectProperties(prop("newVersion", "1.3.0"));
+        expectProperties(prop(NEW_VERSION.maven(), "1.3.0"));
     }
 
     @Test
@@ -236,7 +237,7 @@ public class PluginComponentTest extends CustomMavenTestFramework {
 
         expectMojoRun(g(Versions.class, "set"));
         assertThat(getCurrentProjectVersion(), is(equalTo("1.2.4")));
-        expectProperties(prop("newVersion", "1.2.4"));
+        expectProperties(prop(NEW_VERSION.maven(), "1.2.4"));
     }
 
     @Test
@@ -287,11 +288,11 @@ public class PluginComponentTest extends CustomMavenTestFramework {
     public void detectLibrary_shouldBeSuccessful() {
         setPackaging("pom");
         terminal.execute(mvnCmd(""));
-        expectProperties(prop("project.library", "true"));
+        expectProperties(prop(PROJECT_LIBRARY.key(), "true"));
 
         setPackaging("jar");
         terminal.execute(mvnCmd(""));
-        expectProperties(prop("project.library", "false"));
+        expectProperties(prop(PROJECT_LIBRARY.key(), "false"));
     }
 
     @Test
@@ -372,8 +373,8 @@ public class PluginComponentTest extends CustomMavenTestFramework {
         final String oldPomVersion = getCurrentProjectVersion();
         terminal.execute(mvnCmd("-Ddeploy.snapshot"));
 
-        expectProperties(prop("newVersion", oldPomVersion + "-SNAPSHOT"));
-        expectProperties(prop("newVersion", oldPomVersion));
+        expectProperties(prop(NEW_VERSION.maven(), oldPomVersion + "-SNAPSHOT"));
+        expectProperties(prop(NEW_VERSION.maven(), oldPomVersion));
         assertThat(getCurrentProjectVersion(), is(equalTo(oldPomVersion)));
         expectMojoRun(true, g(Versions.class, "set"), g(Jar.class, "jar"), g(Deploy.class, "deploy"));
     }

@@ -1,6 +1,7 @@
 package berlin.yuna.mavendeploy.plugin;
 
 import berlin.yuna.mavendeploy.model.Logger;
+import berlin.yuna.mavendeploy.model.Parameter;
 import berlin.yuna.mavendeploy.model.Prop;
 import org.apache.maven.execution.MavenSession;
 import org.apache.maven.project.MavenProject;
@@ -99,6 +100,10 @@ public class PluginSession {
 
     private Optional<String> getParam(final String... keys) {
         return stream(keys).map(this::getString).filter(Optional::isPresent).findFirst().orElseGet(Optional::empty);
+    }
+
+    public Optional<String> getParamPresent(final Parameter... keys) {
+        return getParamPresent(stream(keys).map(berlin.yuna.mavendeploy.model.Parameter::key).toArray(String[]::new));
     }
 
     public Optional<String> getParamPresent(final String... keys) {

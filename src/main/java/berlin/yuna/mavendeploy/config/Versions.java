@@ -4,6 +4,8 @@ import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
 import org.apache.maven.project.MavenProject;
 
+import static berlin.yuna.mavendeploy.model.Parameter.NEW_VERSION;
+import static berlin.yuna.mavendeploy.model.Parameter.POM_BACKUP;
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.configuration;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executeMojo;
@@ -28,7 +30,7 @@ public class Versions extends MojoBase {
                 goal(goal),
                 session.prepareXpp3Dom(
                         prop("allowSnapshots"),
-                        prop("generateBackupPoms")
+                        prop(POM_BACKUP.maven())
 //                        prop( "parentVersion"),
 //                        prop( "maven.version.rules"),
                 ), session.getEnvironment()
@@ -51,7 +53,7 @@ public class Versions extends MojoBase {
                         prop("allowSnapshots"),
                         prop("autoLinkItems"),
                         prop("excludeReactor"),
-                        prop("generateBackupPoms"),
+                        prop(POM_BACKUP.maven()),
                         prop("processDependencies"),
                         prop("processDependencyManagement"),
                         prop("processParent")
@@ -70,7 +72,7 @@ public class Versions extends MojoBase {
                 goal(goal),
                 session.prepareXpp3Dom(
                         prop("allowSnapshots"),
-                        prop("generateBackupPoms")
+                        prop(POM_BACKUP.maven())
 //                        prop( "maven.version.rules"),
                 ), session.getEnvironment()
         );
@@ -90,7 +92,7 @@ public class Versions extends MojoBase {
                         prop("allowMinorUpdates"),
                         prop("allowSnapshots"),
                         prop("excludeReactor"),
-                        prop("generateBackupPoms"),
+                        prop(POM_BACKUP.maven()),
                         prop("processDependencyManagement"),
                         prop("processParent")
 //                        prop( "maven.version.rules"),
@@ -112,7 +114,7 @@ public class Versions extends MojoBase {
                         prop("allowMinorUpdates"),
                         prop("allowSnapshots"),
                         prop("excludeReactor"),
-                        prop("generateBackupPoms"),
+                        prop(POM_BACKUP.maven()),
                         prop("processDependencies"),
                         prop("processDependencyManagement"),
                         prop("processParent")
@@ -135,7 +137,7 @@ public class Versions extends MojoBase {
                         prop("allowMinorUpdates"),
                         prop("allowSnapshots"),
                         prop("excludeReactor"),
-                        prop("generateBackupPoms"),
+                        prop(POM_BACKUP.maven()),
                         prop("processDependencies"),
                         prop("processDependencyManagement"),
                         prop("processParent")
@@ -155,7 +157,7 @@ public class Versions extends MojoBase {
                 session.prepareXpp3Dom(
                         prop("allowSnapshots"),
                         prop("artifactId"),
-                        prop("generateBackupPoms"),
+                        prop(POM_BACKUP.maven()),
                         prop("groupId"),
                         prop("nextSnapshot"),
                         prop("oldVersion"),
@@ -168,7 +170,7 @@ public class Versions extends MojoBase {
 //                        prop( "maven.version.rules"),
                 ), session.getEnvironment()
         );
-        session.getParamPresent("newVersion").ifPresent(this::modifySessionVersion);
+        session.getParamPresent(NEW_VERSION.maven()).ifPresent(this::modifySessionVersion);
         logGoal(goal, false);
         return this;
     }

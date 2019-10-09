@@ -3,6 +3,8 @@ package berlin.yuna.mavendeploy.config;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
 
+import static berlin.yuna.mavendeploy.model.Parameter.SOURCE;
+import static berlin.yuna.mavendeploy.model.Parameter.TARGET;
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.goal;
@@ -42,9 +44,9 @@ public class Compiler extends MojoBase {
                         prop("showDeprecation"),
                         prop("showWarnings"),
                         prop("skipMultiThreadWarning"),
-                        prop("source"),
                         prop("lastModGranularityMs"),
-                        prop("target"),
+                        prop(SOURCE.maven()),
+                        prop(TARGET.maven()),
                         prop("testRelease"),
                         prop("testSource"),
                         prop("testTarget"),
@@ -82,9 +84,9 @@ public class Compiler extends MojoBase {
                         prop("showDeprecation"),
                         prop("showWarnings"),
                         prop("skipMultiThreadWarning"),
-                        prop("source"),
+                        prop(SOURCE.maven()),
+                        prop(TARGET.maven()),
                         prop("lastModGranularityMs"),
-                        prop("target"),
                         prop("testRelease"),
                         prop("testSource"),
                         prop("testTarget"),

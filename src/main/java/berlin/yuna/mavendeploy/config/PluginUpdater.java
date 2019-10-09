@@ -22,6 +22,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 
+import static berlin.yuna.mavendeploy.model.Parameter.BASE_DIR;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.deletePath;
 import static java.lang.String.format;
@@ -59,7 +60,7 @@ public class PluginUpdater extends MojoBase {
     }
 
     private void updatePomFile(final HashMap<Plugin, String> pluginUpdates) throws IOException {
-        final File pomFile = Optional.ofNullable(session.getProject().getFile()).orElse(new File(session.getParamPresent("base.dir").orElse(""), "pom.xml"));
+        final File pomFile = Optional.ofNullable(session.getProject().getFile()).orElse(new File(session.getParamPresent(BASE_DIR).orElse(""), "pom.xml"));
         if (pomFile.exists()) {
             String pomXml = Files.readString(pomFile.toPath());
             for (Map.Entry<Plugin, String> entry : pluginUpdates.entrySet()) {
@@ -70,7 +71,7 @@ public class PluginUpdater extends MojoBase {
             Files.write(pomFile.toPath(), pomXml.getBytes());
             log.info("%s Updated pom file [file://%s]", unicode(0x1F516), pomFile.toURI().getRawPath());
         } else {
-            log.error("Can't find pom file to update please provide at least [base.dir] property");
+            log.error("Can't find pom file to update please provide at least [%s] property", BASE_DIR.key());
         }
     }
 

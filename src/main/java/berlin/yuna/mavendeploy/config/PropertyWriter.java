@@ -7,6 +7,8 @@ import java.nio.file.Files;
 import java.util.Map;
 import java.util.function.Predicate;
 
+import static berlin.yuna.mavendeploy.model.Parameter.BASE_DIR;
+import static berlin.yuna.mavendeploy.model.Parameter.TARGET;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.addSecret;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.hideSecrets;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
@@ -64,7 +66,7 @@ public class PropertyWriter extends MojoBase {
 
     private File getOutputFile() {
         return session.getBoolean("properties.print").orElse(false) ?
-                new File(session.getParamFallback("base.dir", ""), "target" + File.separator + "all.properties") :
+                new File(session.getParamFallback(BASE_DIR.key(), ""), TARGET.maven() + File.separator + "all.properties") :
                 new File(session.getParamFallback("properties.print", ""));
     }
 }

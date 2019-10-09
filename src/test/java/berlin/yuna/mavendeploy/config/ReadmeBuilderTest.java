@@ -10,6 +10,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 
 import static berlin.yuna.mavendeploy.helper.CustomMavenTestFramework.getPath;
+import static berlin.yuna.mavendeploy.model.Parameter.JAVA_VERSION;
 import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.core.IsNot.not;
@@ -44,7 +45,7 @@ public class ReadmeBuilderTest extends PluginUnitBase {
 
     @Test
     public void setFallbackJavaVersion() throws IOException {
-        final String javaVersion = environment.getMavenSession().getUserProperties().getProperty("java.version");
+        final String javaVersion = environment.getMavenSession().getUserProperties().getProperty(JAVA_VERSION.key());
         final Path path = getPath(Application.class);
         final String content = Files.readString(path);
         final String result = content.replaceFirst("(?<prefix>.*JAVA_VERSION.*\")(?<version>.*)(?<suffix>\".*)", "${prefix}" + javaVersion + "${suffix}");

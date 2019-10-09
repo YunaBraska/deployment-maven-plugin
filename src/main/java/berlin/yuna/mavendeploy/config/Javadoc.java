@@ -3,6 +3,7 @@ package berlin.yuna.mavendeploy.config;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
 
+import static berlin.yuna.mavendeploy.model.Parameter.SOURCE;
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executeMojo;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.goal;
@@ -88,7 +89,7 @@ public class Javadoc extends MojoBase {
                         prop("serialwarn"),
                         prop("show"),
                         prop("maven.javadoc.skip"),
-                        prop("source", "!8"),
+                        prop(SOURCE.maven(), "!8"),
                         prop("sourcepath"),
                         prop("sourcetab"),
                         prop("linksourcetab"),

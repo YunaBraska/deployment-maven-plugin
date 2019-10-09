@@ -37,12 +37,23 @@ import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readLicense
 import static berlin.yuna.mavendeploy.logic.AdditionalPropertyReader.readModuleProperties;
 import static berlin.yuna.mavendeploy.model.Logger.LogLevel.DEBUG;
 import static berlin.yuna.mavendeploy.model.Logger.LogLevel.INFO;
+import static berlin.yuna.mavendeploy.model.Parameter.BASE_DIR;
+import static berlin.yuna.mavendeploy.model.Parameter.NEW_VERSION;
+import static berlin.yuna.mavendeploy.model.Parameter.POM_BACKUP;
+import static berlin.yuna.mavendeploy.model.Parameter.PROJECT_LIBRARY;
+import static berlin.yuna.mavendeploy.model.Parameter.REMOVE_SNAPSHOT;
+import static berlin.yuna.mavendeploy.model.Parameter.SOURCE;
+import static berlin.yuna.mavendeploy.model.Parameter.TARGET;
+import static berlin.yuna.mavendeploy.model.Parameter.TEST_INT;
+import static berlin.yuna.mavendeploy.model.Parameter.TEST_INTEGRATION;
+import static berlin.yuna.mavendeploy.model.Parameter.TEST_SKIP;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executionEnvironment;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
 import static java.lang.String.format;
 import static java.nio.charset.StandardCharsets.UTF_8;
+import static java.util.Arrays.stream;
 import static java.util.Objects.requireNonNull;
 
 //https://stackoverflow.com/questions/53954902/custom-maven-plugin-development-getartifacts-is-empty-though-dependencies-are
@@ -75,7 +86,7 @@ public class Application extends AbstractMojo {
     public void execute() {
         before();
         LOG.info("%s Preparing information [%s:%s]", unicode(0x1F453), plugin.getArtifactId(), plugin.getVersion());
-        SESSION.setNewParam("maven.test.skip", SESSION.getBoolean("test.skip").orElse(false).toString());
+        SESSION.setNewParam(TEST_SKIP.maven(), SESSION.getBoolean(TEST_SKIP.key()).orElse(false).toString());
         final String newProjectVersion = prepareProjectVersion();
         try {
             final boolean isLibrary = isLibrary();
@@ -84,15 +95,15 @@ public class Application extends AbstractMojo {
 
             LOG.info("%s STEP [1/6] SETUP MOJO PROPERTIES", unicode(0x1F4DD));
             //SET GIT PROPERTIES
-            setWhen("project.library", String.valueOf(isLibrary));
-            setWhen("newVersion", newProjectVersion, !isEmpty(newProjectVersion) && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
-            setWhen("removeSnapshot", "true", isTrue("remove.snapshot"));
-            setWhen("generateBackupPoms", "false", true);
-            setWhen("test.integration", SESSION.getParamPresent("test.int").orElse(null));
-            setWhen("java.version", JAVA_VERSION, !hasText("java.version"));
-            final Optional<String> javaVersion = SESSION.getParamPresent("java.version");
-            setWhen("source", prepareSourceVersion(javaVersion.orElse(null)));
-            setWhen("target", prepareSourceVersion(javaVersion.orElse(null)));
+            setWhen(PROJECT_LIBRARY, String.valueOf(isLibrary));
+            setWhen(NEW_VERSION.maven(), newProjectVersion, !isEmpty(newProjectVersion) && !newProjectVersion.equalsIgnoreCase(project.getVersion()));
+            setWhen(REMOVE_SNAPSHOT.maven(), "true", isTrue(REMOVE_SNAPSHOT.key()));
+            setWhen(POM_BACKUP.maven(), "false");
+            setWhen(TEST_INTEGRATION, SESSION.getParamPresent(TEST_INT.key()).orElse(null));
+            setWhen(JAVA_VERSION, JAVA_VERSION, !hasText(JAVA_VERSION));
+            final Optional<String> javaVersion = SESSION.getParamPresent(JAVA_VERSION);
+            setWhen(SOURCE.maven(), prepareSourceVersion(javaVersion.orElse(null)));
+            setWhen(TARGET.maven(), prepareSourceVersion(javaVersion.orElse(null)));
             setWhen("compilerVersion", javaVersion.orElse(null));
             setWhen("javadocVersion", javaVersion.orElse(null));
             setWhen("project.encoding", UTF_8.toString(), SESSION.getParamPresent("project.encoding").isEmpty());
@@ -124,11 +135,11 @@ public class Application extends AbstractMojo {
             runWhen(() -> Versions.build(SESSION).useNextSnapshots(), isTrue("update.major", "update.minor"));
             runWhen(() -> PluginUpdater.build(SESSION).update(), SESSION.getBoolean("update.plugins").orElse(false));
             runWhen(() -> Versions.build(SESSION).commit(), isTrue("update.major", "update.minor"));
-            runWhen(() -> Versions.build(SESSION).set(), hasText("newVersion"), isTrue("removeSnapshot"));
+            runWhen(() -> Versions.build(SESSION).set(), hasText(NEW_VERSION.maven()), isTrue("removeSnapshot"));
 
             LOG.info("%s STEP [4/6] RUN PLUGINS WITH VERIFIERS", unicode(0x1F50E));
-            runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(SESSION).compiler(), isTrue("test.run", "test.unit", "test.integration"));
-            runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(SESSION).testCompiler(), isTrue("test.run", "test.unit", "test.integration"));
+            runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(SESSION).compiler(), isTrue("test.run", "test.unit", TEST_INTEGRATION.key()));
+            runWhen(() -> berlin.yuna.mavendeploy.config.Compiler.build(SESSION).testCompiler(), isTrue("test.run", "test.unit", TEST_INTEGRATION.key()));
             runWhen(() -> Surefire.build(SESSION).test(), isTrue("test.run", "test.unit"));
 
             LOG.info("%s STEP [5/6] RUN PLUGINS WITH ACTIONS", unicode(0x1F3AC));
@@ -162,7 +173,7 @@ public class Application extends AbstractMojo {
         final boolean removeSnapshot = SESSION.getBoolean("snapshot.deployment").orElse(false);
         if (removeSnapshot) {
             SESSION.setParameter("oldVersion", newProjectVersion, true);
-            SESSION.setParameter("newVersion", newProjectVersion.split("-SNAPSHOT")[0], true);
+            SESSION.setParameter(NEW_VERSION.maven(), newProjectVersion.split("-SNAPSHOT")[0], true);
         }
         try {
             runWhen(() -> Versions.build(SESSION).set(), removeSnapshot);
@@ -310,7 +321,7 @@ public class Application extends AbstractMojo {
         setWhen(true, "project.inceptionYear", project.getInceptionYear());
         setWhen(true, "project.modelVersion", project.getModelVersion());
 
-        setWhen("base.dir", basedir.toString(), !hasText("base.dir"));
+        setWhen(BASE_DIR, basedir.toString(), !hasText(BASE_DIR));
     }
 
     private void runWhen(final ThrowingFunction consumer, final boolean... when) throws Exception {
@@ -320,6 +331,10 @@ public class Application extends AbstractMojo {
                 break;
             }
         }
+    }
+
+    private void setWhen(final berlin.yuna.mavendeploy.model.Parameter key, final String value, final boolean... when) {
+        setWhen(key.key(), value, when);
     }
 
     private void setWhen(final String key, final String value, final boolean... when) {
@@ -345,6 +360,10 @@ public class Application extends AbstractMojo {
 
     private boolean isTrue(final String... keys) {
         return SESSION.isTrue(keys);
+    }
+
+    private boolean hasText(final berlin.yuna.mavendeploy.model.Parameter... keys) {
+        return hasText(stream(keys).map(berlin.yuna.mavendeploy.model.Parameter::key).toArray(String[]::new));
     }
 
     private boolean hasText(final String... keys) {

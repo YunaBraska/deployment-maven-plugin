@@ -38,6 +38,7 @@ import static berlin.yuna.mavendeploy.archive.MavenCommands.NEXUS_DEPLOY_XX;
 import static berlin.yuna.mavendeploy.archive.MavenCommands.XX_CMD_MVN_SNAPSHOT;
 import static berlin.yuna.mavendeploy.archive.MavenCommands.XX_CMD_MVN_TAG_MSG;
 import static berlin.yuna.mavendeploy.archive.MavenCommands.XX_CMD_MVN_VERSION;
+import static berlin.yuna.mavendeploy.model.Parameter.SOURCE;
 import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 
@@ -102,7 +103,7 @@ public class Ci {
         MVN_CLEAN = getBoolean(clr, "CLEAN", MVN_CLEAN);
         MVN_CLEAN_CACHE = getBoolean(clr, "CLEAN_CACHE", MVN_CLEAN_CACHE);
         MVN_JAVA_DOC = getBoolean(clr, "JAVA_DOC", MVN_JAVA_DOC);
-        MVN_SOURCE = getBoolean(clr, "SOURCE", MVN_SOURCE);
+        MVN_SOURCE = getBoolean(clr, SOURCE.maven(), MVN_SOURCE);
         MVN_PROFILES = getBoolean(clr, "PROFILES", MVN_PROFILES);
         GPG_PASS = getString(clr, "GPG_PASS", GPG_PASS);
         GPG_PASS_ALT = getString(clr, "GPG_PASS_ALT", GPG_PASS_ALT);
