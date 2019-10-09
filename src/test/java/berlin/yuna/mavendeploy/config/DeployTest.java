@@ -1,6 +1,5 @@
 package berlin.yuna.mavendeploy.config;
 
-import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.settings.Server;
 import org.junit.Test;

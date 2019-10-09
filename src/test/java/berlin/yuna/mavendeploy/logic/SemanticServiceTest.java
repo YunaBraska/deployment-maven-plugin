@@ -1,6 +1,5 @@
 package berlin.yuna.mavendeploy.logic;
 
-import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.junit.Test;
 

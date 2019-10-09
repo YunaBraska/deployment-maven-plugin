@@ -10,7 +10,7 @@
 
 ### Index
 * [Motivation](#motivation)
-* [Usage](#builder_usage_plugin)
+* [Usage](#usage-as-plugin)
 * [Building](#building)
 * [Semantic and Versioning](#semantic-and-versioning)
 * [Tagging and Committing](#tagging-and-committing)

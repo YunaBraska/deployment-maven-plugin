@@ -2,7 +2,6 @@ package berlin.yuna.mavendeploy.config;
 
 import berlin.yuna.clu.logic.Terminal;
 import berlin.yuna.mavendeploy.helper.CustomMavenTestFramework;
-import berlin.yuna.mavendeploy.helper.PluginUnitBase;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.model.Plugin;
 import org.codehaus.plexus.util.xml.pull.XmlPullParserException;

@@ -180,7 +180,7 @@ public class ReadmeBuilder extends MojoBase {
         return new File(outputBase, fileName).toPath();
     }
 
-    class Content {
+    static class Content {
 
         String key;
         String value;

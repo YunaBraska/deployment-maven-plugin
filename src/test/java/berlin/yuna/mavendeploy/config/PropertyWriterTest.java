@@ -4,7 +4,6 @@ package berlin.yuna.mavendeploy.config;
 import berlin.yuna.mavendeploy.helper.PluginUnitBase;
 import org.junit.Test;
 
-import java.util.List;
 import java.util.Properties;
 import java.util.stream.Collectors;
 

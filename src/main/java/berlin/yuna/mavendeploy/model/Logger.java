@@ -89,7 +89,7 @@ public class Logger implements Log {
         lastLog = LocalDateTime.now();
     }
 
-    private void print(final LogLevel logLevel, final String result) {
+    private synchronized void print(final LogLevel logLevel, final String result) {
         if (consumer != null) {
             consumer.accept(result);
         } else if (logLevel == ERROR || logLevel == FATAL) {

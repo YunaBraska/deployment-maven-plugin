@@ -2,9 +2,9 @@ package berlin.yuna.mavendeploy.archive;
 
 import berlin.yuna.clu.logic.CommandLineReader;
 import berlin.yuna.clu.logic.Terminal;
+import berlin.yuna.mavendeploy.helper.SettingsXmlBuilder;
 import berlin.yuna.mavendeploy.logic.GitService;
 import berlin.yuna.mavendeploy.logic.SemanticService;
-import berlin.yuna.mavendeploy.helper.SettingsXmlBuilder;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.plugin.logging.Log;
@@ -38,6 +38,7 @@ import static berlin.yuna.mavendeploy.archive.MavenCommands.NEXUS_DEPLOY_XX;
 import static berlin.yuna.mavendeploy.archive.MavenCommands.XX_CMD_MVN_SNAPSHOT;
 import static berlin.yuna.mavendeploy.archive.MavenCommands.XX_CMD_MVN_TAG_MSG;
 import static berlin.yuna.mavendeploy.archive.MavenCommands.XX_CMD_MVN_VERSION;
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 
 public class Ci {
@@ -83,7 +84,7 @@ public class Ci {
         this.LOG = LOG;
         clr = new CommandLineReader(args == null ? new String[]{""} : args);
         //Versioning
-        PROJECT_VERSION = getString(clr, "PROJECT_VERSION", PROJECT_VERSION);
+        PROJECT_VERSION = getString(clr, "PROJECT_VERSION", null);
         SEMANTIC_FORMAT = getString(clr, "SEMANTIC_FORMAT", SEMANTIC_FORMAT);
         MVN_REMOVE_SNAPSHOT = getBoolean(clr, "REMOVE_SNAPSHOT", MVN_REMOVE_SNAPSHOT);
         MVN_TAG = getBoolean(clr, "TAG", MVN_TAG);
@@ -121,7 +122,7 @@ public class Ci {
         IS_POM = isPomArtifact(pom);
 
         gitService = null;
-        semanticService = new SemanticService(null, gitService, isEmpty(SEMANTIC_FORMAT) ? "\\.:none" : SEMANTIC_FORMAT);
+        semanticService = new SemanticService(null, null, isEmpty(SEMANTIC_FORMAT) ? "\\.:none" : SEMANTIC_FORMAT);
 //        gitService = new GitService(LOG, PROJECT_DIR, false);
 
         PROJECT_VERSION = isEmpty(SEMANTIC_FORMAT) ?
@@ -291,7 +292,7 @@ public class Ci {
     }
 
     private boolean getOrElse(final String test, final boolean fallback) {
-        return !isEmpty(test) ? Boolean.valueOf(test) : fallback;
+        return !isEmpty(test) ? parseBoolean(test) : fallback;
     }
 
     private String getOrElse(final String test, final String fallback) {

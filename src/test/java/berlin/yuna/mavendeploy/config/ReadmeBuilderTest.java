@@ -2,7 +2,6 @@ package berlin.yuna.mavendeploy.config;
 
 import berlin.yuna.mavendeploy.helper.PluginUnitBase;
 import berlin.yuna.mavendeploy.plugin.Application;
-import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.junit.Test;
 
 import java.io.File;

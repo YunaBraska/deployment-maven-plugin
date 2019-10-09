@@ -11,6 +11,7 @@ import java.util.regex.Pattern;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isNumeric;
 import static berlin.yuna.mavendeploy.util.MojoUtil.splitAtDigits;
+import static java.lang.Integer.parseInt;
 
 public class SemanticService {
 
@@ -71,7 +72,7 @@ public class SemanticService {
         final List<String> parts = splitAtDigits(versionPart);
         for (int i = 0; i < parts.size(); i++) {
             if (isNumeric(parts.get(i))) {
-                parts.set(i, (increase ? String.valueOf((Integer.valueOf(parts.get(i)) + 1)) : "0"));
+                parts.set(i, (increase ? String.valueOf((parseInt(parts.get(i)) + 1)) : "0"));
             }
         }
         return String.join("", parts);

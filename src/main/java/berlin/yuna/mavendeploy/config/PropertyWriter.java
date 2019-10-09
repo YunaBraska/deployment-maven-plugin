@@ -5,7 +5,6 @@ import berlin.yuna.mavendeploy.plugin.PluginSession;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Map;
-import java.util.Properties;
 import java.util.function.Predicate;
 
 import static berlin.yuna.mavendeploy.plugin.PluginSession.addSecret;
