@@ -9,3 +9,10 @@ echo "CLU installing"
 mvn --file=clu/pom.xml install -DskipTests=true --quiet
 echo "CLU removing"
 rm -rf clu
+#https://central.sonatype.org/pages/working-with-pgp-signatures.html
+if [ -z ${GPG_KEY_UID+x} ]; then
+  echo "GPG_KEY_UID not set - skipping gpg key import"
+else
+echo "import gpg key"
+  gpg --keyserver hkp://pool.sks-keyservers.net --recv-keys "${GPG_KEY_UID}"
+fi
