@@ -145,7 +145,7 @@ public class Application extends AbstractMojo {
             LOG.info("%s STEP [5/6] RUN PLUGINS WITH ACTIONS", unicode(0x1F3AC));
             runWhen(() -> Javadoc.build(SESSION).jar(), (!isLibrary() && isTrue("java.doc", "java.doc.break")));
             runWhen(() -> JavaSource.build(SESSION).jarNoFork(), (!isLibrary() && isTrue("java.source")));
-            runWhen(() -> Jar.build(SESSION).jar(), hasText("package") || isTrue("deploy", "deploy.snapshot"));
+            runWhen(() -> Jar.build(SESSION).jar(), hasText("package", "gpg.passphrase") || isTrue("deploy", "deploy.snapshot"));
             runWhen(() -> Gpg.build(SESSION).sign(), hasText("gpg.passphrase"));
             runWhen(() -> Deploy.build(SESSION).deploy(), isTrue("deploy", "deploy.snapshot"));
             runWhen(() -> Scm.build(SESSION).tag(), hasNewTag);
