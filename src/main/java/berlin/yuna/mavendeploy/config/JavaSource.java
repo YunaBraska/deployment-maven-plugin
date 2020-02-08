@@ -10,7 +10,7 @@ import static berlin.yuna.mavendeploy.plugin.PluginExecutor.goal;
 public class JavaSource extends MojoBase {
 
     public JavaSource(final PluginSession session) {
-        super("org.apache.maven.plugins", "maven-source-plugin", "3.1.0", session);
+        super("org.apache.maven.plugins", "maven-source-plugin", "3.2.1", session);
     }
 
     public static JavaSource build(final PluginSession session) {

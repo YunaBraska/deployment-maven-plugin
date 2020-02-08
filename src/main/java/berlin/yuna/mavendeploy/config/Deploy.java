@@ -14,6 +14,7 @@ import java.util.Comparator;
 import java.util.List;
 import java.util.Optional;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
 import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executeMojo;
@@ -36,20 +37,24 @@ public class Deploy extends MojoBase {
         final String goal = "deploy";
         prepareSettingsServer();
         configureDeployment();
-        logGoal(goal, true);
-        executeMojo(
-                getPlugin(),
-                goal(goal),
-                session.prepareXpp3Dom(
-                        prop("altDeploymentRepository"),
-                        prop("altReleaseDeploymentRepository"),
-                        prop("altSnapshotDeploymentRepository"),
-                        prop("deployAtEnd"),
-                        prop("retryFailedDeploymentCount"),
-                        prop("maven.deploy.skip")
-                ), session.getEnvironment()
-        );
-        logGoal(goal, false);
+        if (isNexusDeployment()) {
+            NexusStaging.build(session).deploy();
+        } else {
+            logGoal(goal, true);
+            executeMojo(
+                    getPlugin(),
+                    goal(goal),
+                    session.prepareXpp3Dom(
+                            prop("altDeploymentRepository"),
+                            prop("altReleaseDeploymentRepository"),
+                            prop("altSnapshotDeploymentRepository"),
+                            prop("deployAtEnd"),
+                            prop("retryFailedDeploymentCount"),
+                            prop("maven.deploy.skip")
+                    ), session.getEnvironment()
+            );
+            logGoal(goal, false);
+        }
         return this;
     }
 
@@ -85,6 +90,16 @@ public class Deploy extends MojoBase {
                 session.getProject().getDistributionManagement().setSnapshotRepository(prepareRepository(deployId, deployUrl));
             }
         }
+    }
+
+    public boolean isNexusDeployment() {
+        final Optional<String> nexusDeployment = session.getParamPresent("deploy.nexus");
+        final String deployUrl = session.getParamPresent("deploy.url").orElse("http://deploy.url-not.found");
+        if (nexusDeployment.isEmpty() && Stream.of("nexus", "sonatype", "oss").anyMatch(nexus -> deployUrl.toLowerCase().contains(nexus))) {
+            session.setParameter("deploy.nexus", "true", true);
+            return true;
+        }
+        return false;
     }
 
     private DeploymentRepository prepareRepository(final String deployId, final String deployUrl) {

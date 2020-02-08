@@ -399,10 +399,22 @@ public class PluginComponentTest extends CustomMavenTestFramework {
 
     @Test
     public void deploy_withDeployIdAndDeployUrlButEmptySettings_shouldNotStartDeployment() {
+        terminal.execute(mvnCmd("-Dclean -Ddeploy -Ddeploy.id='invalid' -Ddeploy.url='https://artifact.invalid' --settings=" + new SettingsXmlBuilder().create()));
+
+        assertThat(terminal.consoleInfo(), containsString("Config added key [altDeploymentRepository] value [invalid::default::https://nexus.invalid]"));
+        assertThat(terminal.consoleInfo(), containsString("Start org.apache.maven.plugins:maven-deploy-plugin:deploy"));
+        assertThat(terminal.consoleInfo(), containsString("UnknownHostException"));
+        expectMojoRun(true, g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"), g(Jar.class, "jar"));
+    }
+
+    @Test
+    public void deploy_withDeployIdAndNexusDeployUrlButEmptySettings_shouldNotStartDeployment() {
         terminal.execute(mvnCmd("-Dclean -Ddeploy -Ddeploy.id='invalid' -Ddeploy.url='https://nexus.invalid' --settings=" + new SettingsXmlBuilder().create()));
 
         assertThat(terminal.consoleInfo(), containsString("Config added key [altDeploymentRepository] value [invalid::default::https://nexus.invalid]"));
-        expectMojoRun(true, g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"), g(Jar.class, "jar"), g(Deploy.class, "deploy"));
+        assertThat(terminal.consoleInfo(), containsString("Start org.sonatype.plugins:nexus-staging-maven-plugin"));
+        assertThat(terminal.consoleInfo(), containsString("Server credentials with ID"));
+        expectMojoRun(true, g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"), g(Jar.class, "jar"));
     }
 
     @Test
@@ -465,8 +477,8 @@ public class PluginComponentTest extends CustomMavenTestFramework {
             final File target = new File(TEST_DIR.toFile(), "target");
             assertThat(target.exists(), is(true));
             final List<Path> ascFiles = Files.walk(target.toPath()).filter(f -> f.getFileName().toString().endsWith(".asc")).collect(toList());
-            assertThat(ascFiles, hasSize(3));
-            expectMojoRun(g(Javadoc.class, "jar"), g(JavaSource.class, "jar-no-fork"), g(Gpg.class, "sign"));
+            assertThat(ascFiles, hasSize(4));
+            expectMojoRun(g(Javadoc.class, "jar"), g(JavaSource.class, "jar-no-fork"), g(Jar.class, "jar"), g(Gpg.class, "sign"));
         }
     }
 

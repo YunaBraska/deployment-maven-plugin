@@ -10,7 +10,7 @@ import static berlin.yuna.mavendeploy.plugin.PluginExecutor.goal;
 public class Jar extends MojoBase {
 
     public Jar(final PluginSession session) {
-        super("org.apache.maven.plugins", "maven-jar-plugin", "3.1.2", session);
+        super("org.apache.maven.plugins", "maven-jar-plugin", "3.2.0", session);
     }
 
     public static Jar build(final PluginSession session) {

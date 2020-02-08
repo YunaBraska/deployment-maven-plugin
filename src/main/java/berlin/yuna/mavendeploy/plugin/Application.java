@@ -7,6 +7,7 @@ import berlin.yuna.mavendeploy.config.Gpg;
 import berlin.yuna.mavendeploy.config.Jar;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
+import berlin.yuna.mavendeploy.config.NexusStaging;
 import berlin.yuna.mavendeploy.config.PluginUpdater;
 import berlin.yuna.mavendeploy.config.PropertyWriter;
 import berlin.yuna.mavendeploy.config.ReadmeBuilder;

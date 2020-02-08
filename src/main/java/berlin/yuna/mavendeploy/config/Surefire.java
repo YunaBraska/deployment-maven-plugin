@@ -10,7 +10,7 @@ import static berlin.yuna.mavendeploy.plugin.PluginExecutor.goal;
 public class Surefire extends MojoBase {
 
     public Surefire(final PluginSession session) {
-        super("org.apache.maven.plugins", "maven-surefire-plugin", "3.0.0-M3", session);
+        super("org.apache.maven.plugins", "maven-surefire-plugin", "3.0.0-M4", session);
     }
 
     public static Surefire build(final PluginSession session) {
