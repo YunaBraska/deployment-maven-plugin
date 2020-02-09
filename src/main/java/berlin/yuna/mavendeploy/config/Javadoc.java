@@ -3,9 +3,10 @@ package berlin.yuna.mavendeploy.config;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
 
+import static berlin.yuna.mavendeploy.model.Parameter.SOURCE;
 import static berlin.yuna.mavendeploy.model.Prop.prop;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executeMojo;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.goal;
 
 public class Javadoc extends MojoBase {
 
@@ -25,7 +26,7 @@ public class Javadoc extends MojoBase {
                 goal(goal),
                 session.prepareXpp3Dom(
 //                        prop("additionalparam", "-Xdoclint:none"),
-                        prop("doclint"),
+                        prop("doclint", session.getBoolean("java.doc.break").orElse(false) ? null : "none"),
                         prop("maven.javadoc.classifier"),
                         prop("destDir"),
                         prop("additionalJOption"),
@@ -55,7 +56,7 @@ public class Javadoc extends MojoBase {
                         prop("extdirs"),
                         prop("maven.javadoc.failOnError"),
                         prop("maven.javadoc.failOnWarnings"),
-                        prop("project.build.finalName"),
+                        prop("finalName"),
                         prop("header"),
                         prop("footer"),
                         prop("helpfile"),
@@ -88,7 +89,7 @@ public class Javadoc extends MojoBase {
                         prop("serialwarn"),
                         prop("show"),
                         prop("maven.javadoc.skip"),
-                        prop("source", "!8"),
+                        prop(SOURCE.maven(), "!8"),
                         prop("sourcepath"),
                         prop("sourcetab"),
                         prop("linksourcetab"),

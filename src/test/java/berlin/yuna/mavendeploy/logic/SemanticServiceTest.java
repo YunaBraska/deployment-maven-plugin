@@ -1,5 +1,6 @@
 package berlin.yuna.mavendeploy.logic;
 
+import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.junit.Test;
 
 import java.util.Optional;
@@ -12,25 +13,35 @@ import static org.mockito.Mockito.when;
 
 public class SemanticServiceTest {
 
+    public PluginSession session = new PluginSession(null);
+
+    @Test
+    public void changeOnlyNumberInVersion_ShouldBeSuccessful() {
+        final String version = "1.2.34-SnapShot-4.rc";
+        final SemanticService service = new SemanticService(session, null, null);
+        final String result = service.increaseNumbersInString(version, true);
+        assertThat(result, is(equalTo("2.3.35-SnapShot-5.rc")));
+    }
+
     @Test
     public void getBranchName_WithBranch_ShouldBeSuccessful() {
         final GitService gitService = mock(GitService.class);
-        when(gitService.findOriginalBranchName()).thenReturn(Optional.of("currentBranch"));
+        when(gitService.getBranchNameRefLog()).thenReturn(Optional.of("currentBranch"));
 
-        final SemanticService service = new SemanticService(gitService, null);
-        assertThat(service.getBranchName().isPresent(), is(true));
-        assertThat(service.getBranchName().get(), is(equalTo("currentBranch")));
+        final SemanticService service = new SemanticService(session, gitService, null);
+        assertThat(service.getBranchNameRefLog().isPresent(), is(true));
+        assertThat(service.getBranchNameRefLog().get(), is(equalTo("currentBranch")));
     }
 
     @Test
     public void getBranchName_WithOutGitService_ShouldReturnNull() {
-        final SemanticService service = new SemanticService(null, null);
-        assertThat(service.getBranchName().isPresent(), is(false));
+        final SemanticService service = new SemanticService(session, null, null);
+        assertThat(service.getBranchNameRefLog().isPresent(), is(false));
     }
 
     @Test
     public void getNextSemanticVersion_withoutGitService_shouldReturnFallback() {
-        final SemanticService service = new SemanticService(null, null);
+        final SemanticService service = new SemanticService(session, null, null);
         final String output = service.getNextSemanticVersion("1.2.3", "failed");
         assertThat(output, is("failed"));
     }
@@ -38,9 +49,9 @@ public class SemanticServiceTest {
     @Test
     public void getNextSemanticVersion_withoutBranch_shouldReturnFallback() {
         final GitService gitService = mock(GitService.class);
-        when(gitService.findOriginalBranchName()).thenReturn(Optional.of(""));
+        when(gitService.getBranchNameRefLog()).thenReturn(Optional.of(""));
 
-        final SemanticService service = new SemanticService(gitService, null);
+        final SemanticService service = new SemanticService(session, gitService, null);
         final String output = service.getNextSemanticVersion("1.2.3", "failed");
         assertThat(output, is("failed"));
     }
@@ -48,9 +59,9 @@ public class SemanticServiceTest {
     @Test
     public void getNextSemanticVersion_withNotMatchingSemanticVersion_shouldReturnFallback() {
         final GitService gitService = mock(GitService.class);
-        when(gitService.findOriginalBranchName()).thenReturn(Optional.of("Major-update"));
+        when(gitService.getBranchNameRefLog()).thenReturn(Optional.of("Major-update"));
 
-        final SemanticService service = new SemanticService(gitService, "[\\.]::none::none::none");
+        final SemanticService service = new SemanticService(session, gitService, "[\\.]::none::none::none");
         final String output = service.getNextSemanticVersion("1.2.3", "failed");
         assertThat(output, is("failed"));
     }
@@ -58,9 +69,9 @@ public class SemanticServiceTest {
     @Test
     public void getNextSemanticVersion_withMatchingSemanticVersion_shouldReturnFallback() {
         final GitService gitService = mock(GitService.class);
-        when(gitService.findOriginalBranchName()).thenReturn(Optional.of("Major/update"));
+        when(gitService.getBranchNameRefLog()).thenReturn(Optional.of("Major/update"));
 
-        final SemanticService service = new SemanticService(gitService, "[\\.]::Major.*::none::none");
+        final SemanticService service = new SemanticService(session, gitService, "[\\.]::Major.*::none::none");
         final String output = service.getNextSemanticVersion("1.2.3", "failed");
         assertThat(output, is("2.0.0"));
     }

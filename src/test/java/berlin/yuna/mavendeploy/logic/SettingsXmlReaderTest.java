@@ -1,28 +1,28 @@
 package berlin.yuna.mavendeploy.logic;
 
 
-import berlin.yuna.mavendeploy.model.Logger;
-import berlin.yuna.mavendeploy.plugin.MojoExecutor.ExecutionEnvironment;
+import berlin.yuna.mavendeploy.config.Gpg;
+import berlin.yuna.mavendeploy.plugin.PluginExecutor.ExecutionEnvironment;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.execution.MavenSession;
+import org.apache.maven.project.MavenProject;
 import org.apache.maven.settings.Server;
 import org.apache.maven.settings.Settings;
 import org.junit.Before;
 import org.junit.Test;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 import java.util.Properties;
 import java.util.stream.Stream;
 
-import static berlin.yuna.mavendeploy.helper.CustomMavenTestFramework.DEBUG;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
 import static java.util.Arrays.stream;
+import static org.hamcrest.CoreMatchers.containsString;
 import static org.hamcrest.CoreMatchers.equalTo;
+import static org.hamcrest.CoreMatchers.is;
 import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
-import static org.hamcrest.CoreMatchers.is;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
@@ -36,7 +36,7 @@ public class SettingsXmlReaderTest {
         mavenSession = mock(MavenSession.class);
         final ExecutionEnvironment environment = mock(ExecutionEnvironment.class);
         when(environment.getMavenSession()).thenReturn(mavenSession);
-        pluginSession = new PluginSession(environment, new Logger().enableDebug(DEBUG));
+        pluginSession = new PluginSession(environment);
     }
 
     @Test
@@ -55,6 +55,7 @@ public class SettingsXmlReaderTest {
                 })
         );
         systemProperties.put("settings.xml", "--ServerId=servername0 --Username=username0 --Password=password0");
+        when(pluginSession.getProject()).thenReturn(new MavenProject());
         when(mavenSession.getUserProperties()).thenReturn(userProperties);
         when(mavenSession.getSystemProperties()).thenReturn(systemProperties);
 
@@ -72,14 +73,15 @@ public class SettingsXmlReaderTest {
         final Properties userProperties = new Properties();
         userProperties.put("gpg.passphrase", "12345");
         final Settings settings = new Settings();
+        when(pluginSession.getProject()).thenReturn(new MavenProject());
         when(mavenSession.getUserProperties()).thenReturn(userProperties);
         when(mavenSession.getSystemProperties()).thenReturn(new Properties());
         when(mavenSession.getSettings()).thenReturn(settings);
 
-        SettingsXmlReader.read(pluginSession);
+        new Gpg(pluginSession).addGpgToSettings();
         assertThat(settings.getProfiles(), hasSize(1));
         assertThat(settings.getProfiles().get(0).getProperties().get("gpg.passphrase"), is(equalTo("12345")));
-        assertThat(settings.getProfiles().get(0).getProperties().get("gpg.executable"), is(equalTo("gpg")));
+        assertThat(settings.getProfiles().get(0).getProperties().get("gpg.executable").toString(), containsString("gpg"));
 
     }
 }

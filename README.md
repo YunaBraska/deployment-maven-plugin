@@ -36,7 +36,7 @@
 
 ### Index
 * [Motivation](#motivation)
-* [Usage](#builder_usage_plugin)
+* [Usage](#usage-as-plugin)
 * [Building](#building)
 * [Semantic and Versioning](#semantic-and-versioning)
 * [Tagging and Committing](#tagging-and-committing)
@@ -50,7 +50,8 @@
 ### Motivation
 Once upon a time i had to define the deployment in each of my applications.
 The pom.xml's and bash scripts didn't stop growing with build instructions which my app doesn't care about.
-I needed thousands commits for hacky testing of my CI/CD systems even if i just want to do defaults like tagging or semantic versioning.
+I needed thousands commits for hacky testing of my CI/CD systems even if i just want to do defaults like tagging
+or semantic versioning.
 So i started this project to keep the build instructions in my environment and have the plugin already tested.
 Now i can run with auto configuration my deployments daily.
 The plugin will even take care of updating all dependencies as semantic versioning.
@@ -66,15 +67,16 @@ For example:
 * Readme.md variables and placeholder,
 * Tagging,
 * [...]
-and much more while you can still use the original maven userProperties and/or systemProperties (ignoring ".", "_", "-") to configure the plugins
+and much more while you can still use the original maven userProperties and/or systemProperties (ignoring ".",
+"_", "-") to configure the plugins
 
 ### Usage as plugin
-*version = \<version>java.major.minor/fixes\</version>*
+*version = \<version>java.major/release.minor/features/fixes\</version>*
 ````xml
 <plugin>
     <groupId>berlin.yuna</groupId>
     <artifactId>deployment-maven-plugin</artifactId>
-    <version>12.0.1</version>
+    <version>12.0.4</version>
 </plugin>
 ````
 
@@ -180,8 +182,15 @@ server2.passphrase='passphrase2'
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | deploy              | Boolean | ''                 | Start deployment                                                           |
 | deploy.snapshot     | Boolean | ''                 | Start snapshot deployment && adds temporary "-SNAPSHOT" to the project version |
+| deploy.nexus        | Boolean | '${auto}'          | auto = triggers nexus deploy plugin on url keywords "nexus", "oss", or "sonatype" |
 | deploy.id           | String  | ${settings.get(0)} | Id from server settings or settings.xml - default first setting server id containing ids like 'nexus', 'artifact', 'archiva', 'repository', 'snapshot'|
 | deploy.url          | String  | ''                 | url to artifact repository - re-prioritize default setting server id if contains keywords from 'deploy.id' |
+##### Examples:
+```shell script
+mvn deployment-maven-plugin:run -Dclean -Djava.doc -Djava.source -Ddeploy.url='https://user:pw@url:port/libs-release' -Ddeploy=true
+mvn deployment-maven-plugin:run -Dclean -Djava.doc -Djava.source -Ddeploy.url='http://user:pw@url:port/nexus/content/repositories/snapshots' -Ddeploy=true
+mvn deployment-maven-plugin:run -Dclean -Djava.doc -Djava.source -Ddeploy.url='http://user:pw@url:port/nexus/content/repositories/releases' -Ddeploy=true
+```
 
 ### Builder files (like README.builder.md)
 ### Parameters
@@ -212,9 +221,10 @@ server2.passphrase='passphrase2'
 #### UNDER CONSTRUCTION (NOT STABLE)
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
-| clean               | Boolean | false              | cleans target and resolves dependencies                                    |
+| clean               | Boolean | false              | Cleans target and resolves dependencies                                    |
 | clean.cache         | Boolean | false              | Purges local maven repository cache                                        |
 | java.doc            | Boolean | false              | Creates java doc (javadoc.jar) if its not a pom artifact                   |
+| java.doc.break      | Boolean | false              | Same as "java.doc" but breaks on error                                     |
 | java.source         | Boolean | false              | Creates java sources (sources.jar) if its not a pom artifact               |
 | gpg.pass            | String  | ''                 | Signs artifacts (.asc) with GPG 2.1                                        |
 
@@ -223,10 +233,12 @@ server2.passphrase='passphrase2'
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | REPORT              | Boolean | false              | Generates report about version updates                                     |
-| test.skip           | Boolean | false              | same as "maven.test.skip"                                                  |
-| project.encoding    | Boolean | false              | sets default encoding to every encoding parameter definition               |
-| java.version        | Boolean | false              | sets default java version to every java version parameter definition       |
-| properties.print    | Boolean/String | ''          | writes all properties to (given fileValue or "all.properties") file        |
+| test.skip           | Boolean | false              | Same as "maven.test.skip"                                                  |
+| project.encoding    | Boolean | false              | Sets default encoding to every encoding parameter definition               |
+| java.version        | Boolean | false              | Sets default java version to every java version parameter definition       |
+| properties.print    | Boolean/String | ''          | Writes all properties to (given fileValue or "all.properties") file        |
+| package             | Boolean | false              | Build jar file (automatically is true if deployment is requested)          |
+| changes.push        | String  | ''                 | Push changes to specific branch                                            |
 
 ### Requirements
 * \[JAVA\] for maven 
@@ -244,10 +256,14 @@ server2.passphrase='passphrase2'
 
 ### TODO
 * [ ] finish converting from bash to real mojo
+* [ ] read properties from file project, system, file ,commandline
+* [ ] replace some GitService functions with scm plugin
 * [ ] Jacoco
+* [ ] failsafe
 * [ ] plugin updater exclusions
 * [ ] plugin updater remove inner bash command
 * [ ] update testProject too
+* [ ] add mavenProperty resolver to getParameter
 * [ ] git last commit as variables
 * [ ] Git credentials
 * [ ] Git push when changes are made

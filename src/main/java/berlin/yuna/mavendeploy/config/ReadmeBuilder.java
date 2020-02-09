@@ -86,7 +86,7 @@ public class ReadmeBuilder extends MojoBase {
 
     private HashMap<String, String> readVariables(final List<Content> content) {
         final HashMap<String, String> variables = new HashMap<>();
-        session.getEnvironment().getMavenSession().getUserProperties().forEach((k, v) -> variables.put(String.valueOf(k), String.valueOf(v)));
+        session.getProperties().forEach((k, v) -> variables.put(String.valueOf(k), String.valueOf(v)));
         variables.putAll(readVariables(content, variables));
         return variables;
     }
@@ -180,7 +180,7 @@ public class ReadmeBuilder extends MojoBase {
         return new File(outputBase, fileName).toPath();
     }
 
-    class Content {
+    static class Content {
 
         String key;
         String value;

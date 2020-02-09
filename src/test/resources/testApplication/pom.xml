@@ -47,4 +47,12 @@
         </plugins>
     </build>
 
+<!--    <distributionManagement>-->
+<!--        <repository>-->
+<!--            <id>artifactory</id>-->
+<!--            <name>atifactory</name>-->
+<!--            <url>https://artifactory.yuna.berlin:443/libs-release</url>-->
+<!--        </repository>-->
+<!--    </distributionManagement>-->
+
 </project>

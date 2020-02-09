@@ -4,13 +4,13 @@ import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
 
 import static berlin.yuna.mavendeploy.model.Prop.prop;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executeMojo;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.goal;
 
 public class JavaSource extends MojoBase {
 
     public JavaSource(final PluginSession session) {
-        super("org.apache.maven.plugins", "maven-source-plugin", "3.1.0", session);
+        super("org.apache.maven.plugins", "maven-source-plugin", "3.2.1", session);
     }
 
     public static JavaSource build(final PluginSession session) {
@@ -24,6 +24,7 @@ public class JavaSource extends MojoBase {
                 getPlugin(),
                 goal(goal),
                 session.prepareXpp3Dom(
+                        prop("finalName"),
                         prop("maven.source.attach"),
                         prop("maven.source.classifier"),
                         prop("maven.source.excludeResources"),

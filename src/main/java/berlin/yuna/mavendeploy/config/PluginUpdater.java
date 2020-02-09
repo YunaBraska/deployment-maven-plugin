@@ -19,9 +19,13 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Properties;
+import java.util.Map;
+import java.util.Optional;
 
+import static berlin.yuna.mavendeploy.model.Parameter.BASE_DIR;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
+import static berlin.yuna.mavendeploy.util.MojoUtil.deletePath;
+import static java.lang.String.format;
 
 public class PluginUpdater extends MojoBase {
 
@@ -41,31 +45,51 @@ public class PluginUpdater extends MojoBase {
         final MavenProject project = session.getEnvironment().getMavenProject();
         final List<Plugin> plugins = project.getBuildPlugins();
         final Path tmpProjectPath = Files.createTempDirectory("plugin-updater_");
-        final Path pomFile = Paths.get(tmpProjectPath.toString(), "pom.xml");
+        final Path tmpPomFile = Paths.get(tmpProjectPath.toString(), "pom.xml");
 
-        createPomFile(pomFile, plugins);
-        getTerminal(pomFile).execute(mvnUpdate());
-        reportPluginUpdates(log, plugins, pomFile.toFile());
+        createPomFile(tmpPomFile, plugins, session);
+        for (String versionsGoal : new String[]{"use-latest-releases", "use-latest-versions", "use-next-snapshots"}) {
+            getTerminal(tmpPomFile).execute(mvnUpdate(versionsGoal));
+        }
+
+        updatePomFile(reportPluginUpdates(log, plugins, tmpPomFile.toFile()));
 
         logGoal(goal, false);
-        Files.deleteIfExists(pomFile);
-        Files.deleteIfExists(tmpProjectPath);
+        deletePath(tmpProjectPath);
         return this;
     }
 
-    private Terminal getTerminal(final Path pomFile) {
-        return new Terminal().dir(pomFile.getParent()).consumerError(log::error).consumerInfo(log::info);
+    private void updatePomFile(final HashMap<Plugin, String> pluginUpdates) throws IOException {
+        final File pomFile = Optional.ofNullable(session.getProject().getFile()).orElse(new File(session.getParamPresent(BASE_DIR).orElse(""), "pom.xml"));
+        if (pomFile.exists()) {
+            String pomXml = Files.readString(pomFile.toPath());
+            for (Map.Entry<Plugin, String> entry : pluginUpdates.entrySet()) {
+                final Plugin plugin = entry.getKey();
+                final String pluginRegex = "(?<prefix>.*" + plugin.getArtifactId() + "(.|\\R)*?<version>)(?<version>" + plugin.getVersion() + ")(?<suffix><.*)";
+                pomXml = pomXml.replaceAll(pluginRegex, "${prefix}" + entry.getValue() + "${suffix}");
+            }
+            Files.write(pomFile.toPath(), pomXml.getBytes());
+            log.info("%s Updated pom file [file://%s]", unicode(0x1F516), pomFile.toURI().getRawPath());
+        } else {
+            log.error("Can't find pom file to update please provide at least [%s] property", BASE_DIR.key());
+        }
     }
 
-    //TODO: mojo execution
-    private String mvnUpdate() {
-        final Properties prop = session.getEnvironment().getMavenSession().getUserProperties();
-        final boolean major = prop.containsKey("update.major");
-        final boolean minor = prop.containsKey("update.minor");
-        final String parameter = (major ? " -Dupdate.major" : "") + (minor ? " -Dupdate.minor" : "");
-        final String mvnCmd = "mvn berlin.yuna:deployment-maven-plugin:12.0.1:run -Dupdate.plugins=false " + parameter;
-        log.debug("Running maven command [%s]", mvnCmd);
-        return mvnCmd;
+    private Terminal getTerminal(final Path pomFile) {
+        return new Terminal().dir(pomFile.getParent()).consumerError(log::error);
+    }
+
+    private String mvnUpdate(final String goal) {
+        final Versions versions = Versions.build(session);
+        return format(
+                "mvn %s:%s:%s:%s -DallowMajorUpdates=%s -DallowSnapshots=%s",
+                versions.groupId(),
+                versions.artifactId(),
+                versions.version(),
+                goal,
+                session.getBoolean("update.major").orElse(false).toString(),
+                session.getBoolean("allowSnapshots").orElse(true).toString()
+        );
     }
 
     static HashMap<Plugin, String> reportPluginUpdates(
@@ -92,18 +116,19 @@ public class PluginUpdater extends MojoBase {
         return newVersionAvailable;
     }
 
-    static void createPomFile(final Path pomFile, final List<Plugin> mojoList) {
+    static void createPomFile(final Path pomFile, final List<Plugin> mojoList, final PluginSession session) {
+        final PluginUpdater updater = PluginUpdater.build(session);
         final Element project = new Element("project");
         project.addContent(new Element("modelVersion").addContent("4.0.0"));
-        project.addContent(new Element("groupId").addContent("berlin.yuna"));
-        project.addContent(new Element("artifactId").addContent("plugin-updater"));
-        project.addContent(new Element("version").addContent("0.0.1"));
+        project.addContent(new Element("groupId").addContent(updater.groupId()));
+        project.addContent(new Element("artifactId").addContent(updater.artifactId()));
+        project.addContent(new Element("version").addContent(updater.version()));
         project.addContent(new Element("packaging").addContent("pom"));
-        project.addContent(preparePlugins(mojoList));
+        project.addContent(preparePlugins(mojoList, session.getLog()));
         overwriteTestPom(project, pomFile);
     }
 
-    private static Element preparePlugins(final List<Plugin> mojoList) {
+    private static Element preparePlugins(final List<Plugin> mojoList, final Logger log) {
         final Element plugins = new Element("dependencies");
         mojoList.forEach(mojoBase -> {
             final Element plugin = new Element("dependency");
@@ -111,6 +136,7 @@ public class PluginUpdater extends MojoBase {
             plugin.addContent(new Element("artifactId").addContent(mojoBase.getArtifactId()));
             plugin.addContent(new Element("version").addContent(mojoBase.getVersion()));
             plugins.addContent(plugin);
+            log.debug("Prepare plugin [%s]", mojoBase.getArtifactId());
         });
         return plugins;
     }

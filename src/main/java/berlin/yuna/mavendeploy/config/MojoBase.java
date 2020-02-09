@@ -1,13 +1,13 @@
 package berlin.yuna.mavendeploy.config;
 
 import berlin.yuna.mavendeploy.model.Logger;
-import berlin.yuna.mavendeploy.plugin.MojoExecutor;
+import berlin.yuna.mavendeploy.plugin.PluginExecutor;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.model.Plugin;
 
 import java.util.Objects;
 
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.plugin;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.plugin;
 
 public abstract class MojoBase {
 
@@ -52,9 +52,9 @@ public abstract class MojoBase {
 
     Plugin getPlugin() {
         return plugin(
-                MojoExecutor.groupId(groupId),
-                MojoExecutor.artifactId(artifactId),
-                MojoExecutor.version(version)
+                PluginExecutor.groupId(groupId),
+                PluginExecutor.artifactId(artifactId),
+                PluginExecutor.version(version)
         );
     }
 

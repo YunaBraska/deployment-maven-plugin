@@ -3,7 +3,9 @@ package berlin.yuna.mavendeploy;
 import berlin.yuna.mavendeploy.config.Clean;
 import berlin.yuna.mavendeploy.config.Compiler;
 import berlin.yuna.mavendeploy.config.Dependency;
+import berlin.yuna.mavendeploy.config.Deploy;
 import berlin.yuna.mavendeploy.config.Gpg;
+import berlin.yuna.mavendeploy.config.Jar;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.PluginUpdater;
@@ -22,8 +24,11 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
 
+import static berlin.yuna.mavendeploy.helper.PluginUnitBase.ENV_DEBUG;
+import static berlin.yuna.mavendeploy.helper.PluginUnitBase.getServerVariants;
+import static berlin.yuna.mavendeploy.model.Parameter.NEW_VERSION;
+import static berlin.yuna.mavendeploy.model.Parameter.PROJECT_LIBRARY;
 import static berlin.yuna.mavendeploy.model.Prop.prop;
-import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.toList;
 import static org.hamcrest.CoreMatchers.containsString;
@@ -33,8 +38,7 @@ import static org.hamcrest.MatcherAssert.assertThat;
 import static org.hamcrest.collection.IsCollectionWithSize.hasSize;
 import static org.hamcrest.core.IsNot.not;
 
-//FIXME: how to do a GPG test? ¯\_(ツ)_/¯
-public class MainMojoComponentTest extends CustomMavenTestFramework {
+public class PluginComponentTest extends CustomMavenTestFramework {
 
     @Test
     public void mojoClear_WithTrigger_shouldExecute() {
@@ -109,40 +113,41 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
     @Test
     public void settingsSession_withServerFormatOne_shouldAddServerToSession() {
-        terminal.execute(mvnCmd("-Dsettings.xml=\"--ServerId=Server1 --Username=User1 --Password=Pass1 --ServerId=Server2 --Username=User2\""));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [Server1] user [User1] pass [*****]"));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [Server2] user [User2] pass [null]"));
+        terminal.execute(mvnCmd("-Ddeploy -Dsettings.xml=\"--ServerId=Server1 --Username=User1 --Password=Pass1 --ServerId=Server2 --Username=User2\""));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [Server1] user [User1] pass [*****]"));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [Server2] user [User2] pass [null]"));
     }
 
     @Test
     public void settingsSession_withServerFormatTwo_shouldAddServerToSession() {
         terminal.execute(mvnCmd(
-                " -Dserver='servername1::username1::null::privateKey1::passphrase1' "
+                "-Ddeploy"
+                        + " -Dserver='servername1::username1::null::privateKey1::passphrase1' "
                         + " -DSeRvEr0='servername2::username2::password2::::passphrase2' "
                         + " -Dserver1='servername3::username3::::' "
         ));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername1] user [username1] pass [null]"));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername2] user [username2] pass [*********]"));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername3] user [username3] pass [null]"));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [servername1] user [username1] pass [null]"));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [servername2] user [username2] pass [*********]"));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [servername3] user [username3] pass [null]"));
     }
 
     @Test
     public void settingsSession_withServerFormatThree_shouldAddServerToSession() {
-        terminal.execute(mvnCmd(
-                " -Dserver.Id='servername1' -Dserver.username='username1' -Dserver.password='null' "
-                        + " -Dserver0.iD='servername2' -Dserver0-username='username2' -Dserver0.password='password1' "
-                        + " -Dserver1.ID='servername3' -Dserver1_username='username3' -Dserver1.password='' "
+        terminal.execute(mvnCmd(" -Ddeploy"
+                + " -Dserver.Id='servername1' -Dserver.username='username1' -Dserver.password='null' "
+                + " -Dserver0.iD='servername2' -Dserver0-username='username2' -Dserver0.password='password1' "
+                + " -Dserver1.ID='servername3' -Dserver1_username='username3' -Dserver1.password='' "
         ));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername1] user [username1] pass [null]"));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername2] user [username2] pass [*********]"));
-        assertThat(terminal.consoleInfo(), containsString("+ [Settings] added [Server] id [servername3] user [username3] pass [null]"));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [servername1] user [username1] pass [null]"));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [servername2] user [username2] pass [*********]"));
+        assertThat(terminal.consoleInfo(), containsString("[Settings] added [Server] id [servername3] user [username3] pass [null]"));
     }
 
     @Test
     public void setParameter_manually_shouldNotBeOverwritten() {
         terminal.execute(mvnCmd("-Dproject.version=definedVersion -DnewVersion=manualSetVersion"));
 
-        expectPropertiesOverwrite(prop("newVersion", "manualSetVersion"));
+        assertThat(terminal.consoleInfo(), containsString("(f) newVersion = manualSetVersion"));
         assertThat(getCurrentProjectVersion(), is(equalTo("manualSetVersion")));
     }
 
@@ -150,7 +155,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     public void setParameter_auto_shouldBeOverwritten() {
         terminal.execute(mvnCmd("-Dproject.version=definedVersion"));
 
-        expectProperties(prop("newVersion", "definedVersion"));
+        expectProperties(prop(NEW_VERSION.maven(), "definedVersion"));
         assertThat(getCurrentProjectVersion(), is(equalTo("definedVersion")));
     }
 
@@ -159,7 +164,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         final String prevPomVersion = getCurrentProjectVersion();
         terminal.execute(mvnCmd("-Dproject.version=definedVersion"));
 
-        expectProperties(prop("newVersion", "definedVersion"));
+        expectProperties(prop(NEW_VERSION.maven(), "definedVersion"));
         final String newPomVersion = getCurrentProjectVersion();
 
         expectMojoRun(g(Versions.class, "set"));
@@ -176,7 +181,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
         terminal.execute(mvnCmd("-Dproject.version=1.0.0-fallBackVersion -Dsemantic.format='[.]::none::none::none'"));
         assertThat(getCurrentProjectVersion(), is(equalTo("1.0.0-fallBackVersion")));
-        expectProperties(prop("newVersion", "1.0.0-fallBackVersion"));
+        expectProperties(prop(NEW_VERSION.maven(), "1.0.0-fallBackVersion"));
     }
 
     @Test
@@ -202,7 +207,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
         expectMojoRun(g(Versions.class, "set"));
         assertThat(getCurrentProjectVersion(), is(equalTo("2.0.0")));
-        expectProperties(prop("newVersion", "2.0.0"));
+        expectProperties(prop(NEW_VERSION.maven(), "2.0.0"));
     }
 
     @Test
@@ -217,7 +222,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
         expectMojoRun(g(Versions.class, "set"));
         assertThat(getCurrentProjectVersion(), is(equalTo("1.3.0")));
-        expectProperties(prop("newVersion", "1.3.0"));
+        expectProperties(prop(NEW_VERSION.maven(), "1.3.0"));
     }
 
     @Test
@@ -232,7 +237,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
         expectMojoRun(g(Versions.class, "set"));
         assertThat(getCurrentProjectVersion(), is(equalTo("1.2.4")));
-        expectProperties(prop("newVersion", "1.2.4"));
+        expectProperties(prop(NEW_VERSION.maven(), "1.2.4"));
     }
 
     @Test
@@ -259,6 +264,18 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     }
 
     @Test
+    public void createJavaDocBreak_shouldBeSuccessful() {
+        terminal.execute(mvnCmd("-Djava.doc.break"));
+
+        final File indexHtml = new File(TEST_DIR.toFile(), "target/apidocs/index.html");
+        final File javaDoc = new File(TEST_DIR.toFile(), "target/" + TEST_POM.getArtifactId() + "-" + TEST_POM.getVersion() + "-javadoc.jar");
+        assertThat(format("Cant find [%s]", indexHtml), indexHtml.exists(), is(true));
+        assertThat(format("Cant find [%s]", javaDoc), javaDoc.exists(), is(true));
+
+        expectMojoRun(g(Javadoc.class, "jar"));
+    }
+
+    @Test
     public void createJavaSource_shouldBeSuccessful() {
         terminal.execute(mvnCmd("-Djava.source"));
 
@@ -271,11 +288,11 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     public void detectLibrary_shouldBeSuccessful() {
         setPackaging("pom");
         terminal.execute(mvnCmd(""));
-        expectProperties(prop("project.library", "true"));
+        expectProperties(prop(PROJECT_LIBRARY.key(), "true"));
 
         setPackaging("jar");
         terminal.execute(mvnCmd(""));
-        expectProperties(prop("project.library", "false"));
+        expectProperties(prop(PROJECT_LIBRARY.key(), "false"));
     }
 
     @Test
@@ -356,36 +373,48 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         final String oldPomVersion = getCurrentProjectVersion();
         terminal.execute(mvnCmd("-Ddeploy.snapshot"));
 
-        expectProperties(prop("newVersion", oldPomVersion + "-SNAPSHOT"));
-        expectProperties(prop("newVersion", oldPomVersion));
+        expectProperties(prop(NEW_VERSION.maven(), oldPomVersion + "-SNAPSHOT"));
+        expectProperties(prop(NEW_VERSION.maven(), oldPomVersion));
         assertThat(getCurrentProjectVersion(), is(equalTo(oldPomVersion)));
-        expectMojoRun(g(Versions.class, "set"));
+        expectMojoRun(true, g(Versions.class, "set"), g(Jar.class, "jar"), g(Deploy.class, "deploy"));
     }
 
     @Test
     public void deploy_withEmptyDeployUrl_shouldNotStartDeployment() {
-        terminal.execute(mvnCmd("-Dclean -Ddeploy -Ddeploy.url=''"));
+        terminal.execute(mvnCmd("--settings=" + new SettingsXmlBuilder().create() + " -Dclean -Ddeploy -Ddeploy" +
+                ".url=''"));
 
-        assertThat(terminal.consoleInfo(), not(containsString("Config added key [altDeploymentRepository]")));
-        expectMojoRun(g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"));
+        assertThat(terminal.consoleInfo(), containsString("[altDeploymentRepository] value [default::default::http://deploy.url-not.found]"));
+        expectMojoRun(true, g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"), g(Jar.class, "jar"), g(Deploy.class, "deploy"));
     }
 
     @Test
     public void deploy_withEmptySettings_shouldNotStartDeployment() {
         terminal.execute(mvnCmd("-Dclean -Ddeploy -Ddeploy.url='https://aa.bb' --settings=" + new SettingsXmlBuilder().create()));
         assertThat(terminal.consoleInfo(), containsString("[deploy.id] not set"));
-        assertThat(terminal.consoleInfo(), containsString("Cant find any credentials for deploy.id [null] deploy.url [https://aa.bb]"));
+        assertThat(terminal.consoleInfo(), containsString("Cant find [deploy.id] by [deploy.url] [https://aa.bb]"));
 
-        expectMojoRun(g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"));
+        expectMojoRun(true, g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"), g(Jar.class, "jar"), g(Deploy.class, "deploy"));
     }
 
     @Test
     public void deploy_withDeployIdAndDeployUrlButEmptySettings_shouldNotStartDeployment() {
-        terminal.execute(mvnCmd("-Dclean -Ddeploy -Ddeploy.id='invalid' -Ddeploy.url='https://nexus.com' --settings=" + new SettingsXmlBuilder().create()));
+        terminal.execute(mvnCmd("-Dclean -Ddeploy -Ddeploy.id='invalid' -Ddeploy.url='https://artifact.invalid' --settings=" + new SettingsXmlBuilder().create()));
 
-        assertThat(terminal.consoleInfo(), containsString("DeployUrl [https://nexus.com]"));
-        assertThat(terminal.consoleInfo(), containsString("Cant find any credentials for deploy.id [invalid] deploy.url [https://nexus.com]"));
-        expectMojoRun(g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"));
+        assertThat(terminal.consoleInfo(), containsString("Config added key [altDeploymentRepository] value [invalid::default::https://nexus.invalid]"));
+        assertThat(terminal.consoleInfo(), containsString("Start org.apache.maven.plugins:maven-deploy-plugin:deploy"));
+        assertThat(terminal.consoleInfo(), containsString("UnknownHostException"));
+        expectMojoRun(true, g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"), g(Jar.class, "jar"));
+    }
+
+    @Test
+    public void deploy_withDeployIdAndNexusDeployUrlButEmptySettings_shouldNotStartDeployment() {
+        terminal.execute(mvnCmd("-Dclean -Ddeploy -Ddeploy.id='invalid' -Ddeploy.url='https://nexus.invalid' --settings=" + new SettingsXmlBuilder().create()));
+
+        assertThat(terminal.consoleInfo(), containsString("Config added key [altDeploymentRepository] value [invalid::default::https://nexus.invalid]"));
+        assertThat(terminal.consoleInfo(), containsString("Start org.sonatype.plugins:nexus-staging-maven-plugin"));
+        assertThat(terminal.consoleInfo(), containsString("Server credentials with ID"));
+        expectMojoRun(true, g(Clean.class, "clean"), g(Dependency.class, "resolve-plugins"), g(Jar.class, "jar"));
     }
 
     @Test
@@ -395,7 +424,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
 
         terminal.execute(mvnCmd("-Ddeploy -Ddeploy.id='validId' -Ddeploy.url='https://nexus.com' --settings=" + sxb.create()));
 
-        assertThat(terminal.consoleInfo(), containsString("DeployId [validId] deployUrl [https://nexus.com]"));
+        assertThat(terminal.consoleInfo(), containsString("Config added key [altDeploymentRepository] value [validId::default::https://nexus.com]"));
     }
 
     @Test
@@ -409,9 +438,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         for (String server : getServerVariants()) {
             terminal.execute(mvnCmd("-Ddeploy -Ddeploy.url='https://aa-" + server + "-bb.com' --settings=" + settingsXml));
 
-            assertThat(terminal.consoleInfo(), containsString("[deploy.id] not set"));
-            assertThat(terminal.consoleInfo(), containsString("Fallback to deployId [" + server + "]"));
-            assertThat(terminal.consoleInfo(), containsString(" The packaging for this project did not assign a file to the build artifact"));
+            assertThat(terminal.consoleInfo(), containsString("Config added key [altDeploymentRepository] value [" + server + "::default::https://aa-" + server + "-bb.com]"));
             terminal.clearConsole();
         }
     }
@@ -426,11 +453,9 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
             sxb.addServer("gg", "hh", "ii");
             sxb.addServer("jj", "kk", "ll");
 
-            terminal.execute(mvnCmd("-Ddeploy -Ddeploy.url='https://aa.bb' --settings=" + sxb.create()));
+            terminal.execute(mvnCmd("--settings=" + sxb.create()) + " -Ddeploy -Ddeploy.url='https://aa.bb'");
 
-            assertThat(terminal.consoleInfo(), containsString("[deploy.id] not set"));
-            assertThat(terminal.consoleInfo(), containsString("Fallback to deployId [" + server + "]"));
-            assertThat(terminal.consoleInfo(), containsString(" The packaging for this project did not assign a file to the build artifact"));
+            assertThat(terminal.consoleInfo(), containsString("Config added key [altDeploymentRepository] value [" + server + "::default::https://aa.bb]"));
             terminal.clearConsole();
         }
     }
@@ -441,24 +466,25 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
             setupGpgTestKey(terminal, log);
             this.terminal.execute(mvnCmd("-Djava.doc -Djava.source -Dgpg.pass=mySecret"));
         } catch (Exception e) {
-            log.error("%s GPG test failed cause [%s]", unicode(0x1F940), e);
+            log.error("GPG test failed cause [%s]", e);
         } finally {
             teardownGpgTestKey(terminal, log);
         }
 
         //FIXME: Travis has different GPG version, this test wont work
-        if (DEBUG) {
+        //FIXME: how set GPG key as default? ¯\_(ツ)_/¯
+        if (ENV_DEBUG) {
             final File target = new File(TEST_DIR.toFile(), "target");
             assertThat(target.exists(), is(true));
             final List<Path> ascFiles = Files.walk(target.toPath()).filter(f -> f.getFileName().toString().endsWith(".asc")).collect(toList());
-            assertThat(ascFiles, hasSize(3));
-            expectMojoRun(g(Javadoc.class, "jar"), g(JavaSource.class, "jar-no-fork"), g(Gpg.class, "sign"));
+            assertThat(ascFiles, hasSize(4));
+            expectMojoRun(g(Javadoc.class, "jar"), g(JavaSource.class, "jar-no-fork"), g(Jar.class, "jar"), g(Gpg.class, "sign"));
         }
     }
 
     @Test
     public void writeAllProperties_withBoolean_ShouldBeSuccessful() throws IOException {
-        terminal.execute(mvnCmd("-Dproperties.print -Dsomepassword=berlin -Dsomesecret=iAmAHero"));
+        terminal.execute(mvnCmd("-Dproperties.print -Dsomepassword=b3rl1n -Dsomesecret=iAmAHero"));
 
         final File allProps = new File(TEST_DIR.toFile(), "target/all.properties");
         expectPropertyFile(allProps);
@@ -467,7 +493,7 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
     @Test
     public void writeAllProperties_withFileString_ShouldBeSuccessful() throws IOException {
         final File allProps = new File(TEST_DIR.toFile(), "myFolder/my.properties");
-        terminal.execute(mvnCmd("-Dproperties.print=" + allProps + " -Dsomepassword=berlin -Dsomesecret=iAmAHero"));
+        terminal.execute(mvnCmd("-Dproperties.print=" + allProps + " -Dsomepassword=b3rl1n -Dsomesecret=iAmAHero"));
 
         expectPropertyFile(allProps);
     }
@@ -479,15 +505,5 @@ public class MainMojoComponentTest extends CustomMavenTestFramework {
         assertThat(content, containsString("somesecret = ********"));
         assertThat(content, not(containsString("iAmAHero")));
         expectMojoRun(g(PropertyWriter.class, "write"));
-    }
-
-    private String[] getServerVariants() {
-        return new String[]{
-                "my-nexus",
-                "artifactsGoesHere",
-                "archivaIsNow",
-                "some-repository",
-                "whatASnapshot"
-        };
     }
 }

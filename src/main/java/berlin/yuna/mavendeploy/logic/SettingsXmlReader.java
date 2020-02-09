@@ -1,23 +1,15 @@
 package berlin.yuna.mavendeploy.logic;
 
-import berlin.yuna.clu.logic.SystemUtil;
-import berlin.yuna.clu.logic.Terminal;
-import berlin.yuna.mavendeploy.model.Logger;
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import berlin.yuna.mavendeploy.util.MojoUtil;
-import org.apache.maven.execution.MavenSession;
-import org.apache.maven.settings.Activation;
 import org.apache.maven.settings.IdentifiableBase;
-import org.apache.maven.settings.Profile;
 import org.apache.maven.settings.Server;
 
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.Properties;
 
-import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
 import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
 import static java.util.Arrays.stream;
@@ -27,19 +19,14 @@ import static java.util.stream.Collectors.toList;
 public class SettingsXmlReader {
 
     private final PluginSession session;
-    private final Logger log;
-    private final MavenSession maven;
 
 
     private SettingsXmlReader(final PluginSession session) {
         this.session = session;
-        this.log = session.getLog();
-        this.maven = session.getMavenSession();
     }
 
     private List<Server> read() {
         final HashMap<String, Server> result = new HashMap<>();
-        addGpgToSettings();
         parseFormatOne().forEach(server -> result.put(server.getId(), server));
         parseFormatTwo().forEach(server -> result.put(server.getId(), server));
         parseFormatThree().forEach(server -> result.put(server.getId(), server));
@@ -48,38 +35,6 @@ public class SettingsXmlReader {
 
     public static List<Server> read(final PluginSession session) {
         return new SettingsXmlReader(session).read();
-    }
-
-    public static String getGpgPath(final Logger log) {
-        final String result;
-        //TODO: implement copy terminal
-        final Terminal t = new Terminal().consumerError(log::error).timeoutMs(5000).breakOnError(false);
-        if (SystemUtil.isWindows()) {
-            //FIXME: test on windows if installed, gpg || gpg2, same as with unix
-            result = t.execute("where gpg").consoleInfo();
-        } else {
-            result = t.execute("if which gpg2 >/dev/null 2>&1; then which gpg2; "
-                    + "elif which gpg >/dev/null 2>&1; then which gpg; else echo \"gpg\"; fi"
-            ).consoleInfo();
-            return result;
-        }
-        return isPresent(result) ? result : "gpg";
-    }
-
-    private void addGpgToSettings() {
-        session.getParamPresent("gpg.pass", "gpg.passphrase").ifPresent(gpgPassphrase -> {
-            log.info("%s Creating GPG profile", unicode(0x1F4D1));
-            final Profile profile = new Profile();
-            final Activation activation = new Activation();
-            final Properties properties = new Properties();
-            activation.setActiveByDefault(true);
-            profile.setId("gpg");
-            profile.setActivation(activation);
-            properties.setProperty("gpg.executable", session.getParamFallback("gpg.executable", "gpg"));
-            properties.setProperty("gpg.passphrase", gpgPassphrase);
-            profile.setProperties(properties);
-            maven.getSettings().getProfiles().add(profile);
-        });
     }
 
     private List<Server> parseFormatOne() {

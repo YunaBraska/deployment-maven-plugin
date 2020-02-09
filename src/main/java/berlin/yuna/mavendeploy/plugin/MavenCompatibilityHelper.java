@@ -68,7 +68,7 @@ class MavenCompatibilityHelper {
         }
     }
 
-    public static PluginDescriptor loadPluginDescriptor(final Plugin plugin, final MojoExecutor.ExecutionEnvironment env, final MavenSession session)
+    public static PluginDescriptor loadPluginDescriptor(final Plugin plugin, final PluginExecutor.ExecutionEnvironment env, final MavenSession session)
             throws PluginResolutionException, PluginDescriptorParsingException, InvalidPluginDescriptorException,
             PluginNotFoundException, MojoExecutionException {
 

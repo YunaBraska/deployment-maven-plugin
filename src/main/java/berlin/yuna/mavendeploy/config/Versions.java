@@ -2,11 +2,15 @@ package berlin.yuna.mavendeploy.config;
 
 import berlin.yuna.mavendeploy.plugin.PluginSession;
 import org.apache.maven.plugin.MojoExecutionException;
+import org.apache.maven.project.MavenProject;
 
+import static berlin.yuna.mavendeploy.model.Parameter.NEW_VERSION;
+import static berlin.yuna.mavendeploy.model.Parameter.POM_BACKUP;
 import static berlin.yuna.mavendeploy.model.Prop.prop;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.configuration;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.executeMojo;
-import static berlin.yuna.mavendeploy.plugin.MojoExecutor.goal;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.configuration;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.executeMojo;
+import static berlin.yuna.mavendeploy.plugin.PluginExecutor.goal;
+import static berlin.yuna.mavendeploy.util.MojoUtil.isPresent;
 
 public class Versions extends MojoBase {
 
@@ -26,7 +30,7 @@ public class Versions extends MojoBase {
                 goal(goal),
                 session.prepareXpp3Dom(
                         prop("allowSnapshots"),
-                        prop("generateBackupPoms")
+                        prop(POM_BACKUP.maven())
 //                        prop( "parentVersion"),
 //                        prop( "maven.version.rules"),
                 ), session.getEnvironment()
@@ -49,7 +53,7 @@ public class Versions extends MojoBase {
                         prop("allowSnapshots"),
                         prop("autoLinkItems"),
                         prop("excludeReactor"),
-                        prop("generateBackupPoms"),
+                        prop(POM_BACKUP.maven()),
                         prop("processDependencies"),
                         prop("processDependencyManagement"),
                         prop("processParent")
@@ -68,7 +72,7 @@ public class Versions extends MojoBase {
                 goal(goal),
                 session.prepareXpp3Dom(
                         prop("allowSnapshots"),
-                        prop("generateBackupPoms")
+                        prop(POM_BACKUP.maven())
 //                        prop( "maven.version.rules"),
                 ), session.getEnvironment()
         );
@@ -88,7 +92,7 @@ public class Versions extends MojoBase {
                         prop("allowMinorUpdates"),
                         prop("allowSnapshots"),
                         prop("excludeReactor"),
-                        prop("generateBackupPoms"),
+                        prop(POM_BACKUP.maven()),
                         prop("processDependencyManagement"),
                         prop("processParent")
 //                        prop( "maven.version.rules"),
@@ -110,7 +114,7 @@ public class Versions extends MojoBase {
                         prop("allowMinorUpdates"),
                         prop("allowSnapshots"),
                         prop("excludeReactor"),
-                        prop("generateBackupPoms"),
+                        prop(POM_BACKUP.maven()),
                         prop("processDependencies"),
                         prop("processDependencyManagement"),
                         prop("processParent")
@@ -133,7 +137,7 @@ public class Versions extends MojoBase {
                         prop("allowMinorUpdates"),
                         prop("allowSnapshots"),
                         prop("excludeReactor"),
-                        prop("generateBackupPoms"),
+                        prop(POM_BACKUP.maven()),
                         prop("processDependencies"),
                         prop("processDependencyManagement"),
                         prop("processParent")
@@ -153,7 +157,7 @@ public class Versions extends MojoBase {
                 session.prepareXpp3Dom(
                         prop("allowSnapshots"),
                         prop("artifactId"),
-                        prop("generateBackupPoms"),
+                        prop(POM_BACKUP.maven()),
                         prop("groupId"),
                         prop("nextSnapshot"),
                         prop("oldVersion"),
@@ -166,6 +170,7 @@ public class Versions extends MojoBase {
 //                        prop( "maven.version.rules"),
                 ), session.getEnvironment()
         );
+        session.getParamPresent(NEW_VERSION.maven()).ifPresent(this::modifySessionVersion);
         logGoal(goal, false);
         return this;
     }
@@ -181,5 +186,24 @@ public class Versions extends MojoBase {
         );
         logGoal(goal, false);
         return this;
+    }
+
+    private void modifySessionVersion(final String newVersion) {
+        final MavenProject project = session.getProject();
+        final String oldVersion = project.getVersion();
+        final String finalName = session.getParamPresent("project.build.finalName")
+                .orElse(session.getParamPresent("finalName")
+                        .orElse((project.getBuild() != null && isPresent(project.getBuild().getFinalName())) ?
+                                project.getBuild().getFinalName() : project.getArtifactId() + "-" + oldVersion
+                        )).replace(oldVersion, newVersion);
+        session.setParameter("finalName", finalName, true);
+        session.setParameter("project.build.finalName", finalName, true);
+        project.getAttachedArtifacts().forEach(a -> a.setVersion(a.getVersion().replace(oldVersion, newVersion)));
+        project.getAttachedArtifacts().forEach(a -> log.debug("Attached artifact [%s] [%s]", a.getArtifactId(), a.getVersion()));
+        session.setParameter("oldVersion", oldVersion, true);
+        project.setVersion(newVersion);
+        if (project.getBuild() != null) {
+            project.getBuild().setFinalName(finalName);
+        }
     }
 }

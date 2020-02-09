@@ -10,7 +10,7 @@
 
 ### Index
 * [Motivation](#motivation)
-* [Usage](#builder_usage_plugin)
+* [Usage](#usage-as-plugin)
 * [Building](#building)
 * [Semantic and Versioning](#semantic-and-versioning)
 * [Tagging and Committing](#tagging-and-committing)
@@ -25,7 +25,7 @@
 !{project.description}
 
 ### !{builder_usage_plugin}
-*version = \<version>java.major.minor/fixes\</version>*
+*version = \<version>java.major/release.minor/features/fixes\</version>*
 ````xml
 <plugin>
     <groupId>!{project.groupId}</groupId>
@@ -62,9 +62,10 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 #### UNDER CONSTRUCTION (NOT STABLE)
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
-| clean               | Boolean | false              | cleans target and resolves dependencies                                    |
+| clean               | Boolean | false              | Cleans target and resolves dependencies                                    |
 | clean.cache         | Boolean | false              | Purges local maven repository cache                                        |
 | java.doc            | Boolean | false              | Creates java doc (javadoc.jar) if its not a pom artifact                   |
+| java.doc.break      | Boolean | false              | Same as "java.doc" but breaks on error                                     |
 | java.source         | Boolean | false              | Creates java sources (sources.jar) if its not a pom artifact               |
 | gpg.pass            | String  | ''                 | Signs artifacts (.asc) with GPG 2.1                                        |
 
@@ -73,11 +74,12 @@ mvn deployment:run -Djava.doc=true -Djava.source -Dupdate.minor
 | Parameter           | Type    | Default            |  Description                                                               |
 |:--------------------|:--------|:-------------------|:---------------------------------------------------------------------------|
 | REPORT              | Boolean | false              | Generates report about version updates                                     |
-| test.skip           | Boolean | false              | same as "maven.test.skip"                                                  |
-| project.encoding    | Boolean | false              | sets default encoding to every encoding parameter definition               |
-| java.version        | Boolean | false              | sets default java version to every java version parameter definition       |
-| properties.print    | Boolean/String | ''          | writes all properties to (given fileValue or "all.properties") file        |
-| changes.push        | String  | ''                 | push changes to specific branch                                            |
+| test.skip           | Boolean | false              | Same as "maven.test.skip"                                                  |
+| project.encoding    | Boolean | false              | Sets default encoding to every encoding parameter definition               |
+| java.version        | Boolean | false              | Sets default java version to every java version parameter definition       |
+| properties.print    | Boolean/String | ''          | Writes all properties to (given fileValue or "all.properties") file        |
+| package             | Boolean | false              | Build jar file (automatically is true if deployment is requested)          |
+| changes.push        | String  | ''                 | Push changes to specific branch                                            |
 
 ### Requirements
 * \[JAVA\] for maven 

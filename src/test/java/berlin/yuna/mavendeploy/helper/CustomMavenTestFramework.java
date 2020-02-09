@@ -6,6 +6,7 @@ import berlin.yuna.mavendeploy.config.Compiler;
 import berlin.yuna.mavendeploy.config.Dependency;
 import berlin.yuna.mavendeploy.config.Deploy;
 import berlin.yuna.mavendeploy.config.Gpg;
+import berlin.yuna.mavendeploy.config.Jar;
 import berlin.yuna.mavendeploy.config.JavaSource;
 import berlin.yuna.mavendeploy.config.Javadoc;
 import berlin.yuna.mavendeploy.config.MojoBase;
@@ -41,14 +42,14 @@ import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.List;
 import java.util.Set;
 
-import static berlin.yuna.mavendeploy.logic.SettingsXmlReader.getGpgPath;
+import static berlin.yuna.mavendeploy.config.Gpg.getGpgPath;
+import static berlin.yuna.mavendeploy.helper.PluginUnitBase.ENV_DEBUG;
+import static berlin.yuna.mavendeploy.helper.PluginUnitBase.createTestSession;
 import static berlin.yuna.mavendeploy.plugin.PluginSession.unicode;
-import static berlin.yuna.mavendeploy.util.MojoUtil.isEmpty;
-import static java.lang.Boolean.parseBoolean;
+import static berlin.yuna.mavendeploy.util.MojoUtil.deletePath;
 import static java.lang.String.format;
 import static java.nio.file.Files.readAllBytes;
 import static java.nio.file.StandardCopyOption.REPLACE_EXISTING;
@@ -74,11 +75,9 @@ public class CustomMavenTestFramework {
     public static final String GPG_KEY_FILE = TMP_DIR + "/gpg.keyfile";
     public static final String GPG_SEC = TMP_DIR + "/gpg.sec";
     public static final String GPG_PUB = TMP_DIR + "/gpg.pub";
-    private static final String DEBUG_ENV = System.getenv("DEBUG");
-    public static final boolean DEBUG = isEmpty(DEBUG_ENV) || parseBoolean(DEBUG_ENV);
 
-    protected static GitService gitService;
-    protected static Logger log = new Logger(null, "HH:mm:ss").enableDebug(DEBUG);
+    protected GitService gitService;
+    protected Logger log;
 
     private final List<ActiveGoal> definedMojoList = asList(
             g(Clean.class, "clean"),
@@ -104,23 +103,26 @@ public class CustomMavenTestFramework {
             g(Resources.class, "testResources"),
             g(Compiler.class, "compile"),
             g(Compiler.class, "testCompile"),
+            g(Jar.class, "jar"),
             g(Deploy.class, "deploy")
     );
 
     @BeforeClass
     public static void setUpClass() {
-        log.debug("Start preparing [%s]", name);
-        getTerminal().execute("mvn -Dmaven.test.skip=true install --quiet");
-        log.debug("End preparing [%s]", name);
+        final PluginSession testSession = createTestSession();
+        testSession.getLog().debug("Start preparing [%s]", name);
+        getTerminal(testSession.getLog()).execute("mvn -Dmaven.test.skip=true install --quiet");
+        testSession.getLog().debug("End preparing [%s]", name);
     }
 
     @Before
     public void setUp() throws IOException, URISyntaxException, GitAPIException {
+        log = createTestSession().getLog();
         TEST_DIR = prepareTestProject();
         PROJECT_POM = getPomFile(new File(System.getProperty("user.dir"), "pom.xml"));
         TEST_POM = getPomFile(new File(TEST_DIR.toFile(), "pom.xml"));
-        terminal = getTerminal().dir(TEST_DIR);
-        terminalNoLog = getTerminalNoLog().dir(TEST_DIR);
+        terminal = getTerminal(log).dir(TEST_DIR);
+        terminalNoLog = getTerminalNoLog(log).dir(TEST_DIR);
         gitService = new GitService(log, TEST_DIR.toFile(), true);
         assertThat(
                 format("Terminal does not point to test project [%s]", terminal.dir()),
@@ -131,7 +133,7 @@ public class CustomMavenTestFramework {
     }
 
     @After
-    public void tearDown() throws IOException {
+    public void tearDown() {
         deleteDir(TEST_DIR);
     }
 
@@ -188,34 +190,45 @@ public class CustomMavenTestFramework {
         }
     }
 
-    private static Terminal getTerminal() {
-        return DEBUG ? getTerminalNoLog().consumerInfo(log::info) : getTerminalNoLog();
+    private static Terminal getTerminal(final Logger log) {
+        return ENV_DEBUG ? getTerminalNoLog(log).consumerInfo(log::info) : getTerminalNoLog(log);
     }
 
-    private static Terminal getTerminalNoLog() {
-        return new Terminal().dir(System.getProperty("user.dir")).consumerError(log::error);
+    private static Terminal getTerminalNoLog(final Logger log) {
+        return new Terminal().waitFor(512).dir(System.getProperty("user.dir")).consumerError(log::error);
     }
 
     protected void expectMojoRun(final ActiveGoal... expectedMojos) {
-        final String console = terminal.consoleInfo();
+        expectMojoRun(false, expectedMojos);
+    }
+
+    protected void expectMojoRun(final boolean brokenMojo, final ActiveGoal... expectedMojos) {
+        final String console = getConsoleOutput();
+
         assertThat(console, containsString("Building example-maven-test-project"));
         assertThat(console, not(containsString("Unable to invoke plugin")));
         final List<ActiveGoal> expectedMojoList = expectedMojos == null ? new ArrayList<>() : asList(expectedMojos);
         for (ActiveGoal definedMojo : definedMojoList) {
             if (expectedMojoList.contains(definedMojo)) {
-                log.debug("[INFO] Plugin expected: " + definedMojo.toString());
+                log.debug("Plugin expected: " + definedMojo.toString());
                 assertThat(format("Mojo did not start [%s]", definedMojo), console, containsString("-<=[ Start " + definedMojo.toString()));
-                assertThat(format("Mojo did not run [%s]", definedMojo), console, containsString("-<=[ End " + definedMojo.toString()));
+                if (!brokenMojo) {
+                    assertThat(format("Mojo did not run [%s]", definedMojo), console, containsString("-<=[ End " + definedMojo.toString()));
+                }
             } else {
                 assertThat(format("Mojo unexpectedly started [%s]", definedMojo), console, is(not(containsString("-<=[ Start " + definedMojo.toString()))));
             }
         }
     }
 
+    protected String getConsoleOutput() {
+        return terminal.consoleInfo() + terminal.consoleError();
+    }
+
     protected void expectProperties(final Prop... configs) {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
-            log.debug("[INFO] Config expected key [%s] value [%s] ", config.key, config.value);
+            log.info("Config expected key [%s] value [%s] ", config.key, config.value);
             assertThat(format("Config [%s] is dropped", config.key), consoleInfo, not(containsString(format("Config key [%s] already set", config.key))));
             assertThat(format("Config [%s] is not set", config.key), consoleInfo, containsString(format("Config added key [%s]", config.key)));
             assertThat(format("Config [%s] has wrong value", config.key), consoleInfo, containsString(format("Config added key [%s] value [%s]", config.key, config.value)));
@@ -225,7 +238,7 @@ public class CustomMavenTestFramework {
     protected void expectPropertiesOverwrite(final Prop... configs) {
         final String consoleInfo = terminal.consoleInfo();
         for (Prop config : configs) {
-            log.debug("[INFO] Config not expected: " + config.key);
+            log.info("Config not expected: " + config.key);
             assertThat(format("Config [%s] is set but not overwritten", config.key), consoleInfo, not(containsString(format("Config added key [%s]", config.key))));
             assertThat(format("Config [%s] was not set at all", config.key), consoleInfo, containsString(format("Config key [%s] already set with [%s]", config.key, config.value)));
         }
@@ -243,8 +256,8 @@ public class CustomMavenTestFramework {
 
     private Path prepareTestProject() throws IOException, URISyntaxException, GitAPIException {
         final Path src = Paths.get(requireNonNull(getClass().getClassLoader().getResource("testApplication")).toURI());
-        deleteDirIfExists(Paths.get(src.toString(), "target"));
-        deleteDirIfExists(Paths.get(src.toString().replace("target/test-classes", "src/test/resources"), "target"));
+        deletePath(Paths.get(src.toString(), "target"));
+        deletePath(Paths.get(src.toString().replace("target/test-classes", "src/test/resources"), "target"));
         assertThat(format("directory does not exists [%s]", src.toUri().toString()), Files.exists(src), is(true));
         assertThat(format("[%s] is not a directory", src.toUri().toString()), Files.isDirectory(src), is(true));
         final Path tempDirectory = Files.createTempDirectory(getClass().getSimpleName() + "_" + src.getFileName().toString() + "_");
@@ -253,20 +266,17 @@ public class CustomMavenTestFramework {
         return tempDirectory;
     }
 
-    private void deleteDirIfExists(final Path dir) throws IOException {
+    private void deleteDirIfExists(final Path dir) {
         if (Files.exists(dir)) {
             log.info("%s Deleting [%s]", unicode(0x1F4CD), dir.toString());
             deleteDir(dir);
         }
     }
 
-    private void deleteDir(final Path dir) throws IOException {
+    private void deleteDir(final Path dir) {
         assertThat(format("directory does not exists [%s]", dir.toUri().toString()), Files.exists(dir), is(true));
         assertThat(format("[%s] is not a directory", dir.toUri().toString()), Files.isDirectory(dir), is(true));
-        Files.walk(dir)
-                .sorted(Comparator.reverseOrder())
-                .map(Path::toFile)
-                .forEach(File::delete);
+        deletePath(dir);
         assertThat(format("Unable to delete [%s]", dir.toString()), Files.exists(dir), is(false));
     }
 
@@ -307,7 +317,7 @@ public class CustomMavenTestFramework {
             final Set<Class<? extends MojoBase>> classes = reflections.getSubTypesOf(MojoBase.class);
 
             for (Class<? extends MojoBase> mojo : classes) {
-                mojoList.add(mojo.getDeclaredConstructor(PluginSession.class).newInstance(new PluginSession(null, log)));
+                mojoList.add(mojo.getDeclaredConstructor(PluginSession.class).newInstance(new PluginSession(null)));
             }
         } catch (InstantiationException | IllegalAccessException | InvocationTargetException | NoSuchMethodException e) {
             e.printStackTrace();
@@ -317,7 +327,6 @@ public class CustomMavenTestFramework {
 
     protected static void setupGpgTestKey(final Terminal terminal, final Logger log) {
         final String gpgCmd = getGpgPath(log);
-        terminal.execute(gpgCmd + " --version");
         terminal.execute(
                 "cat > " + GPG_KEY_FILE + " <<EOF\n"
                         + "     %echo Generating a basic OpenPGP key\n"

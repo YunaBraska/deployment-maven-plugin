@@ -2,9 +2,9 @@ package berlin.yuna.mavendeploy.archive;
 
 import berlin.yuna.clu.logic.CommandLineReader;
 import berlin.yuna.clu.logic.Terminal;
+import berlin.yuna.mavendeploy.helper.SettingsXmlBuilder;
 import berlin.yuna.mavendeploy.logic.GitService;
 import berlin.yuna.mavendeploy.logic.SemanticService;
-import berlin.yuna.mavendeploy.helper.SettingsXmlBuilder;
 import org.apache.maven.model.Model;
 import org.apache.maven.model.io.xpp3.MavenXpp3Reader;
 import org.apache.maven.plugin.logging.Log;
@@ -38,6 +38,8 @@ import static berlin.yuna.mavendeploy.archive.MavenCommands.NEXUS_DEPLOY_XX;
 import static berlin.yuna.mavendeploy.archive.MavenCommands.XX_CMD_MVN_SNAPSHOT;
 import static berlin.yuna.mavendeploy.archive.MavenCommands.XX_CMD_MVN_TAG_MSG;
 import static berlin.yuna.mavendeploy.archive.MavenCommands.XX_CMD_MVN_VERSION;
+import static berlin.yuna.mavendeploy.model.Parameter.SOURCE;
+import static java.lang.Boolean.parseBoolean;
 import static java.lang.String.format;
 
 public class Ci {
@@ -83,7 +85,7 @@ public class Ci {
         this.LOG = LOG;
         clr = new CommandLineReader(args == null ? new String[]{""} : args);
         //Versioning
-        PROJECT_VERSION = getString(clr, "PROJECT_VERSION", PROJECT_VERSION);
+        PROJECT_VERSION = getString(clr, "PROJECT_VERSION", null);
         SEMANTIC_FORMAT = getString(clr, "SEMANTIC_FORMAT", SEMANTIC_FORMAT);
         MVN_REMOVE_SNAPSHOT = getBoolean(clr, "REMOVE_SNAPSHOT", MVN_REMOVE_SNAPSHOT);
         MVN_TAG = getBoolean(clr, "TAG", MVN_TAG);
@@ -101,7 +103,7 @@ public class Ci {
         MVN_CLEAN = getBoolean(clr, "CLEAN", MVN_CLEAN);
         MVN_CLEAN_CACHE = getBoolean(clr, "CLEAN_CACHE", MVN_CLEAN_CACHE);
         MVN_JAVA_DOC = getBoolean(clr, "JAVA_DOC", MVN_JAVA_DOC);
-        MVN_SOURCE = getBoolean(clr, "SOURCE", MVN_SOURCE);
+        MVN_SOURCE = getBoolean(clr, SOURCE.maven(), MVN_SOURCE);
         MVN_PROFILES = getBoolean(clr, "PROFILES", MVN_PROFILES);
         GPG_PASS = getString(clr, "GPG_PASS", GPG_PASS);
         GPG_PASS_ALT = getString(clr, "GPG_PASS_ALT", GPG_PASS_ALT);
@@ -121,7 +123,7 @@ public class Ci {
         IS_POM = isPomArtifact(pom);
 
         gitService = null;
-        semanticService = new SemanticService(gitService, isEmpty(SEMANTIC_FORMAT) ? "\\.:none" : SEMANTIC_FORMAT);
+        semanticService = new SemanticService(null, null, isEmpty(SEMANTIC_FORMAT) ? "\\.:none" : SEMANTIC_FORMAT);
 //        gitService = new GitService(LOG, PROJECT_DIR, false);
 
         PROJECT_VERSION = isEmpty(SEMANTIC_FORMAT) ?
@@ -133,7 +135,7 @@ public class Ci {
     }
 
     public String getBranchName() {
-        return semanticService.getBranchName().orElse(null);
+        return semanticService.getBranchNameRefLog().orElse(null);
     }
 
     public boolean allowCommitMessage() {
@@ -291,7 +293,7 @@ public class Ci {
     }
 
     private boolean getOrElse(final String test, final boolean fallback) {
-        return !isEmpty(test) ? Boolean.valueOf(test) : fallback;
+        return !isEmpty(test) ? parseBoolean(test) : fallback;
     }
 
     private String getOrElse(final String test, final String fallback) {

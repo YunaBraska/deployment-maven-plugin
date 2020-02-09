@@ -1,8 +1,12 @@
 * [ ] finish converting from bash to real mojo
+* [ ] read properties from file project, system, file ,commandline
+* [ ] replace some GitService functions with scm plugin
 * [ ] Jacoco
+* [ ] failsafe
 * [ ] plugin updater exclusions
 * [ ] plugin updater remove inner bash command
 * [ ] update testProject too
+* [ ] add mavenProperty resolver to getParameter
 * [ ] git last commit as variables
 * [ ] Git credentials
 * [ ] Git push when changes are made
