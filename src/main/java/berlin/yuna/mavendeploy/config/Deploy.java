@@ -37,9 +37,9 @@ public class Deploy extends MojoBase {
         final String goal = "deploy";
         prepareSettingsServer();
         configureDeployment();
-        if (isNexusDeployment()) {
-            NexusStaging.build(session).deploy();
-        } else {
+//        if (isNexusDeployment()) {
+//            NexusStaging.build(session).deploy();
+//        } else {
             logGoal(goal, true);
             executeMojo(
                     getPlugin(),
@@ -54,7 +54,7 @@ public class Deploy extends MojoBase {
                     ), session.getEnvironment()
             );
             logGoal(goal, false);
-        }
+//        }
         return this;
     }
 
