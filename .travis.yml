@@ -1,17 +1,11 @@
 language: java
-jdk: openjdk12
-dist: trusty
-
-cache:
-  directories:
-    - $HOME/.m2
-
+jdk:
+  - openjdk12
 sudo: false
-install: echo ""
-script: ./deploy.sh
+script: sh scripts/test.sh
 
 after_success:
-  - bash <(curl -s https://codecov.io/bash) -t ab6f3540-1a81-4b13-b45c-d7369dac0eed
+  - bash <(curl -s https://codecov.io/bash) -t 95613817-25e8-4c02-89ca-ab6f67c62312
 env:
   global:
-    - CODECOV_TOKEN=:ab6f3540-1a81-4b13-b45c-d7369dac0eed
+    - CODECOV_TOKEN=:95613817-25e8-4c02-89ca-ab6f67c62312
